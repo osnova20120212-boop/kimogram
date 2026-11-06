@@ -7,6 +7,8 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
+      - 'tools/kimogram/**'
+      - '.github/workflows/proxies.yml'
 
 permissions:
   contents: write

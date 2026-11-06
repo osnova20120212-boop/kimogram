@@ -1,0 +1,43 @@
+name: Refresh proxy list
+
+# Collects free MTProto proxies, keeps the reachable ones and publishes them as list.txt on the
+# `proxies` branch, which Kimogram's auto proxy downloads. Kept off main so it never triggers
+# an app build.
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: proxies
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: tools/kimogram
+      - name: Collect proxies
+        run: python3 tools/kimogram/collect_proxies.py > "$RUNNER_TEMP/list.txt"
+      - name: Publish to the proxies branch
+        run: |
+          lines=$(wc -l < "$RUNNER_TEMP/list.txt")
+          echo "proxies: $lines"
+          if [ "$lines" -lt 1 ]; then
+            echo "Nothing reachable, keeping the previous list."
+            exit 0
+          fi
+          cd "$RUNNER_TEMP"
+          rm -rf publish && mkdir publish && cd publish
+          git init -q -b proxies
+          cp "$RUNNER_TEMP/list.txt" list.txt
+          git add list.txt
+          git -c user.name="kimogram-bot" -c user.email="kimogram-bot@users.noreply.github.com" commit -q -m "Proxy list $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" proxies

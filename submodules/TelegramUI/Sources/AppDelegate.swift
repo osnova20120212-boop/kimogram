@@ -1370,6 +1370,9 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             if let context = context {
                 network = context.context.account.network
             }
+            if let context = context {
+                KimogramAutoProxy.shared.attach(sharedContext: context.context.sharedContext, network: network)
+            }
             
             Logger.shared.log("App \(self.episodeId)", "received context \(String(describing: context)) account \(String(describing: context?.context.account.id)) network \(String(describing: network))")
             
@@ -1434,6 +1437,9 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             if let context = context {
                 network = context.account.network
             }
+            if let context = context {
+                KimogramAutoProxy.shared.attach(sharedContext: context.sharedContext, network: network)
+            }
             
             Logger.shared.log("App \(self.episodeId)", "received auth context \(String(describing: context)) account \(String(describing: context?.account.id)) network \(String(describing: network))")
             
@@ -1482,6 +1488,13 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                 |> deliverOnMainQueue).start(next: { _ in
                     progressDisposable.dispose()
                     self.mainWindow.present(context.rootController, on: .root)
+                    let rootController = context.rootController
+                    let sharedContext = context.sharedContext
+                    Queue.mainQueue().after(1.0, { [weak rootController] in
+                        KimogramAutoProxy.shared.presentLoginOfferIfNeeded(sharedContext: sharedContext, present: { controller in
+                            rootController?.currentWindow?.present(controller, on: .root, blockInteraction: false, completion: {})
+                        })
+                    })
                 }))
             } else {
                 authContextReadyDisposable.set(nil)
