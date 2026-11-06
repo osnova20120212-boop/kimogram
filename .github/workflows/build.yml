@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-26
+    runs-on: macos-latest
     timeout-minutes: 360
 
     steps:
@@ -41,6 +41,7 @@ jobs:
           df -h /
           # Keep only the newest Xcode; remove simulators and caches we do not need.
           ls -d /Applications/Xcode*.app || true
+          sw_vers
           sudo rm -rf ~/Library/Developer/CoreSimulator/Caches || true
           sudo rm -rf /Users/runner/Library/Android /usr/local/share/dotnet /usr/local/lib/node_modules || true
           df -h /
