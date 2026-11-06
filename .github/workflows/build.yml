@@ -123,9 +123,7 @@ jobs:
             --buildNumber="$BUILD_NUMBER"
 
           mkdir -p build/artifacts
-          for f in bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Telegram.ipa; do
-            cp "$f" build/artifacts/Kimogram.ipa
-          done
+          cp -L bazel-bin/Telegram/Telegram.ipa build/artifacts/Kimogram.ipa
           ls -lh build/artifacts
 
       - name: Save Bazel cache
