@@ -92,6 +92,13 @@ jobs:
           json.dump(cfg, open("build-system/kimogram-configuration.json", "w"), indent=2)
           EOF
 
+      - name: Restore Bazel cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/telegram-bazel-cache
+          key: bazel-${{ github.run_id }}
+          restore-keys: bazel-
+
       - name: Build
         run: |
           set -x
@@ -107,7 +114,9 @@ jobs:
             --bazel="$HOME/bazel-bin/bazel" \
             --overrideBazelVersion \
             --bazelUserRoot="/private/var/tmp/_bazel_kimogram" \
+            --cacheDir="$HOME/telegram-bazel-cache" \
             build \
+            --continueOnError \
             --configurationPath="build-system/kimogram-configuration.json" \
             --codesigningInformationPath=build-system/fake-codesigning \
             --configuration=release_arm64 \
@@ -118,6 +127,13 @@ jobs:
             cp "$f" build/artifacts/Kimogram.ipa
           done
           ls -lh build/artifacts
+
+      - name: Save Bazel cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/telegram-bazel-cache
+          key: bazel-${{ github.run_id }}
 
       - name: Upload IPA (workflow artifact)
         uses: actions/upload-artifact@v4
