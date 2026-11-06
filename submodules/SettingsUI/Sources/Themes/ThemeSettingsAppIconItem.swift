@@ -377,31 +377,31 @@ class ThemeSettingsAppIconItemNode: ListViewItemNode, ItemListItemNode {
                             var bordered = true
                             switch icon.name {
                                 case "BlueIcon":
-                                    name = item.strings.Appearance_AppIconDefault
+                                    name = "Kimogram"
                                 case "BlackIcon":
-                                    name = item.strings.Appearance_AppIconDefaultX
+                                    name = "Dark"
                                 case "BlueClassicIcon":
-                                    name = item.strings.Appearance_AppIconClassic
+                                    name = "Glow"
                                 case "BlackClassicIcon":
-                                    name = item.strings.Appearance_AppIconClassicX
+                                    name = "Glow Dark"
                                 case "BlueFilledIcon":
-                                    name = item.strings.Appearance_AppIconFilled
+                                    name = "Violet Filled"
                                     bordered = false
                                 case "BlackFilledIcon":
-                                    name = item.strings.Appearance_AppIconFilledX
+                                    name = "Black Filled"
                                     bordered = false
                                 case "WhiteFilled":
                                     name = "⍺ White"
                                 case "New1":
-                                    name = item.strings.Appearance_AppIconNew1
+                                    name = "Midnight"
                                 case "New2":
-                                    name = item.strings.Appearance_AppIconNew2
+                                    name = "Violet"
                                 case "Premium":
-                                    name = item.strings.Appearance_AppIconPremium
+                                    name = "Aurora"
                                 case "PremiumBlack":
-                                    name = item.strings.Appearance_AppIconBlack
+                                    name = "Obsidian"
                                 case "PremiumTurbo":
-                                    name = item.strings.Appearance_AppIconTurbo
+                                    name = "Neon"
                                 default:
                                     name = icon.name
                             }
