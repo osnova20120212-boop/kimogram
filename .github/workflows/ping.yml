@@ -1,14 +1,13 @@
 name: Runner check
 on:
-  push:
-    branches: [ main ]
-    paths: [ '.github/workflows/ping.yml' ]
+  workflow_dispatch:
 jobs:
-  ubuntu:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo ok
   mac:
-    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-26, macos-15, macos-15-intel, macos-26-intel]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     steps:
-      - run: sw_vers && ls -d /Applications/Xcode*.app
+      - run: sw_vers && uname -m && ls -d /Applications/Xcode*.app && df -h /
