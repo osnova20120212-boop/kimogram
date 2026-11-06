@@ -29,9 +29,6 @@ swift_library(
         "//submodules/TelegramUI/Components/GlassControls",
         "//submodules/Components/BundleIconComponent",
         "//submodules/Components/MultilineTextComponent",
-        "//submodules/ContextUI",
-        "//submodules/TelegramUI/Components/News/NewsFeedSupport",
-        "//submodules/TelegramUI/Components/News/NewsChannelIsland",
     ],
     visibility = [
         "//visibility:public",

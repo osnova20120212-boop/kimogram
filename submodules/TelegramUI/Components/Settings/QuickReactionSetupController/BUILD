@@ -19,6 +19,7 @@ swift_library(
         "//submodules/TelegramUI/Components/EmojiStatusSelectionComponent",
         "//submodules/TelegramUI/Components/EntityKeyboard",
         "//submodules/ItemListUI",
+        "//submodules/Postbox",
         "//submodules/PresentationDataUtils",
         "//submodules/Components/ReactionImageComponent",
         "//submodules/ReactionSelectionNode",

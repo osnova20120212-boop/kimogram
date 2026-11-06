@@ -1,7 +1,7 @@
 import Foundation
 import MtProtoKit
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 
 public struct WalletBackupHolder: Equatable {
     public let datacenterId: Int32

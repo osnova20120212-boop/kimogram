@@ -1,7 +1,7 @@
 import Foundation
 import Postbox
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 import MtProtoKit
 
 func managedVoipConfigurationUpdates(postbox: Postbox, network: Network) -> Signal<Void, NoError> {

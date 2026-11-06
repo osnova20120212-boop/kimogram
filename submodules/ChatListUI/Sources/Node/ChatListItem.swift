@@ -673,22 +673,21 @@ public class ChatListItem: ListViewItem {
     }
 }
 
-
-private let pinIcon = ItemListRevealOptionIcon.animation(animation: "anim_pin", scale: 1.0, offset: 0.0, replaceColors: nil, flip: false)
-private let unpinIcon = ItemListRevealOptionIcon.animation(animation: "anim_unpin", scale: 1.0, offset: 0.0, replaceColors: [0x1993fa], flip: false)
-private let muteIcon = ItemListRevealOptionIcon.animation(animation: "anim_mute", scale: 1.0, offset: 0.0, replaceColors: [0xff9500], flip: false)
-private let unmuteIcon = ItemListRevealOptionIcon.animation(animation: "anim_unmute", scale: 1.0, offset: 0.0, replaceColors: nil, flip: false)
-private let deleteIcon = ItemListRevealOptionIcon.animation(animation: "anim_delete", scale: 1.0, offset: 0.0, replaceColors: nil, flip: false)
-private let groupIcon = ItemListRevealOptionIcon.animation(animation: "anim_group", scale: 1.0, offset: 0.0, replaceColors: nil, flip: false)
-private let ungroupIcon = ItemListRevealOptionIcon.animation(animation: "anim_ungroup", scale: 1.0, offset: 0.0, replaceColors: nil, flip: false)
-private let readIcon = ItemListRevealOptionIcon.animation(animation: "anim_read_reveal", scale: 1.0, offset: 0.0, replaceColors: nil, flip: false)
-private let unreadIcon = ItemListRevealOptionIcon.animation(animation: "anim_unread", scale: 1.0, offset: 0.0, replaceColors: [0x2194fa], flip: false)
-private let archiveIcon = ItemListRevealOptionIcon.animation(animation: "anim_archive", scale: 1.0, offset: 2.0, replaceColors: [0xa9a9ad], flip: false)
-private let unarchiveIcon = ItemListRevealOptionIcon.animation(animation: "anim_unarchive", scale: 0.52, offset: -6.0, replaceColors: [0xa9a9ad], flip: false)
-private let hideIcon = ItemListRevealOptionIcon.animation(animation: "anim_hide", scale: 1.1, offset: 2.0, replaceColors: [0xbdbdc2], flip: false)
-private let unhideIcon = ItemListRevealOptionIcon.animation(animation: "anim_hide", scale: 1.0, offset: -15.0, replaceColors: [0xbdbdc2], flip: true)
-private let startIcon = ItemListRevealOptionIcon.animation(animation: "anim_play", scale: 1.0, offset: 0.0, replaceColors: [0xbdbdc2], flip: false)
-private let closeIcon = ItemListRevealOptionIcon.animation(animation: "anim_pause", scale: 1.0, offset: 0.0, replaceColors: [0xbdbdc2], flip: false)
+private let pinIcon = ItemListRevealOptionIcon.animation(animation: "anim_pin", scale: 1.0, offset: 0.0, replaceColors: nil, flip: false, startFrame: 3)
+private let unpinIcon = ItemListRevealOptionIcon.animation(animation: "anim_unpin", scale: 1.0, offset: 0.0, replaceColors: [0x1993fa], flip: false, startFrame: 5)
+private let muteIcon = ItemListRevealOptionIcon.animation(animation: "anim_mute", scale: 1.0, offset: 0.0, replaceColors: [0xff9500], flip: false, startFrame: 3)
+private let unmuteIcon = ItemListRevealOptionIcon.animation(animation: "anim_unmute", scale: 1.0, offset: 0.0, replaceColors: nil, flip: false, startFrame: 3)
+private let deleteIcon = ItemListRevealOptionIcon.animation(animation: "anim_delete", scale: 1.0, offset: 0.0, replaceColors: nil, flip: false, startFrame: 3)
+private let groupIcon = ItemListRevealOptionIcon.animation(animation: "anim_group", scale: 1.0, offset: 0.0, replaceColors: nil, flip: false, startFrame: 5)
+private let ungroupIcon = ItemListRevealOptionIcon.animation(animation: "anim_ungroup", scale: 1.0, offset: 0.0, replaceColors: nil, flip: false, startFrame: 5)
+private let readIcon = ItemListRevealOptionIcon.animation(animation: "anim_read", scale: 1.0, offset: 0.0, replaceColors: nil, flip: false, startFrame: 5)
+private let unreadIcon = ItemListRevealOptionIcon.animation(animation: "anim_unread", scale: 1.0, offset: 0.0, replaceColors: [0x2194fa], flip: false, startFrame: 5)
+private let archiveIcon = ItemListRevealOptionIcon.animation(animation: "anim_archive", scale: 1.0, offset: 2.0, replaceColors: [0xa9a9ad], flip: false, startFrame: 5)
+private let unarchiveIcon = ItemListRevealOptionIcon.animation(animation: "anim_unarchive", scale: 0.52, offset: -6.0, replaceColors: [0xa9a9ad], flip: false, startFrame: 5)
+private let hideIcon = ItemListRevealOptionIcon.animation(animation: "anim_hide", scale: 1.1, offset: 2.0, replaceColors: [0xbdbdc2], flip: false, startFrame: 5)
+private let unhideIcon = ItemListRevealOptionIcon.animation(animation: "anim_hide", scale: 1.0, offset: -15.0, replaceColors: [0xbdbdc2], flip: true, startFrame: 5)
+private let startIcon = ItemListRevealOptionIcon.animation(animation: "anim_play", scale: 1.0, offset: 0.0, replaceColors: [0xbdbdc2], flip: false, startFrame: 5)
+private let closeIcon = ItemListRevealOptionIcon.animation(animation: "anim_pause", scale: 1.0, offset: 0.0, replaceColors: [0xbdbdc2], flip: false, startFrame: 5)
 private let ungroupCommunityIcon = ItemListRevealOptionIcon.animation(animation: "anim_ungroupcom", scale: 0.5, offset: -4.0, replaceColors: nil, flip: false, startFrame: 0)
 
 enum RevealOptionKey: Int32 {
@@ -2836,7 +2835,16 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                             authorAttributedString = NSAttributedString(string: peerText, font: textFont, textColor: theme.authorNameColor)
                         }
                                        
-                        var entities = chatListPreviewTextEntities(entities)
+                        var entities = entities.filter { entity in
+                            switch entity.type {
+                            case .Spoiler, .CustomEmoji, .FormattedDate:
+                                return true
+                            case .Strikethrough, .Underline, .Italic, .Bold:
+                                return true
+                            default:
+                                return false
+                            }
+                        }
                         if let _ = message.media.first(where: { $0 is TelegramMediaPoll }) {
                             entities = []
                         }
@@ -2871,7 +2879,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                             }
                             messageString = chatListRichTextPreview(foldedRichTextPreview, font: textFont, italicFont: italicTextFont, textColor: theme.messageTextColor, additionalSpoilers: spoilerRanges)
                         } else if !messageText.isEmpty && entities.count > 0 {
-                            let appliedString = chatListPreviewAttributedString(messageText, entities: entities, strings: item.presentationData.strings, dateTimeFormat: item.presentationData.dateTimeFormat, font: textFont, italicFont: italicTextFont, textColor: theme.messageTextColor, message: message._asMessage())
+                            let appliedString = stringWithAppliedEntities(messageText, entities: entities, strings: item.presentationData.strings, dateTimeFormat: item.presentationData.dateTimeFormat, baseColor: theme.messageTextColor, linkColor: theme.messageTextColor, baseFont: textFont, linkFont: textFont, boldFont: textFont, italicFont: italicTextFont, boldItalicFont: textFont, fixedFont: textFont, blockQuoteFont: textFont, underlineLinks: false, message: message._asMessage())
                             messageString = foldLineBreaks(appliedString)
                         } else if spoilers != nil || customEmojiRanges != nil {
                             let mutableString = NSMutableAttributedString(string: messageText, font: textFont, textColor: theme.messageTextColor)
@@ -3617,22 +3625,22 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
             
             var titleLeftOffset: CGFloat = 0.0
             if let currentVerifiedIconContent {
-                if case .animation = currentVerifiedIconContent {
+                if titleLeftOffset.isZero, case .animation = currentVerifiedIconContent {
                     titleLeftOffset += 19.0
+                }
+                
+                if titleIconsWidth.isZero {
+                    titleIconsWidth += 4.0
                 } else {
-                    if titleIconsWidth.isZero {
-                        titleIconsWidth += 4.0
-                    } else {
-                        titleIconsWidth += 2.0
-                    }
-                    switch currentVerifiedIconContent {
-                    case let .text(_, string):
-                        let textString = NSAttributedString(string: string, font: Font.bold(10.0), textColor: .black, paragraphAlignment: .center)
-                        let stringRect = textString.boundingRect(with: CGSize(width: 100.0, height: 16.0), options: .usesLineFragmentOrigin, context: nil)
-                        titleIconsWidth += floor(stringRect.width) + 11.0
-                    default:
-                        titleIconsWidth += 8.0
-                    }
+                    titleIconsWidth += 2.0
+                }
+                switch currentVerifiedIconContent {
+                case let .text(_, string):
+                    let textString = NSAttributedString(string: string, font: Font.bold(10.0), textColor: .black, paragraphAlignment: .center)
+                    let stringRect = textString.boundingRect(with: CGSize(width: 100.0, height: 16.0), options: .usesLineFragmentOrigin, context: nil)
+                    titleIconsWidth += floor(stringRect.width) + 11.0
+                default:
+                    titleIconsWidth += 8.0
                 }
             }
             
@@ -3664,7 +3672,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                     let stringRect = textString.boundingRect(with: CGSize(width: 100.0, height: 16.0), options: .usesLineFragmentOrigin, context: nil)
                     titleIconsWidth += floor(stringRect.width) + 11.0
                 default:
-                    titleIconsWidth += 16.0
+                    titleIconsWidth += 8.0
                 }
             }
             
@@ -3846,7 +3854,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                 titleAttributedString = NSAttributedString(string: " ", font: titleFont, textColor: theme.titleColor)
             }
                         
-            var titleRectWidth = rawContentWidth - dateLayout.size.width - 10.0 - statusWidth - titleIconsWidth - titleLeftOffset
+            var titleRectWidth = rawContentWidth - dateLayout.size.width - 10.0 - statusWidth - titleIconsWidth
             var titleCutout: TextNodeCutout?
             if !titleLeftCutout.isZero {
                 titleCutout = TextNodeCutout(topLeft: CGSize(width: titleLeftCutout, height: 10.0), topRight: nil, bottomRight: nil)

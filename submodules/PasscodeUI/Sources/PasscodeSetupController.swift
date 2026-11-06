@@ -84,7 +84,7 @@ public final class PasscodeSetupController: ViewController {
             self.authentication = nil
         }
         
-        super.init(navigationBarPresentationData: NavigationBarPresentationData(presentationData: self.presentationData))
+        super.init(navigationBarPresentationData: NavigationBarPresentationData(presentationData: self.presentationData, style: .glass))
         
         self.supportedOrientations = ViewControllerSupportedOrientations(regularSize: .all, compactSize: .portrait)
         self.statusBar.statusBarStyle = self.presentationData.theme.rootController.statusBarStyle.style
@@ -123,6 +123,7 @@ public final class PasscodeSetupController: ViewController {
         self.displayNode = PasscodeSetupControllerNode(presentationData: self.presentationData, mode: self.mode, useCustomNumericKeyboard: self.useCustomNumericKeyboard)
         self.displayNodeDidLoad()
         
+        self.navigationBar?.updateBackgroundAlpha(0.0, transition: .immediate)
         
         self.controllerNode.selectPasscodeMode = { [weak self] sourceNode in
             self?.openPasscodeModeMenu(sourceNode: sourceNode)

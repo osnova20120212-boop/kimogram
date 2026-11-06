@@ -1,7 +1,7 @@
 
 import Foundation
 import Postbox
-internal import TelegramApi
+import TelegramApi
 
 public class InvertMediaMessageAttribute: MessageAttribute, Equatable {
     public let associatedPeerIds: [PeerId] = []

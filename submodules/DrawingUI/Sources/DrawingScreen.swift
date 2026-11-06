@@ -1179,11 +1179,6 @@ private final class DrawingScreenComponent: CombinedComponent {
                     let mirroredControlsBottomInset = -(environment.statusBarHeight + 31.0 + 30.0)
                     bottomPanelLift = max(0.0, controlsBottomInset - mirroredControlsBottomInset)
                     controlsBottomInset -= bottomPanelLift
-                } else {
-                    // Elsewhere (folded) the editor's bar is 62pt above the home indicator; so is this one, and the rows
-                    // above it move up with it.
-                    bottomPanelLift = environment.safeInsets.bottom
-                    controlsBottomInset -= bottomPanelLift
                 }
             }
             let previewBottomInset = max(0.0, unclampedPreviewBottomInset)

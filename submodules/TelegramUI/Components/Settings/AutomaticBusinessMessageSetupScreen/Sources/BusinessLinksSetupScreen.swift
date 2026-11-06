@@ -121,6 +121,10 @@ final class BusinessLinksSetupScreenComponent: Component {
             
             let navigationAlphaDistance: CGFloat = 16.0
             let navigationAlpha: CGFloat = max(0.0, min(1.0, (self.scrollView.contentOffset.y - navigationRevealOffsetY) / navigationAlphaDistance))
+            if let controller = self.environment?.controller(), let navigationBar = controller.navigationBar {
+                transition.setAlpha(layer: navigationBar.backgroundNode.layer, alpha: navigationAlpha)
+                transition.setAlpha(layer: navigationBar.stripeNode.layer, alpha: navigationAlpha)
+            }
             
             var scrolledUp = false
             if navigationAlpha < 0.5 {
@@ -254,7 +258,7 @@ final class BusinessLinksSetupScreenComponent: Component {
                 return
             }
             
-            environment.controller()?.present(component.context.sharedContext.makeShareScreen(context: component.context, params: ShareControllerParams(subject: .url(link.url), showInChat: nil, externalShare: false, immediateExternalShare: false)), in: .window(.root))
+            environment.controller()?.present(component.context.sharedContext.makeShareController(context: component.context, params: ShareControllerParams(subject: .url(link.url), showInChat: nil, externalShare: false, immediateExternalShare: false)), in: .window(.root))
         }
         
         func update(component: BusinessLinksSetupScreenComponent, availableSize: CGSize, state: EmptyComponentState, environment: Environment<EnvironmentType>, transition: ComponentTransition) -> CGSize {

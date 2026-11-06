@@ -1,7 +1,7 @@
 import Foundation
 import Postbox
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 
 public final class NewSessionReview: Codable, Equatable {
     struct Id {

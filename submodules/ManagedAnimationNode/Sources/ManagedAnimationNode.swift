@@ -102,7 +102,7 @@ public enum ManagedAnimationSource: Equatable {
                 }
                 return getAppBundle().path(forResource: name, ofType: "json")
             case let .resource(account, resource):
-                return TelegramEngine(account: account).resources.completedResourcePath(id: resource.id)
+                return account.postbox.mediaBox.completedResourcePath(resource._asResource())
         }
     }
     

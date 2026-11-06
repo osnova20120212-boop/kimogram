@@ -75,7 +75,6 @@ swift_library(
         "//submodules/TelegramUI/Components/AnimationCache/ImageDCT",
         "//submodules/FileMediaResourceStatus",
         "//submodules/TelegramUI/Components/MediaEditor/ImageObjectSeparation",
-        "//submodules/TelegramUI/Components/MediaAssetsContext",
     ],
     visibility = [
         "//visibility:public",

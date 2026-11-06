@@ -78,27 +78,27 @@ public func giftOfferAlertController(
             let id: String?
             let title: String?
             let value: NSAttributedString
-            let rarity: StarGift.UniqueGift.Attribute.Rarity?
+            let percentage: Float?
             let tag: AnyObject?
             
             switch attribute {
-            case let .model(name, _, rarityValue, _):
+            case let .model(name, _, rarity, _):
                 id = "model"
                 title = strings.Gift_Unique_Model
                 value = NSAttributedString(string: name, font: tableFont, textColor: tableTextColor)
-                rarity = rarityValue
+                percentage = Float(rarity.permilleValue) * 0.1
                 tag = modelButtonTag
-            case let .backdrop(name, _, _, _, _, _, rarityValue):
+            case let .backdrop(name, _, _, _, _, _, rarity):
                 id = "backdrop"
                 title = strings.Gift_Unique_Backdrop
                 value = NSAttributedString(string: name, font: tableFont, textColor: tableTextColor)
-                rarity = rarityValue
+                percentage = Float(rarity.permilleValue) * 0.1
                 tag = backdropButtonTag
-            case let .pattern(name, _, rarityValue):
+            case let .pattern(name, _, rarity):
                 id = "pattern"
                 title = strings.Gift_Unique_Symbol
                 value = NSAttributedString(string: name, font: tableFont, textColor: tableTextColor)
-                rarity = rarityValue
+                percentage = Float(rarity.permilleValue) * 0.1
                 tag = symbolButtonTag
             case .originalInfo:
                 continue
@@ -113,20 +113,17 @@ public func giftOfferAlertController(
                     )
                 )
             )
-            if let rarity, let tag {
-                let badge = giftAttributeRarityBadge(rarity: rarity, strings: strings, accentColor: presentationData.theme.list.itemAccentColor)
+            if let percentage, let tag {
                 items.append(AnyComponentWithIdentity(
                     id: AnyHashable(1),
                     component: AnyComponent(Button(
                         content: AnyComponent(ButtonContentComponent(
                             context: context,
-                            text: badge.text,
-                            color: badge.color
+                            text: formatPercentage(percentage),
+                            color: presentationData.theme.list.itemAccentColor
                         )),
                         action: {
-                            if let description = badge.description {
-                                showAttributeInfoImpl?(tag, description)
-                            }
+                            showAttributeInfoImpl?(tag, strings.Gift_Unique_AttributeDescription(formatPercentage(percentage)).string)
                         }
                     ).tagged(tag))
                 ))

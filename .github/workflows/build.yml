@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-26-intel
     timeout-minutes: 360
 
     steps:
@@ -58,6 +58,15 @@ jobs:
           sudo xcode-select -s "$XCODE/Contents/Developer"
           xcodebuild -version
 
+      - name: Download Bazel for this Mac
+        run: |
+          BAZEL_VERSION=$(python3 -c 'import json;print(json.load(open("versions.json"))["bazel"].split(":")[0])')
+          ARCH=$(uname -m); [ "$ARCH" = "x86_64" ] && BARCH=darwin-x86_64 || BARCH=darwin-arm64
+          mkdir -p "$HOME/bazel-bin"
+          curl -fsSL -o "$HOME/bazel-bin/bazel" "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-$BARCH"
+          chmod +x "$HOME/bazel-bin/bazel"
+          "$HOME/bazel-bin/bazel" --version
+
       - name: Create canonical source directory
         run: |
           sudo mkdir -p /Users/Shared
@@ -93,6 +102,8 @@ jobs:
           python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
           python3 -u build-system/Make/Make.py \
             --overrideXcodeVersion \
+            --bazel="$HOME/bazel-bin/bazel" \
+            --overrideBazelVersion \
             --bazelUserRoot="/private/var/tmp/_bazel_kimogram" \
             build \
             --configurationPath="build-system/kimogram-configuration.json" \

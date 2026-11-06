@@ -1,6 +1,6 @@
 import Foundation
 import Postbox
-internal import TelegramApi
+import TelegramApi
 
 public final class OutgoingQuickReplyMessageAttribute: Equatable, MessageAttribute {
     public let shortcut: String

@@ -13,7 +13,7 @@ private func walletCollectibleWebFileImage(
     account: Account,
     file: TelegramMediaWebFile
 ) -> Signal<(TransformImageArguments) -> DrawingContext?, NoError> {
-    return TelegramEngine(account: account).resources.data(resource: EngineMediaResource(file.resource))
+    return account.postbox.mediaBox.resourceData(file.resource)
     |> map { fullSizeData in
         return { arguments in
             guard let context = DrawingContext(size: arguments.drawingSize, clear: true) else {
@@ -22,7 +22,7 @@ private func walletCollectibleWebFileImage(
 
             var fullSizeImage: CGImage?
             var imageOrientation: UIImage.Orientation = .up
-            if fullSizeData.isComplete {
+            if fullSizeData.complete {
                 let options = NSMutableDictionary()
                 options[kCGImageSourceShouldCache as NSString] = false as NSNumber
                 if let imageSource = CGImageSourceCreateWithURL(URL(fileURLWithPath: fullSizeData.path) as CFURL, nil),

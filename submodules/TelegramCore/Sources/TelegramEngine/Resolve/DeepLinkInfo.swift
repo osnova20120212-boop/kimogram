@@ -1,6 +1,6 @@
 import Foundation
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 
 
 public struct DeepLinkInfo {

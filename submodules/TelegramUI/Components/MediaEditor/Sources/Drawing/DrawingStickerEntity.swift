@@ -9,18 +9,7 @@ func entitiesPath() -> String {
 }
 
 func fullEntityMediaPath(_ path: String) -> String {
-    return entitiesPath() + "/" + path
-}
-
-/// Creates the entity-media directory and keeps it out of backups, for the same reason as the
-/// story drafts it belongs to: these are rendered copies of media the user already has, written
-/// beside a draft and regenerated whenever one is re-encoded.
-@discardableResult
-func ensureEntitiesDirectory() -> String {
-    let path = entitiesPath()
-    try? FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
-    excludeFromBackup(path: path)
-    return path
+    return NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0] + "/mediaEntities/" + path
 }
 
 public final class DrawingStickerEntity: DrawingEntity, Codable {
@@ -333,7 +322,7 @@ public final class DrawingStickerEntity: DrawingEntity, Codable {
             let imagePath = "\(self.uuid).png"
             let fullImagePath = fullEntityMediaPath(imagePath)
             if let imageData = image.pngData() {
-                ensureEntitiesDirectory()
+                try? FileManager.default.createDirectory(atPath: entitiesPath(), withIntermediateDirectories: true)
                 try? imageData.write(to: URL(fileURLWithPath: fullImagePath))
                 try container.encodeIfPresent(imagePath, forKey: .imagePath)
             }
@@ -348,14 +337,14 @@ public final class DrawingStickerEntity: DrawingEntity, Codable {
         case let .animatedImage(data, thumbnailImage):
             let dataPath = "\(self.uuid).heics"
             let fullDataPath = fullEntityMediaPath(dataPath)
-            ensureEntitiesDirectory()
+            try? FileManager.default.createDirectory(atPath: entitiesPath(), withIntermediateDirectories: true)
             try? data.write(to: URL(fileURLWithPath: fullDataPath))
             try container.encodeIfPresent(dataPath, forKey: .animatedImagePath)
             
             let imagePath = "\(self.uuid).png"
             let fullImagePath = fullEntityMediaPath(imagePath)
             if let imageData = thumbnailImage.pngData() {
-                ensureEntitiesDirectory()
+                try? FileManager.default.createDirectory(atPath: entitiesPath(), withIntermediateDirectories: true)
                 try? imageData.write(to: URL(fileURLWithPath: fullImagePath))
                 try container.encodeIfPresent(imagePath, forKey: .imagePath)
             }

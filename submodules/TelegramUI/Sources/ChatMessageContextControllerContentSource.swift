@@ -231,7 +231,7 @@ final class ChatViewOnceMessageContextExtractedContentSource: ContextExtractedCo
             if (isIncoming || "".isEmpty) {
                 let messageItem = self.context.sharedContext.makeChatMessagePreviewItem(
                     context: self.context,
-                    messages: [self.message],
+                    messages: [self.message._asMessage()],
                     theme: self.presentationData.theme,
                     strings: self.presentationData.strings,
                     wallpaper: self.presentationData.chatWallpaper,
@@ -250,8 +250,7 @@ final class ChatViewOnceMessageContextExtractedContentSource: ContextExtractedCo
                     isStandalone: true,
                     rank: nil,
                     rankRole: nil,
-                    isGiftMessageComposerPreview: false,
-                    activateGiftMessageInput: nil
+                    isGiftMessageComposerPreview: false
                 )
                 
                 let width = chatNode.historyNode.frame.width

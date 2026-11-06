@@ -230,10 +230,11 @@ public final class BatchVideoRenderingContext {
         for (id, targetContext) in self.targetContexts {
             if targetContext.target != nil {
                 if targetContext.fetchDisposable == nil {
-                    targetContext.fetchDisposable = self.context.engine.resources.fetch(
-                        reference: targetContext.file.resourceReference(targetContext.file.media.resource),
+                    targetContext.fetchDisposable = fetchedMediaResource(
+                        mediaBox: self.context.account.postbox.mediaBox,
                         userLocation: targetContext.userLocation,
-                        userContentType: .sticker
+                        userContentType: .sticker,
+                        reference: targetContext.file.resourceReference(targetContext.file.media.resource)
                     ).startStrict()
                 }
                 if targetContext.dataDisposable == nil {

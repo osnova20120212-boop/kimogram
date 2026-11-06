@@ -1,7 +1,7 @@
 import Foundation
 import Postbox
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 
 func _internal_topPeerActiveLiveLocationMessages(viewTracker: AccountViewTracker, accountPeerId: PeerId, peerId: PeerId) -> Signal<(Peer?, [Message]), NoError> {
     return viewTracker.aroundMessageHistoryViewForLocation(.peer(peerId: peerId, threadId: nil), index: .upperBound, anchorIndex: .upperBound, count: 50, fixedCombinedReadStates: nil, tag: .tag(.liveLocation), orderStatistics: [], additionalData: [.peer(accountPeerId)])

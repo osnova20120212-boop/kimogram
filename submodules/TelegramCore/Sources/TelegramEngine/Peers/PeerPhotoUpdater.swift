@@ -2,7 +2,7 @@ import Foundation
 import Postbox
 import SwiftSignalKit
 import MtProtoKit
-internal import TelegramApi
+import TelegramApi
 
 public enum UpdatePeerPhotoStatus {
     case progress(Float)

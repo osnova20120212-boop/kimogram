@@ -368,9 +368,9 @@ public final class ChatMessageAttachedContentNode: ASDisplayNode {
                             contentFileValue = file
                         }
                         
-                        if shouldDownloadMediaAutomatically(settings: automaticDownloadSettings, peerType: associatedData.automaticDownloadPeerType, networkType: associatedData.automaticDownloadNetworkType, authorPeerId: message.author?.id, contactsPeerIds: associatedData.contactsPeerIds, media: .file(file), isAd: isAd) {
+                        if shouldDownloadMediaAutomatically(settings: automaticDownloadSettings, peerType: associatedData.automaticDownloadPeerType, networkType: associatedData.automaticDownloadNetworkType, authorPeerId: message.author?.id, contactsPeerIds: associatedData.contactsPeerIds, media: file, isAd: isAd) {
                             contentMediaAutomaticDownload = .full
-                        } else if shouldPredownloadMedia(settings: automaticDownloadSettings, peerType: associatedData.automaticDownloadPeerType, networkType: associatedData.automaticDownloadNetworkType, media: .file(file)) {
+                        } else if shouldPredownloadMedia(settings: automaticDownloadSettings, peerType: associatedData.automaticDownloadPeerType, networkType: associatedData.automaticDownloadNetworkType, media: file) {
                             contentMediaAutomaticDownload = .prefetch
                         }
                         
@@ -426,15 +426,15 @@ public final class ChatMessageAttachedContentNode: ASDisplayNode {
                 } else {
                     let contentMode: InteractiveMediaNodeContentMode = contentMediaAspectFilled ? .aspectFill : .aspectFit
                     
-                    let automaticDownload = shouldDownloadMediaAutomatically(settings: automaticDownloadSettings, peerType: associatedData.automaticDownloadPeerType, networkType: associatedData.automaticDownloadNetworkType, authorPeerId: message.author?.id, contactsPeerIds: associatedData.contactsPeerIds, media: EngineMedia(contentMediaValue), isAd: isAd)
+                    let automaticDownload = shouldDownloadMediaAutomatically(settings: automaticDownloadSettings, peerType: associatedData.automaticDownloadPeerType, networkType: associatedData.automaticDownloadNetworkType, authorPeerId: message.author?.id, contactsPeerIds: associatedData.contactsPeerIds, media: contentMediaValue, isAd: isAd)
                     
                     let (_, initialImageWidth, refineLayout) = makeContentMedia(
                         context,
                         presentationData,
                         presentationData.dateTimeFormat,
-                        EngineMessage(message), associatedData,
+                        message, associatedData,
                         attributes,
-                        EngineMedia(contentMediaValue),
+                        contentMediaValue,
                         nil,
                         nil,
                         automaticDownload ? .full : .none,
@@ -457,7 +457,7 @@ public final class ChatMessageAttachedContentNode: ASDisplayNode {
             
             let contentFileContinueLayout: ChatMessageInteractiveFileNode.ContinueLayout?
             if let contentFileValue {
-                let automaticDownload = shouldDownloadMediaAutomatically(settings: automaticDownloadSettings, peerType: associatedData.automaticDownloadPeerType, networkType: associatedData.automaticDownloadNetworkType, authorPeerId: message.author?.id, contactsPeerIds: associatedData.contactsPeerIds, media: .file(contentFileValue), isAd: isAd)
+                let automaticDownload = shouldDownloadMediaAutomatically(settings: automaticDownloadSettings, peerType: associatedData.automaticDownloadPeerType, networkType: associatedData.automaticDownloadNetworkType, authorPeerId: message.author?.id, contactsPeerIds: associatedData.contactsPeerIds, media: contentFileValue, isAd: isAd)
                 
                 let (_, refineLayout) = makeContentFile(ChatMessageInteractiveFileNode.Arguments(
                     context: context,
@@ -1406,7 +1406,7 @@ public final class ChatMessageAttachedContentNode: ASDisplayNode {
                                     guard let controllerInteraction else {
                                         return
                                     }
-                                    controllerInteraction.playMessageEffect(message._asMessage())
+                                    controllerInteraction.playMessageEffect(message)
                                 }
                                 contentMedia.activateLocalContent = { [weak self] mode in
                                     guard let self else {
@@ -1418,7 +1418,7 @@ public final class ChatMessageAttachedContentNode: ASDisplayNode {
                                     guard let controllerInteraction else {
                                         return
                                     }
-                                    controllerInteraction.updateMessageReaction(message._asMessage(), value, force, sourceView)
+                                    controllerInteraction.updateMessageReaction(message, value, force, sourceView)
                                 }
                                 contentMedia.visibility = self.visibility != .none
                                 

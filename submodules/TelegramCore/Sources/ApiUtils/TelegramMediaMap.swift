@@ -1,6 +1,6 @@
 import Foundation
 import Postbox
-internal import TelegramApi
+import TelegramApi
 
 
 func telegramMediaMapFromApiGeoPoint(_ geo: Api.GeoPoint, title: String?, address: String?, provider: String?, venueId: String?, venueType: String?, liveBroadcastingTimeout: Int32?, liveProximityNotificationRadius: Int32?, heading: Int32?) -> TelegramMediaMap {

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftSignalKit
+import Postbox
 import TelegramCore
 import AccountContext
 import TemporaryCachedPeerDataManager
@@ -11,11 +12,11 @@ enum PeerInfoMemberRole {
 }
 
 enum PeerInfoMember: Equatable {
-    case channelMember(participant: RenderedChannelParticipant, storyStats: EnginePeerStoryStats?)
-    case legacyGroupMember(peer: EngineRenderedPeer, role: PeerInfoMemberRole, invitedBy: EnginePeer.Id?, presence: TelegramUserPresence?, storyStats: EnginePeerStoryStats?, rank: String?)
+    case channelMember(participant: RenderedChannelParticipant, storyStats: PeerStoryStats?)
+    case legacyGroupMember(peer: RenderedPeer, role: PeerInfoMemberRole, invitedBy: PeerId?, presence: TelegramUserPresence?, storyStats: PeerStoryStats?, rank: String?)
     case account(peer: EngineRenderedPeer)
 
-    var id: EnginePeer.Id {
+    var id: PeerId {
         switch self {
         case let .channelMember(participant, _):
             return participant.peer.id
@@ -31,7 +32,7 @@ enum PeerInfoMember: Equatable {
         case let .channelMember(participant, _):
             return participant.peer
         case let .legacyGroupMember(peer, _, _, _, _, _):
-            return peer.peers[peer.peerId]!
+            return EnginePeer(peer.peers[peer.peerId]!)
         case let .account(peer):
             return peer.peer!
         }
@@ -84,7 +85,7 @@ enum PeerInfoMember: Equatable {
         }
     }
     
-    var storyStats: EnginePeerStoryStats? {
+    var storyStats: PeerStoryStats? {
         switch self {
         case let .channelMember(_, value):
             return value
@@ -107,7 +108,7 @@ struct PeerInfoMembersState: Equatable {
     var dataState: PeerInfoMembersDataState
 }
 
-private func membersSortedByPresence(_ members: [PeerInfoMember], accountPeerId: EnginePeer.Id) -> [PeerInfoMember] {
+private func membersSortedByPresence(_ members: [PeerInfoMember], accountPeerId: PeerId) -> [PeerInfoMember] {
     return members.sorted(by: { lhs, rhs in
         if lhs.id == accountPeerId {
             return true
@@ -135,12 +136,12 @@ private func membersSortedByPresence(_ members: [PeerInfoMember], accountPeerId:
 private final class PeerInfoMembersContextImpl {
     private let queue: Queue
     private let context: AccountContext
-    private let peerId: EnginePeer.Id
+    private let peerId: PeerId
     
     private var canAddMembers = false
     private var members: [PeerInfoMember] = []
     private var dataState: PeerInfoMembersDataState = .loading(isInitial: true)
-    private var removingMemberIds: [EnginePeer.Id: Disposable] = [:]
+    private var removingMemberIds: [PeerId: Disposable] = [:]
     private var membersHidden: Bool?
     
     private var participantsVersion: Int32?
@@ -153,7 +154,7 @@ private final class PeerInfoMembersContextImpl {
     private let peerDisposable = MetaDisposable()
     private var channelMembersControl: PeerChannelMemberCategoryControl?
     
-    init(queue: Queue, context: AccountContext, peerId: EnginePeer.Id) {
+    init(queue: Queue, context: AccountContext, peerId: PeerId) {
         self.queue = queue
         self.context = context
         self.peerId = peerId
@@ -239,7 +240,7 @@ private final class PeerInfoMembersContextImpl {
                 for participant in participantsData.participants {
                     if let peer = view.peers[participant.peerId] {
                         let role: PeerInfoMemberRole
-                        let invitedBy: EnginePeer.Id?
+                        let invitedBy: PeerId?
                         let rank: String?
                         switch participant {
                         case let .creator(_, rankValue):
@@ -255,7 +256,7 @@ private final class PeerInfoMembersContextImpl {
                             invitedBy = invitedByValue
                             rank = rankValue
                         }
-                        unsortedMembers.append(.legacyGroupMember(peer: EngineRenderedPeer(peer: EnginePeer(peer)), role: role, invitedBy: invitedBy, presence: view.peerPresences[participant.peerId] as? TelegramUserPresence, storyStats: view.memberStoryStats[participant.peerId], rank: rank))
+                        unsortedMembers.append(.legacyGroupMember(peer: RenderedPeer(peer: peer), role: role, invitedBy: invitedBy, presence: view.peerPresences[participant.peerId] as? TelegramUserPresence, storyStats: view.memberStoryStats[participant.peerId], rank: rank))
                     }
                 }
                 
@@ -307,7 +308,7 @@ private final class PeerInfoMembersContextImpl {
         }
     }
     
-    func removeMember(memberId: EnginePeer.Id) {
+    func removeMember(memberId: PeerId) {
         if self.removingMemberIds[memberId] == nil {
             let signal: Signal<Never, NoError>
             if self.peerId.namespace == Namespaces.Peer.CloudChannel {
@@ -355,7 +356,7 @@ final class PeerInfoMembersContext: Equatable {
         }
     }
     
-    init(context: AccountContext, peerId: EnginePeer.Id) {
+    init(context: AccountContext, peerId: PeerId) {
         let queue = self.queue
         self.impl = QueueLocalObject(queue: queue, generate: {
             return PeerInfoMembersContextImpl(queue: queue, context: context, peerId: peerId)
@@ -368,7 +369,7 @@ final class PeerInfoMembersContext: Equatable {
         }
     }
     
-    func removeMember(memberId: EnginePeer.Id) {
+    func removeMember(memberId: PeerId) {
         self.impl.with { impl in
             impl.removeMember(memberId: memberId)
         }

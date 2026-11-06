@@ -11,7 +11,7 @@ public enum WallpaperPreviewMediaContent: Equatable {
     case emoticon(String)
 }
 
-public final class WallpaperPreviewMedia: EngineCustomMedia {
+public final class WallpaperPreviewMedia: EngineRawMedia {
     public var id: EngineMedia.Id? {
         return nil
     }
@@ -72,7 +72,7 @@ public extension WallpaperPreviewMedia {
     }
 }
 
-public final class UniqueGiftPreviewMedia: EngineCustomMedia {
+public final class UniqueGiftPreviewMedia: EngineRawMedia {
     public var id: EngineMedia.Id? {
         return nil
     }
@@ -109,7 +109,7 @@ public final class UniqueGiftPreviewMedia: EngineCustomMedia {
 }
 
 
-public final class GiftAuctionPreviewMedia: EngineCustomMedia {
+public final class GiftAuctionPreviewMedia: EngineRawMedia {
     public var id: EngineMedia.Id? {
         return nil
     }

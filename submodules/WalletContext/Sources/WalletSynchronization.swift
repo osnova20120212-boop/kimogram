@@ -201,7 +201,6 @@ extension WalletContextImpl {
             )
             guard self.isCurrentCollectiblesSynchronization(taskId, observationId: observationId) else { return }
             self.replaceCollectibles(try self.currentState.collectibles.applying(page, offset: "", refresh: true))
-            self.reconcileCardStickers(self.currentState.collectibles)
         } catch {
             guard self.isCurrentCollectiblesSynchronization(taskId, observationId: observationId) else { return }
             if !(error is CancellationError) {

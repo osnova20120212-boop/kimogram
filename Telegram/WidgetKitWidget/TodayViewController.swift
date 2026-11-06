@@ -12,6 +12,7 @@ import Intents
 
 import OpenSSLEncryptionProvider
 import SwiftSignalKit
+import Postbox
 import TelegramCore
 import OpenSSLEncryptionProvider
 import WidgetItemsUtils
@@ -92,7 +93,7 @@ private func getCommonTimeline(friends: [Friend]?, in context: TimelineProviderC
     
     let rootPath = rootPathForBasePath(appGroupUrl.path)
     
-    EngineTempBox.initializeShared(basePath: rootPath, processType: "widget", launchSpecificId: Int64.random(in: Int64.min ... Int64.max))
+    TempBox.initializeShared(basePath: rootPath, processType: "widget", launchSpecificId: Int64.random(in: Int64.min ... Int64.max))
     
     let logsPath = rootPath + "/logs/widget-logs"
     let _ = try? FileManager.default.createDirectory(atPath: logsPath, withIntermediateDirectories: true, attributes: nil)
@@ -102,7 +103,7 @@ private func getCommonTimeline(friends: [Friend]?, in context: TimelineProviderC
     initializeAccountManagement()
     
     let deviceSpecificEncryptionParameters = BuildConfig.deviceSpecificEncryptionParameters(rootPath, baseAppBundleId: baseAppBundleId)
-    let encryptionParameters = EngineValueBoxEncryptionParameters(forceEncryptionIfNoSet: false, key: EngineValueBoxEncryptionParameters.Key(data: deviceSpecificEncryptionParameters.key)!, salt: EngineValueBoxEncryptionParameters.Salt(data: deviceSpecificEncryptionParameters.salt)!)
+    let encryptionParameters = ValueBoxEncryptionParameters(forceEncryptionIfNoSet: false, key: ValueBoxEncryptionParameters.Key(data: deviceSpecificEncryptionParameters.key)!, salt: ValueBoxEncryptionParameters.Salt(data: deviceSpecificEncryptionParameters.salt)!)
     
     var itemsByAccount: [Int64: [(Int64, Friend)]] = [:]
     var itemOrder: [(Int64, Int64)] = []
@@ -138,7 +139,7 @@ private func getCommonTimeline(friends: [Friend]?, in context: TimelineProviderC
             var result: [ParsedPeer] = []
             
             for (peerId, _) in items {
-                guard let peer = transaction.getPeer(EnginePeer.Id(peerId)) else {
+                guard let peer = transaction.getPeer(PeerId(peerId)) else {
                     continue
                 }
                 

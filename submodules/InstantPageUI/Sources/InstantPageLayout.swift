@@ -1125,7 +1125,7 @@ public func instantPageLayoutForWebPage(_ webPage: TelegramMediaWebpage, instant
     var contentSize = CGSize(width: boundingWidth, height: 0.0)
     var items: [InstantPageItem] = []
     
-    var media = instantPage.media
+    var media = instantPage.media.mapValues(EngineMedia.init)
     if let image = loadedContent.image, let id = image.id {
         media[id] = .image(image)
     }

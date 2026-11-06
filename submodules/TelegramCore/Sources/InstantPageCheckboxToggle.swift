@@ -13,7 +13,7 @@ public extension InstantPage {
         let newBlocks = togglingCheckboxInBlocks(self.blocks, path: path, value: value)
         return InstantPage(
             blocks: newBlocks,
-            rawMedia: self.rawMedia,
+            media: self.media,
             isComplete: self.isComplete,
             rtl: self.rtl,
             url: self.url,

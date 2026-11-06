@@ -1,6 +1,6 @@
 import SwiftSignalKit
 import Postbox
-internal import TelegramApi
+import TelegramApi
 
 public extension TelegramEngine {
     final class Stickers {

@@ -792,7 +792,7 @@ final class GiftValueSheetComponent: CombinedComponent {
     }
 }
 
-public final class GiftValueScreen: ViewControllerComponentContainer {
+final class GiftValueScreen: ViewControllerComponentContainer {
     private let context: AccountContext
     private let gift: StarGift
     private let valueInfo: StarGift.UniqueGift.ValueInfo

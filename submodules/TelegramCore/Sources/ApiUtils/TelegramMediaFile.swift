@@ -1,6 +1,6 @@
 import Foundation
 import Postbox
-internal import TelegramApi
+import TelegramApi
 
 func dimensionsForFileAttributes(_ attributes: [TelegramMediaFileAttribute]) -> PixelDimensions? {
     for attribute in attributes {

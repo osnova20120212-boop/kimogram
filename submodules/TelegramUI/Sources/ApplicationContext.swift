@@ -4,6 +4,7 @@ import Intents
 import TelegramPresentationData
 import TelegramUIPreferences
 import SwiftSignalKit
+import Postbox
 import TelegramCore
 import Display
 import LegacyComponents
@@ -32,7 +33,6 @@ import PhoneNumberFormat
 import AttachmentUI
 import MinimizedContainer
 import BrowserUI
-import NewsFeedSupport
 
 final class UnauthorizedApplicationContext {
     let sharedContext: SharedAccountContextImpl
@@ -153,8 +153,6 @@ final class AuthorizedApplicationContext {
     
     private var showCallsTab: Bool
     private var showCallsTabDisposable: Disposable?
-    private var showNewsTab: Bool
-    private var showNewsTabDisposable: Disposable?
     private var enablePostboxTransactionsDiposable: Disposable?
     
     init(sharedApplicationContext: SharedApplicationContext, mainWindow: Window1, context: AccountContextImpl, accountManager: AccountManager<TelegramAccountManagerTypes>, showCallsTab: Bool, reinitializedNotificationSettings: @escaping () -> Void) {
@@ -169,7 +167,6 @@ final class AuthorizedApplicationContext {
         self.context = context
         
         self.showCallsTab = showCallsTab
-        self.showNewsTab = isNewsFeedEnabled(appConfiguration: context.currentAppConfiguration.with { $0 })
         
         self.notificationController = NotificationContainerController(context: context)
         
@@ -252,7 +249,7 @@ final class AuthorizedApplicationContext {
         }
         
         if self.rootController.rootTabController == nil {
-            self.rootController.addRootControllers(showCallsTab: self.showCallsTab, showNewsTab: self.showNewsTab)
+            self.rootController.addRootControllers(showCallsTab: self.showCallsTab)
         }
         if let tabsController = self.rootController.viewControllers.first as? TabBarController, !tabsController.controllers.isEmpty, tabsController.selectedIndex >= 0 {
             let controller = tabsController.controllers[tabsController.selectedIndex]
@@ -295,7 +292,7 @@ final class AuthorizedApplicationContext {
 
         let engine = context.engine
         self.notificationMessagesDisposable.set((context.account.stateManager.notificationMessages
-        |> mapToSignal { messageList in
+        |> mapToSignal { messageList -> Signal<[([Message], PeerGroupId, Bool, MessageHistoryThreadData?)], NoError> in
             return engine.data.get(EngineDataMap(
                 messageList.compactMap { item -> TelegramEngine.EngineData.Item.Messages.ChatListIndex? in
                     if let message = item.0.first {
@@ -305,7 +302,7 @@ final class AuthorizedApplicationContext {
                     }
                 }
             ))
-            |> map { chatListIndexMap in
+            |> map { chatListIndexMap -> [([Message], PeerGroupId, Bool, MessageHistoryThreadData?)] in
                 return messageList.filter { item in
                     guard let message = item.0.first else {
                         return false
@@ -817,22 +814,9 @@ final class AuthorizedApplicationContext {
             if let strongSelf = self {
                 if strongSelf.showCallsTab != value {
                     strongSelf.showCallsTab = value
-                    strongSelf.rootController.updateRootControllers(showCallsTab: value, showNewsTab: strongSelf.showNewsTab)
+                    strongSelf.rootController.updateRootControllers(showCallsTab: value)
                 }
             }
-        })
-
-        self.showNewsTabDisposable = (context.appConfiguration
-        |> map { appConfiguration -> Bool in
-            return isNewsFeedEnabled(appConfiguration: appConfiguration)
-        }
-        |> distinctUntilChanged
-        |> deliverOnMainQueue).start(next: { [weak self] value in
-            guard let self, self.showNewsTab != value else {
-                return
-            }
-            self.showNewsTab = value
-            self.rootController.updateRootControllers(showCallsTab: self.showCallsTab, showNewsTab: value)
         })
         
         self.rootController.setForceInCallStatusBar((self.context.sharedContext as! SharedAccountContextImpl).currentCallStatusBarNode)
@@ -846,7 +830,6 @@ final class AuthorizedApplicationContext {
     
     deinit {
         self.context.account.postbox.clearCaches()
-        self.showNewsTabDisposable?.dispose()
         self.context.account.shouldKeepOnlinePresence.set(.single(false))
         self.context.account.shouldBeServiceTaskMaster.set(.single(.never))
         self.loggedOutDisposable.dispose()
@@ -869,7 +852,7 @@ final class AuthorizedApplicationContext {
         self.rootController.pushViewController(notificationsAndSoundsController(context: self.context, exceptionsList: nil))
     }
     
-    func startCall(peerId: EnginePeer.Id, isVideo: Bool) {
+    func startCall(peerId: PeerId, isVideo: Bool) {
         guard let appLockContext = self.context.sharedContext.appLockContext as? AppLockContextImpl else {
             return
         }
@@ -886,7 +869,7 @@ final class AuthorizedApplicationContext {
         }))
     }
     
-    func openChatWithPeerId(peerId: EnginePeer.Id, threadId: Int64?, messageId: EngineMessage.Id? = nil, activateInput: Bool = false, storyId: EngineStoryId?, openAppIfAny: Bool = false, alwaysKeepMessageId: Bool = false) {
+    func openChatWithPeerId(peerId: PeerId, threadId: Int64?, messageId: MessageId? = nil, activateInput: Bool = false, storyId: StoryId?, openAppIfAny: Bool = false, alwaysKeepMessageId: Bool = false) {
         if let storyId {
             var controllers = self.rootController.viewControllers
             controllers = controllers.filter { c in
@@ -899,7 +882,7 @@ final class AuthorizedApplicationContext {
             
             self.rootController.chatListController?.openStoriesFromNotification(peerId: storyId.peerId, storyId: storyId.id)
         } else {
-            var visiblePeerId: EnginePeer.Id?
+            var visiblePeerId: PeerId?
             if let controller = self.rootController.topViewController as? ChatControllerImpl, controller.chatLocation.peerId == peerId, controller.chatLocation.threadId == threadId {
                 visiblePeerId = peerId
             }

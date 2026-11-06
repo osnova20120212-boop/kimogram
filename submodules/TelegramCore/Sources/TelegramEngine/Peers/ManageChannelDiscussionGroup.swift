@@ -1,7 +1,7 @@
 import Foundation
 import SwiftSignalKit
 import Postbox
-internal import TelegramApi
+import TelegramApi
 
 
 public enum AvailableChannelDiscussionGroupError {

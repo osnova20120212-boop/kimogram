@@ -1,11 +1,12 @@
 import Foundation
+import Postbox
 import TelegramCore
 import RichTextEditorCore
 
 /// Build a chat rich-message `InstantPage` from already-normalized blocks (media blocks resolved via the supplied map).
-func buildInstantPage(from blocks: [Block], media: [String: EngineMedia]) -> InstantPage {
+func buildInstantPage(from blocks: [Block], media: [String: Media]) -> InstantPage {
     var pageBlocks: [InstantPageBlock] = []
-    var pageMedia: [EngineMedia.Id: EngineMedia] = [:]
+    var pageMedia: [MediaId: Media] = [:]
     var index = 0
     while index < blocks.count {
         let block = blocks[index]
@@ -88,7 +89,7 @@ func buildInstantPage(from blocks: [Block], media: [String: EngineMedia]) -> Ins
                 case .location:
                     // A location resolves to a `TelegramMediaMap` (id-less); emit a `.map` block with the coordinates
                     // inline. No `pageMedia` entry (the block carries no MediaId). See ChatInputContentInstantPage.
-                    if case let .geo(map) = resolved {
+                    if let map = resolved as? TelegramMediaMap {
                         let dimensions: PixelDimensions
                         if mediaBlock.naturalSize.width > 0, mediaBlock.naturalSize.height > 0 {
                             dimensions = PixelDimensions(width: Int32(mediaBlock.naturalSize.width), height: Int32(mediaBlock.naturalSize.height))

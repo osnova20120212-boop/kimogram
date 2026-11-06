@@ -1,7 +1,7 @@
 import Foundation
 import Postbox
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 import MtProtoKit
 
 /// `confirmed` gets the stored configuration once the server confirmed it is current (a new one was

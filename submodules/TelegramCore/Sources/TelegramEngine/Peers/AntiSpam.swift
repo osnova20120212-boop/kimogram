@@ -1,7 +1,7 @@
 import Foundation
 import Postbox
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 import MtProtoKit
 
 func _internal_toggleAntiSpamProtection(account: Account, peerId: PeerId, enabled: Bool) -> Signal<Void, NoError> {

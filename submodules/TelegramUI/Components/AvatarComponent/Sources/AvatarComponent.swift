@@ -20,9 +20,6 @@ public final class AvatarComponent: Component {
     let overrideImage: AvatarNodeImageOverride?
     let icon: AnyComponent<Empty>?
     let size: CGSize?
-    /// Whether the photo is decoded on the main thread as the view is updated. A view built ahead of being
-    /// shown (a list row entering during a scroll) can pass false and stay blank until it loads.
-    let synchronousLoad: Bool
 
     public init(
         context: AccountContext,
@@ -31,8 +28,7 @@ public final class AvatarComponent: Component {
         clipStyle: ClipStyle = .round,
         overrideImage: AvatarNodeImageOverride? = nil,
         icon: AnyComponent<Empty>? = nil,
-        size: CGSize? = nil,
-        synchronousLoad: Bool = true
+        size: CGSize? = nil
     ) {
         self.context = context
         self.theme = theme
@@ -41,7 +37,6 @@ public final class AvatarComponent: Component {
         self.overrideImage = overrideImage
         self.icon = icon
         self.size = size
-        self.synchronousLoad = synchronousLoad
     }
 
     public static func ==(lhs: AvatarComponent, rhs: AvatarComponent) -> Bool {
@@ -64,9 +59,6 @@ public final class AvatarComponent: Component {
             return false
         }
         if lhs.size != rhs.size {
-            return false
-        }
-        if lhs.synchronousLoad != rhs.synchronousLoad {
             return false
         }
         return true
@@ -138,7 +130,7 @@ public final class AvatarComponent: Component {
                 peer: component.peer,
                 overrideImage: component.overrideImage,
                 clipStyle: clipStyle,
-                synchronousLoad: component.synchronousLoad,
+                synchronousLoad: true,
                 displayDimensions: size,
                 cutoutRect: cutoutRect
             )

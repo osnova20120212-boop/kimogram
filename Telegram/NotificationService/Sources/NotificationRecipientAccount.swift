@@ -1,4 +1,5 @@
 import Foundation
+import Postbox
 import TelegramCore
 
 /// Whether a notification has to say which account it was delivered to: more than one is signed
@@ -21,7 +22,7 @@ func notificationsNameRecipientAccount(records: [AccountRecord<TelegramAccountMa
 /// The name a notification uses for the account it was delivered to, as the extension named it
 /// before its 2021 rewrite dropped the feature (`StoredAccountInfo.peerName`): the username
 /// without "@", else the account's name.
-func notificationRecipientAccountName(accountPeer: EnginePeer?) -> String? {
+func notificationRecipientAccountName(accountPeer: Peer?) -> String? {
     guard let accountPeer else {
         return nil
     }

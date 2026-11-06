@@ -1,7 +1,7 @@
 import Foundation
 import Postbox
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 
 public enum ServerProvidedSuggestion: Equatable {
     case autoarchivePopular

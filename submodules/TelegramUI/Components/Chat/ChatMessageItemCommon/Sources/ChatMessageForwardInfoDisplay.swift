@@ -1,4 +1,5 @@
 import Foundation
+import Postbox
 import TelegramCore
 
 /// The forward header an item node last applied.
@@ -12,11 +13,11 @@ import TelegramCore
 /// The `messageId` is what makes that safe: item nodes are reused for unrelated messages, and a
 /// cache with no identity hands the next message the previous one's sender.
 public struct ChatMessageAppliedForwardInfo {
-    public let messageId: EngineMessage.Id
-    public let source: EnginePeer?
+    public let messageId: MessageId
+    public let source: Peer?
     public let authorSignature: String?
 
-    public init(messageId: EngineMessage.Id, source: EnginePeer?, authorSignature: String?) {
+    public init(messageId: MessageId, source: Peer?, authorSignature: String?) {
         self.messageId = messageId
         self.source = source
         self.authorSignature = authorSignature
@@ -30,20 +31,20 @@ public struct ChatMessageAppliedForwardInfo {
 /// `peerDisplayTitle` renders a peer's name; it is a closure so that this module does not need to
 /// depend on the presentation strings.
 public func chatMessageForwardInfoDisplay(
-    forwardInfo: EngineMessage.ForwardInfo,
-    messageId: EngineMessage.Id,
+    forwardInfo: MessageForwardInfo,
+    messageId: MessageId,
     previouslyApplied: ChatMessageAppliedForwardInfo?,
-    peerDisplayTitle: (EnginePeer) -> String
+    peerDisplayTitle: (Peer) -> String
 ) -> ChatMessageAppliedForwardInfo {
-    let source: EnginePeer?
+    let source: Peer?
     let authorSignature: String?
 
     if let forwardSource = forwardInfo.source {
-        source = EnginePeer(forwardSource)
+        source = forwardSource
         if let signature = forwardInfo.authorSignature {
             authorSignature = signature
         } else if let author = forwardInfo.author, author.id != forwardSource.id {
-            authorSignature = peerDisplayTitle(EnginePeer(author))
+            authorSignature = peerDisplayTitle(author)
         } else {
             authorSignature = nil
         }
@@ -55,7 +56,7 @@ public func chatMessageForwardInfoDisplay(
         source = previouslyApplied.source
         authorSignature = previouslyApplied.authorSignature
     } else {
-        source = forwardInfo.author.flatMap(EnginePeer.init)
+        source = forwardInfo.author
         authorSignature = forwardInfo.authorSignature
     }
 

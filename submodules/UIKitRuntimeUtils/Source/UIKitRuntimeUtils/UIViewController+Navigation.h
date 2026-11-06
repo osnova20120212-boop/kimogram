@@ -104,11 +104,6 @@ void snapshotViewByDrawingInContext(UIView * _Nonnull view);
 
 @property (nonatomic) double lumaMin;
 @property (nonatomic) double lumaMax;
-@property (nonatomic) double glassBlurRadius;
-
-+ (void)applyGlassBlurRadius:(double)radius toLayerTree:(CALayer * _Nonnull)layer depth:(int)depth;
-
-@property (class, nonatomic) double morphGlassBlurRadius;
 
 @end
 

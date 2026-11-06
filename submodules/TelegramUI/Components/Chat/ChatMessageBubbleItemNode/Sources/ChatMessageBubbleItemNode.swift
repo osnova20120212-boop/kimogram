@@ -212,8 +212,6 @@ private func contentNodeMessagesAndClassesForItem(_ item: ChatMessageItem) -> ([
                         }
                         result.append((message, ChatMessageMediaBubbleContentNode.self, itemAttributes, BubbleItemAttributes(isAttachment: false, neighborType: .media, neighborSpacing: .default)))
                     }
-                } else if file.isDisplayablePass && message.groupingKey == nil {
-                    result.append((message, ChatMessageMediaBubbleContentNode.self, itemAttributes, BubbleItemAttributes(isAttachment: false, neighborType: .media, neighborSpacing: .default)))
                 } else {
                     var neighborSpacing: ChatMessageBubbleRelativePosition.NeighbourSpacing = .default
                     if previousItemIsFile {
@@ -2214,10 +2212,6 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         if firstMessage.isRestricted(platform: "ios", contentSettings: item.context.currentContentSettings.with { $0 }) {
             replyMarkup = nil
         }
-        // A suspicious sender's buttons are not shown, as their links are not.
-        if item.associatedData.isSuspiciousPeer && firstMessage.effectivelyIncoming(item.context.account.peerId) {
-            replyMarkup = nil
-        }
         
         if let forwardInfo = firstMessage.forwardInfo, forwardInfo.psaType != nil {
             inlineBotNameString = nil
@@ -2748,7 +2742,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         var forwardInfoOriginY: CGFloat = 0.0
         var forwardInfoSizeApply: (CGSize, (CGFloat) -> ChatMessageForwardInfoNode?) = (CGSize(), { _ in nil })
         
-        var forwardSource: EnginePeer?
+        var forwardSource: Peer?
         var forwardAuthorSignature: String?
         
         var unlockButtonSizeApply: (CGSize, (Bool) -> ChatMessageUnlockMediaNode?) = (CGSize(), {  _ in nil })
@@ -2956,11 +2950,11 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                 let forwardPsaType: String? = forwardInfo.psaType
                 
                 let resolvedForwardInfo = chatMessageForwardInfoDisplay(forwardInfo: forwardInfo, messageId: firstMessage.id, previouslyApplied: currentForwardInfo, peerDisplayTitle: { peer in
-                    return peer.displayTitle(strings: item.presentationData.strings, displayOrder: item.presentationData.nameDisplayOrder)
+                    return EnginePeer(peer).displayTitle(strings: item.presentationData.strings, displayOrder: item.presentationData.nameDisplayOrder)
                 })
                 forwardSource = resolvedForwardInfo.source
                 forwardAuthorSignature = resolvedForwardInfo.authorSignature
-                let sizeAndApply = forwardInfoLayout(item.context, item.presentationData, item.presentationData.strings, .bubble(incoming: incoming), forwardSource, forwardAuthorSignature, forwardInlineBotNameString, forwardPsaType, nil, CGSize(width: maximumNodeWidth - layoutConstants.text.bubbleInsets.left - layoutConstants.text.bubbleInsets.right, height: CGFloat.greatestFiniteMagnitude))
+                let sizeAndApply = forwardInfoLayout(item.context, item.presentationData, item.presentationData.strings, .bubble(incoming: incoming), forwardSource.flatMap(EnginePeer.init), forwardAuthorSignature, forwardInlineBotNameString, forwardPsaType, nil, CGSize(width: maximumNodeWidth - layoutConstants.text.bubbleInsets.left - layoutConstants.text.bubbleInsets.right, height: CGFloat.greatestFiniteMagnitude))
                 forwardInfoSizeApply = (sizeAndApply.0, { width in sizeAndApply.1(width) })
                 
                 headerSize.height += 2.0
@@ -2973,7 +2967,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                     headerSize.height += 5.0
                 }
                 
-                forwardSource = firstMessage.peers[storyMedia.storyId.peerId].flatMap(EnginePeer.init)
+                forwardSource = firstMessage.peers[storyMedia.storyId.peerId]
                 if forwardSource == nil, let currentForwardInfo, currentForwardInfo.messageId == firstMessage.id {
                     forwardSource = currentForwardInfo.source
                 }
@@ -2991,7 +2985,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                     }
                 }
                 
-                let sizeAndApply = forwardInfoLayout(item.context, item.presentationData, item.presentationData.strings, .bubble(incoming: incoming), forwardSource, nil, nil, nil, ChatMessageForwardInfoNode.StoryData(storyType: storyType), CGSize(width: maximumNodeWidth - layoutConstants.text.bubbleInsets.left - layoutConstants.text.bubbleInsets.right, height: CGFloat.greatestFiniteMagnitude))
+                let sizeAndApply = forwardInfoLayout(item.context, item.presentationData, item.presentationData.strings, .bubble(incoming: incoming), forwardSource.flatMap(EnginePeer.init), nil, nil, nil, ChatMessageForwardInfoNode.StoryData(storyType: storyType), CGSize(width: maximumNodeWidth - layoutConstants.text.bubbleInsets.left - layoutConstants.text.bubbleInsets.right, height: CGFloat.greatestFiniteMagnitude))
                 forwardInfoSizeApply = (sizeAndApply.0, { width in sizeAndApply.1(width) })
                 
                 if storyType != .regular {
@@ -3876,7 +3870,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         layout: ListViewItemNodeLayout,
         layoutInsets: UIEdgeInsets,
         item: ChatMessageItem,
-        forwardSource: EnginePeer?,
+        forwardSource: Peer?,
         forwardAuthorSignature: String?,
         accessibilityData: ChatMessageAccessibilityData,
         actionButtonsSizeAndApply: (CGSize, (ListViewItemUpdateAnimation) -> ChatMessageActionButtonsNode)?,
@@ -6992,7 +6986,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
             self.highlightedState = highlightedState
             
             for contentNode in self.contentNodes {
-                if let contentNode = contentNode as? ChatMessageQuoteSourceContentNode {
+                if let contentNode = contentNode as? ChatMessageTextBubbleContentNode {
                     contentNode.updateQuoteTextHighlightState(text: nil, offset: nil, color: .clear, animated: true)
                 } else if let contentNode = contentNode as? ChatMessageTodoBubbleContentNode {
                     contentNode.updateTaskHighlightState(id: nil, color: .clear, animated: true)
@@ -7049,8 +7043,8 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                                     
                                     var quoteFrame: CGRect?
                                     for contentNode in self.contentNodes {
-                                        if let quoteContentNode = contentNode as? ChatMessageQuoteSourceContentNode {
-                                            quoteContentNode.updateQuoteTextHighlightState(text: quote.string, offset: quote.offset, color: highlightColor, animated: false)
+                                        if let contentNode = contentNode as? ChatMessageTextBubbleContentNode {
+                                            contentNode.updateQuoteTextHighlightState(text: quote.string, offset: quote.offset, color: highlightColor, animated: false)
                                             var sourceFrame = backgroundHighlightNode.view.convert(backgroundHighlightNode.bounds, to: contentNode.view)
                                             if item.message.effectivelyIncoming(item.context.account.peerId) {
                                                 sourceFrame.origin.x += 6.0
@@ -7059,7 +7053,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                                                 sourceFrame.size.width -= 6.0
                                             }
                                             
-                                            if let localFrame = quoteContentNode.animateQuoteTextHighlightIn(sourceFrame: sourceFrame, transition: transition) {
+                                            if let localFrame = contentNode.animateQuoteTextHighlightIn(sourceFrame: sourceFrame, transition: transition) {
                                                 if self.contentNodes[0] !== contentNode && self.contentNodes[0].supernode === contentNode.supernode {
                                                     contentNode.supernode?.insertSubnode(contentNode, belowSubnode: self.contentNodes[0])
                                                 }
@@ -7638,14 +7632,11 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         return self.nameNode
     }
     
-    // The chat's scroll hold re-reads this on every held pass, including passes made while the message
-    // is in a context menu: the conversion must not cross the extraction boundary directly, which
-    // yields `CGRect.null` and placed the message at infinity.
     public func getQuoteRect(quote: String, offset: Int?) -> CGRect? {
         for contentNode in self.contentNodes {
-            if let quoteContentNode = contentNode as? ChatMessageQuoteSourceContentNode {
-                if let result = quoteContentNode.getQuoteRect(quote: quote, offset: offset) {
-                    return self.mainContextSourceNode.convertFromContent(result, in: contentNode.view, to: self.view)
+            if let contentNode = contentNode as? ChatMessageTextBubbleContentNode {
+                if let result = contentNode.getQuoteRect(quote: quote, offset: offset) {
+                    return contentNode.view.convert(result, to: self.view)
                 }
             }
         }
@@ -7661,16 +7652,15 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         return nil
     }
 
-    // Read by the scroll hold on every held pass, like `getQuoteRect`.
     public func getInnerReplySubjectRect(innerSubject: EngineMessageReplyInnerSubject) -> CGRect? {
         switch innerSubject {
         case let .todoItem(todoItemId):
             if let contentNode = self.contentNodes.first(where: { $0 is ChatMessageTodoBubbleContentNode }) as? ChatMessageTodoBubbleContentNode, let result = contentNode.getTaskRect(id: todoItemId) {
-                return self.mainContextSourceNode.convertFromContent(result, in: contentNode.view, to: self.view)
+                return contentNode.view.convert(result, to: self.view)
             }
         case let .pollOption(pollOption):
             if let contentNode = self.contentNodes.first(where: { $0 is ChatMessagePollBubbleContentNode }) as? ChatMessagePollBubbleContentNode, let result = contentNode.getOptionRect(id: pollOption) {
-                return self.mainContextSourceNode.convertFromContent(result, in: contentNode.view, to: self.view)
+                return contentNode.view.convert(result, to: self.view)
             }
         }
         return nil

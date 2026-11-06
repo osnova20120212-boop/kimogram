@@ -90,14 +90,6 @@ open class TabBarControllerImpl: ViewController, TabBarController {
         return self.currentController?.navigationBar
     }
     
-    override public var navigationBarTransitionSource: NavigationBarTransitionSource? {
-        return self.currentController?.navigationBarTransitionSource
-    }
-
-    override public func navigationExpansionSource(above controller: ViewController, operation: NavigationExpansionOperation) -> NavigationExpansionSource? {
-        return self.currentController?.navigationExpansionSource(above: controller, operation: operation)
-    }
-    
     private let pendingControllerDisposable = MetaDisposable()
     
     private var theme: PresentationTheme

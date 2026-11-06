@@ -49,7 +49,7 @@ extension PeerInfoScreenNode {
                     }
                     
                     self.state = self.state.withIsEditingBirthDate(true)
-                    self.performNavigationButtonAction?(.edit, nil, nil)
+                    self.headerNode.navigationButtonContainer.performAction?(.edit, nil, nil)
                 }
             })))
         }

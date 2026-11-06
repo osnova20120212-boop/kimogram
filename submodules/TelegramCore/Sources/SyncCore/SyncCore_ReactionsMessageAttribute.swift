@@ -1,6 +1,6 @@
 import Foundation
 import Postbox
-internal import TelegramApi
+import TelegramApi
 
 public struct MessageReaction: Equatable, PostboxCoding, Codable {
     #if DEBUG

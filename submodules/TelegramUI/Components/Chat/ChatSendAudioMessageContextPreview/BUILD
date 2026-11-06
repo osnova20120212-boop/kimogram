@@ -18,6 +18,7 @@ swift_library(
         "//submodules/ComponentFlow",
         "//submodules/AccountContext",
         "//submodules/TelegramCore",
+        "//submodules/Postbox",
         "//submodules/SSignalKit/SwiftSignalKit",
         "//submodules/Display",
         "//submodules/WallpaperBackgroundNode",

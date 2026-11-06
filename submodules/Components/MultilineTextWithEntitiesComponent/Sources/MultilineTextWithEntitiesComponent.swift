@@ -305,7 +305,6 @@ public final class MultilineTextWithEntitiesComponent: Component {
                     self.textNode.dustNode?.textNode = spoilerTextNode
                 }
                 
-                spoilerTextNode.displaysAsynchronously = component.displaysAsynchronously
                 spoilerTextNode.displaySpoilers = true
                 spoilerTextNode.displaySpoilerEffect = false
                 spoilerTextNode.attributedText = attributedString

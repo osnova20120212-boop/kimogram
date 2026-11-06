@@ -58,9 +58,9 @@ public final class TwoFactorAuthSplashScreen: ViewController {
         
         self.presentationData = self.sharedContext.currentPresentationData.with { $0 }
         
-        let navigationBarTheme = NavigationBarTheme(rootControllerTheme: self.presentationData.theme, edgeEffectColor: .clear)
+        let navigationBarTheme = NavigationBarTheme(rootControllerTheme: self.presentationData.theme, enableBackgroundBlur: false, hideBackground: true, edgeEffectColor: .clear, style: .glass)
         
-        super.init(navigationBarPresentationData: NavigationBarPresentationData(theme: navigationBarTheme, strings: NavigationBarStrings(back: self.presentationData.strings.Common_Back, close: self.presentationData.strings.Common_Close, more: self.presentationData.strings.Common_More)))
+        super.init(navigationBarPresentationData: NavigationBarPresentationData(theme: navigationBarTheme, strings: NavigationBarStrings(back: self.presentationData.strings.Common_Back, close: self.presentationData.strings.Common_Close)))
 
         self.navigationPresentation = presentation
         

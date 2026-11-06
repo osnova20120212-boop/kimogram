@@ -3,6 +3,7 @@ import UIKit
 import Display
 import AsyncDisplayKit
 import SwiftSignalKit
+import Postbox
 import TelegramCore
 import TelegramPresentationData
 import TelegramStringFormatting
@@ -15,7 +16,7 @@ import AnimationCache
 import MultiAnimationRenderer
 
 private enum ChatListSearchEntryStableId: Hashable {
-    case messageId(EngineMessage.Id)
+    case messageId(MessageId)
     
     public static func ==(lhs: ChatListSearchEntryStableId, rhs: ChatListSearchEntryStableId) -> Bool {
         switch lhs {
@@ -30,7 +31,7 @@ private enum ChatListSearchEntryStableId: Hashable {
 }
 
 private enum ChatListSearchEntry: Comparable, Identifiable {
-    case message(EngineMessage, EngineRenderedPeer, EnginePeerReadCounters?, ChatListPresentationData)
+    case message(Message, RenderedPeer, CombinedPeerReadState?, ChatListPresentationData)
     
     public var stableId: ChatListSearchEntryStableId {
         switch self {
@@ -90,10 +91,10 @@ private enum ChatListSearchEntry: Comparable, Identifiable {
                     filterData: nil,
                     index: .chatList(EngineChatList.Item.Index.ChatList(pinningIndex: nil, messageIndex: message.index)),
                     content: .peer(ChatListItemContent.PeerData(
-                        messages: [message],
-                        peer: peer,
+                        messages: [EngineMessage(message)],
+                        peer: EngineRenderedPeer(peer),
                         threadInfo: nil,
-                        combinedReadState: readState,
+                        combinedReadState: readState.flatMap { EnginePeerReadCounters(state: $0, isMuted: false) },
                         isRemovedFromTotalUnreadCount: false,
                         presence: nil,
                         hasUnseenMentions: false,
@@ -214,13 +215,13 @@ class ChatSearchResultsControllerNode: ViewControllerTracingNode, ASScrollViewDe
             var entries: [ChatListSearchEntry] = []
             
             for message in searchResult.messages {
-                var peer = EngineRenderedPeer(message: EngineMessage(message))
+                var peer = RenderedPeer(message: message)
                 if let group = message.peers[message.id.peerId] as? TelegramGroup, let migrationReference = group.migrationReference {
                     if let channelPeer = message.peers[migrationReference.peerId] {
-                        peer = EngineRenderedPeer(peer: EnginePeer(channelPeer))
+                        peer = RenderedPeer(peer: channelPeer)
                     }
                 }
-                entries.append(.message(EngineMessage(message), peer, searchResult.readStates[peer.peerId].flatMap { EnginePeerReadCounters(state: $0, isMuted: false) }, presentationData))
+                entries.append(.message(message, peer, searchResult.readStates[peer.peerId], presentationData))
             }
             
             return entries
@@ -359,13 +360,13 @@ class ChatSearchResultsControllerNode: ViewControllerTracingNode, ASScrollViewDe
                 var entries: [ChatListSearchEntry] = []
                 
                 for message in updatedResult.messages {
-                    var peer = EngineRenderedPeer(message: EngineMessage(message))
+                    var peer = RenderedPeer(message: message)
                     if let group = message.peers[message.id.peerId] as? TelegramGroup, let migrationReference = group.migrationReference {
                         if let channelPeer = message.peers[migrationReference.peerId] {
-                            peer = EngineRenderedPeer(peer: EnginePeer(channelPeer))
+                            peer = RenderedPeer(peer: channelPeer)
                         }
                     }
-                    entries.append(.message(EngineMessage(message), peer, nil, presentationData))
+                    entries.append(.message(message, peer, nil, presentationData))
                 }
                 
                 return entries

@@ -1,7 +1,7 @@
 import Foundation
 import Postbox
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 
 func _internal_removeSavedLocalization(transaction: Transaction, languageCode: String) {
     updateLocalizationListStateInteractively(transaction: transaction, { state in

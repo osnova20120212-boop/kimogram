@@ -67,12 +67,6 @@ final class MediaEditorRenderer {
     private var commandQueue: MTLCommandQueue?
     private var textureCache: CVMetalTextureCache?
     private var semaphore = DispatchSemaphore(value: 3)
-    /// Permits actually taken from `semaphore`.
-    ///
-    /// A timed-out wait does NOT take one, so signalling unconditionally in `didRenderFrame`
-    /// handed back a permit that was never held: the count crept up, the triple buffer stopped
-    /// throttling, and queued GPU work ran further and further ahead of the display.
-    private let acquiredRenderPermits = Atomic<Int>(value: 0)
     
     private var renderPasses: [RenderPass] = []
     
@@ -111,10 +105,7 @@ final class MediaEditorRenderer {
     }
     
     deinit {
-        // A DispatchSemaphore traps if it is deallocated while permits are still held, so hand
-        // back exactly the ones outstanding rather than a fixed three.
-        let outstanding = self.acquiredRenderPermits.swap(0)
-        for _ in 0 ..< outstanding {
+        for _ in 0 ..< 3 {
             self.semaphore.signal()
         }
     }
@@ -329,28 +320,12 @@ final class MediaEditorRenderer {
     }
     
     func willRenderFrame() {
-        // Bounded on both paths. `consume` waits here before the export's own frame timeout can
-        // apply, so an unbounded wait would deadlock ahead of it if a permit were ever lost — for
-        // instance when a command buffer's completion handler does not run after a GPU error.
-        // Proceeding without a permit only costs throttling for that one frame.
-        let timeout = DispatchTime.now() + (self.renderTarget != nil ? 0.1 : 10.0)
-        if self.semaphore.wait(timeout: timeout) == .success {
-            let _ = self.acquiredRenderPermits.modify { $0 + 1 }
-        }
+        let timeout = self.renderTarget != nil ? DispatchTime.now() + 0.1 : .distantFuture
+        let _ = self.semaphore.wait(timeout: timeout)
     }
     
     func didRenderFrame() {
-        var heldPermit = false
-        let _ = self.acquiredRenderPermits.modify { current in
-            guard current > 0 else {
-                return current
-            }
-            heldPermit = true
-            return current - 1
-        }
-        if heldPermit {
-            self.semaphore.signal()
-        }
+        self.semaphore.signal()
     }
     
     func consume(

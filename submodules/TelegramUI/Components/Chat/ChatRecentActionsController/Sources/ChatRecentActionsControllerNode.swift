@@ -495,13 +495,13 @@ final class ChatRecentActionsControllerNode: ViewControllerTracingNode {
         }, openExternalInstantPage: { _ in
         }, shareCurrentLocation: { _ in }, shareAccountContact: { _ in }, sendBotCommand: { _, _ in }, openInstantPage: { [weak self] message, associatedData in
             if let strongSelf = self, let navigationController = strongSelf.getNavigationController() {
-                if let controller = strongSelf.context.sharedContext.makeInstantPageController(context: strongSelf.context, message: EngineMessage(message), sourcePeerType: associatedData?.automaticDownloadPeerType) {
+                if let controller = strongSelf.context.sharedContext.makeInstantPageController(context: strongSelf.context, message: message, sourcePeerType: associatedData?.automaticDownloadPeerType) {
                     navigationController.pushViewController(controller)
                 }
             }
         }, openWallpaper: { [weak self] message in
             if let strongSelf = self{
-                strongSelf.context.sharedContext.openChatWallpaper(context: strongSelf.context, message: EngineMessage(message), present: { [weak self] c, a in
+                strongSelf.context.sharedContext.openChatWallpaper(context: strongSelf.context, message: message, present: { [weak self] c, a in
                     self?.pushController(c)
                 })
             }
@@ -1451,8 +1451,6 @@ final class ChatRecentActionsControllerNode: ViewControllerTracingNode {
                         }
                     case .inaccessiblePeer:
                         strongSelf.controllerInteraction.presentController(textAlertController(context: strongSelf.context, updatedPresentationData: strongSelf.controller?.updatedPresentationData, title: nil, text: strongSelf.presentationData.strings.Conversation_ErrorInaccessibleMessage, actions: [TextAlertAction(type: .defaultAction, title: strongSelf.presentationData.strings.Common_OK, action: {})]), nil)
-                    case let .noPaidMessagesToken(peer, _):
-                        strongSelf.openPeer(peer: EnginePeer(peer))
                     case .botStart:
                         break
                     case .groupBotStart:

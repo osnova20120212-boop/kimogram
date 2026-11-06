@@ -176,9 +176,7 @@ public func generateChatInputTextEntities(_ text: NSAttributedString, maxAnimate
                 case .quote:
                     entities.append(MessageTextEntity(range: range.lowerBound ..< range.upperBound, type: .BlockQuote(isCollapsed: value.isCollapsed)))
                 case let .code(language):
-                    // The language is a token on the wire (`chatInputCodeLanguageForSending`): the composer keeps the
-                    // line as typed, edge whitespace included.
-                    entities.append(MessageTextEntity(range: range.lowerBound ..< range.upperBound, type: .Pre(language: chatInputCodeLanguageForSending(language))))
+                    entities.append(MessageTextEntity(range: range.lowerBound ..< range.upperBound, type: .Pre(language: language)))
                 }
             }
         }

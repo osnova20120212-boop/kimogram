@@ -51,9 +51,6 @@ public final class AnimatedTextComponent: Component {
     public let preferredDirectionIsDown: Bool
     public let blur: Bool
     public let useTransitionAnimation: Bool
-    /// Its text drawn by `SplitTintTextView`s: in white, coloured by their text layers' multiply colour
-    /// (`textTintLayers`), emoji apart and untinted, so a transition can run the colour on the render server.
-    public let splitsEmoji: Bool
     
     public init(
         font: UIFont,
@@ -64,8 +61,7 @@ public final class AnimatedTextComponent: Component {
         animateSlide: Bool = true,
         preferredDirectionIsDown: Bool = false,
         blur: Bool = false,
-        useTransitionAnimation: Bool = false,
-        splitsEmoji: Bool = false
+        useTransitionAnimation: Bool = false
     ) {
         self.font = font
         self.color = color
@@ -76,7 +72,6 @@ public final class AnimatedTextComponent: Component {
         self.preferredDirectionIsDown = preferredDirectionIsDown
         self.blur = blur
         self.useTransitionAnimation = useTransitionAnimation
-        self.splitsEmoji = splitsEmoji
     }
 
     public static func ==(lhs: AnimatedTextComponent, rhs: AnimatedTextComponent) -> Bool {
@@ -107,9 +102,6 @@ public final class AnimatedTextComponent: Component {
         if lhs.useTransitionAnimation != rhs.useTransitionAnimation {
             return false
         }
-        if lhs.splitsEmoji != rhs.splitsEmoji {
-            return false
-        }
         return true
     }
     
@@ -121,12 +113,6 @@ public final class AnimatedTextComponent: Component {
 
     public final class View: UIView {
         private var characters: [CharacterKey: ComponentView<Empty>] = [:]
-        
-        /// The layers its text is coloured through (`splitsEmoji`): their multiply colour is the text's colour, emoji
-        /// drawn apart.
-        public var textTintLayers: [CALayer] {
-            return self.characters.values.compactMap { ($0.view as? SplitTintTextView)?.tintView.layer }
-        }
         
         private var spaceSize: CGSize?
         
@@ -289,17 +275,9 @@ public final class AnimatedTextComponent: Component {
                                 addTrailingSpace = true
                             }
                             
-                            if component.splitsEmoji {
-                                characterComponent = AnyComponent(SplitTintTextComponent(
-                                    text: text,
-                                    font: component.font,
-                                    color: component.color
-                                ))
-                            } else {
-                                characterComponent = AnyComponent(MultilineTextComponent(
-                                    text: .plain(NSAttributedString(string: text, font: component.font, textColor: component.color))
-                                ))
-                            }
+                            characterComponent = AnyComponent(MultilineTextComponent(
+                                text: .plain(NSAttributedString(string: text, font: component.font, textColor: component.color))
+                            ))
                         }
                     case let .icon(iconName, tint, offset, scaleFactor):
                         characterComponent = AnyComponent(BundleIconComponent(
@@ -361,7 +339,7 @@ public final class AnimatedTextComponent: Component {
                             }
                             
                             if component.animateScale {
-                                motionTransition.animateScale(layer: characterComponentView.layer, from: 0.001, to: 1.0, delay: delayNorm * delayWidth, completion: characterComponentView.layer.beginRasterizedAnimation())
+                                motionTransition.animateScale(layer: characterComponentView.layer, from: 0.001, to: 1.0, delay: delayNorm * delayWidth)
                             }
                             if component.blur {
                                 ComponentTransition.easeInOut(duration: 0.2).animateBlur(layer: characterComponentView.layer, from: transitionBlurRadius, to: 0.0, delay: delayNorm * delayWidth)
@@ -399,8 +377,6 @@ public final class AnimatedTextComponent: Component {
                             delayWidth = max(0.0, delayWidth)
                             
                             if component.animateScale {
-                                characterComponentView.layer.rasterizationScale = UIScreenScale
-                                characterComponentView.layer.shouldRasterize = true
                                 motionTransition.setScale(view: characterComponentView, scale: 0.01, delay: delayNorm * delayWidth)
                             }
                             let targetY: CGFloat
@@ -470,38 +446,5 @@ public extension AnimatedTextComponent {
         }
         
         return textItems
-    }
-}
-
-/// One line of text drawn by a `SplitTintTextView`: white, coloured by its text layer's multiply colour, emoji untinted.
-private final class SplitTintTextComponent: Component {
-    let text: String
-    let font: UIFont
-    let color: UIColor
-
-    init(text: String, font: UIFont, color: UIColor) {
-        self.text = text
-        self.font = font
-        self.color = color
-    }
-
-    static func ==(lhs: SplitTintTextComponent, rhs: SplitTintTextComponent) -> Bool {
-        return lhs.text == rhs.text && lhs.font == rhs.font && lhs.color == rhs.color
-    }
-
-    final class View: SplitTintTextView {
-        func update(component: SplitTintTextComponent, availableSize: CGSize) -> CGSize {
-            self.attributedText = NSAttributedString(string: component.text, font: component.font, textColor: .white)
-            self.textColor = component.color
-            return self.updateLayout(availableSize)
-        }
-    }
-
-    func makeView() -> View {
-        return View(frame: CGRect())
-    }
-
-    func update(view: View, availableSize: CGSize, state: EmptyComponentState, environment: Environment<Empty>, transition: ComponentTransition) -> CGSize {
-        return view.update(component: self, availableSize: availableSize)
     }
 }

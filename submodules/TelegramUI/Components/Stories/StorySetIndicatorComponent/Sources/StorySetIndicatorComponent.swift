@@ -216,10 +216,11 @@ public final class StorySetIndicatorComponent: Component {
                             highQuality: true
                         )
                         if let representation = image.representations.last {
-                            fetchSignal = context.engine.resources.fetch(
-                                reference: ImageMediaReference.story(peer: peerReference, id: item.storyItem.id, media: image).resourceReference(representation.resource),
+                            fetchSignal = fetchedMediaResource(
+                                mediaBox: context.account.postbox.mediaBox,
                                 userLocation: .peer(peerReference.id),
-                                userContentType: .story
+                                userContentType: .story,
+                                reference: ImageMediaReference.story(peer: peerReference, id: item.storyItem.id, media: image).resourceReference(representation.resource)
                             )
                             |> ignoreValues
                             |> `catch` { _ -> Signal<Never, NoError> in
@@ -241,10 +242,11 @@ public final class StorySetIndicatorComponent: Component {
                             useMiniThumbnailIfAvailable: false,
                             blurred: false
                         )
-                        fetchSignal = context.engine.resources.fetch(
-                            reference: FileMediaReference.story(peer: peerReference, id: item.storyItem.id, media: file).resourceReference(file.resource),
+                        fetchSignal = fetchedMediaResource(
+                            mediaBox: context.account.postbox.mediaBox,
                             userLocation: .peer(peerReference.id),
-                            userContentType: .story
+                            userContentType: .story,
+                            reference: FileMediaReference.story(peer: peerReference, id: item.storyItem.id, media: file).resourceReference(file.resource)
                         )
                         |> ignoreValues
                         |> `catch` { _ -> Signal<Never, NoError> in

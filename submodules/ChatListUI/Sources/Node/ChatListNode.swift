@@ -2014,7 +2014,7 @@ public final class ChatListNode: ListViewImpl {
         
         let storageInfo: Signal<Double?, NoError>
         if !"".isEmpty, case .chatList(groupId: .root) = location, chatListFilter == nil {
-            let totalSizeSignal = combineLatest(context.engine.resources.storageTotalSize(), context.engine.resources.cacheStorageTotalSize())
+            let totalSizeSignal = combineLatest(context.account.postbox.mediaBox.storageBox.totalSize(), context.account.postbox.mediaBox.cacheStorageBox.totalSize())
             |> map { a, b -> Int64 in
                 return a + b
             }

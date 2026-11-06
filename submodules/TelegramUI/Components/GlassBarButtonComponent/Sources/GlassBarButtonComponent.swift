@@ -174,10 +174,6 @@ public final class GlassBarButtonComponent: Component {
                     animateAppearance = true
                     self.componentView = nil
                     if let view = componentView.view {
-                        if !transition.animation.isImmediate {
-                            view.layer.rasterizationScale = UIScreenScale
-                            view.layer.shouldRasterize = true
-                        }
                         transition.setScale(view: view, scale: 0.01)
                         transition.setAlpha(view: view, alpha: 0.0, completion: { _ in
                             view.removeFromSuperview()
@@ -215,7 +211,7 @@ public final class GlassBarButtonComponent: Component {
                     view.isUserInteractionEnabled = false
                     self.containerView.addSubview(view)
                     if animateAppearance {
-                        transition.animateScale(view: view, from: 0.01, to: 1.0, completion: transition.animation.isImmediate ? nil : view.layer.beginRasterizedAnimation())
+                        transition.animateScale(view: view, from: 0.01, to: 1.0)
                         transition.animateAlpha(view: view, from: 0.0, to: 1.0)
                     }
                 }
@@ -362,10 +358,6 @@ public final class BarComponentHostNode: ASDisplayNode {
             if let componentView = self.componentView {
                 self.componentView = nil
                 if let view = componentView.view {
-                    if !transition.animation.isImmediate {
-                        view.layer.rasterizationScale = UIScreenScale
-                        view.layer.shouldRasterize = true
-                    }
                     transition.setAlpha(view: view, alpha: 0.0, completion: { _ in
                         view.removeFromSuperview()
                     })
@@ -397,7 +389,7 @@ public final class BarComponentHostNode: ASDisplayNode {
                     
                     if !transition.animation.isImmediate {
                         transition.animateAlpha(view: view, from: 0.0, to: 1.0)
-                        transition.animateScale(view: view, from: 0.01, to: 1.0, completion: view.layer.beginRasterizedAnimation())
+                        transition.animateScale(view: view, from: 0.01, to: 1.0)
                     }
                 }
                 view.frame = CGRect(origin: CGPoint(x: 0.0, y: 0.0), size: self.size)

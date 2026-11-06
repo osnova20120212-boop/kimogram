@@ -73,19 +73,8 @@ func giftAuctionCustomBidController(
             }, autoDismiss: false)
         ]
     )
-    alertController.dismissed = { byTapOutside in
-        if byTapOutside {
-            cancel()
-        }
-    }
-    var isApplied = false
-    applyImpl = { [weak alertController] in
-        guard !isApplied else {
-            return
-        }
+    applyImpl = {
         if let value = inputState.value, value >= minValue {
-            isApplied = true
-            alertController?.dismiss(completion: nil)
             apply(value)
         } else {
             inputState.resetToMinValue()
@@ -182,10 +171,6 @@ private final class AlertAmountFieldComponent: Component {
         
         func resetToMinValue() {
             self.currentValue = self.component?.minValue
-            if let component = self.component {
-                component.externalState.value = component.minValue
-                component.externalState.valuePromise.set(component.minValue)
-            }
             self.state?.updated()
             
             if let amountFieldView = self.amountField.view as? AmountFieldComponent.View {
@@ -208,8 +193,6 @@ private final class AlertAmountFieldComponent: Component {
             
             if self.component == nil {
                 self.currentValue = component.initialValue
-                component.externalState.value = component.initialValue
-                component.externalState.valuePromise.set(component.initialValue)
                 
                 component.externalState.animateError = { [weak self] in
                     self?.animateError()

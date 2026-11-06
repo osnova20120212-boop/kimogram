@@ -28,7 +28,6 @@ import WalletAuthorizationUI
 import PasscodeCore
 import QrCodeUI
 import UndoUI
-import TelegramUIPreferences
 
 private enum WalletSendAmountSource: Equatable {
     case manual
@@ -126,19 +125,6 @@ public typealias WalletSendTransferAnimation = (String, WalletSendTransferAnimat
 public protocol WalletSendTransferAnimationController: AnyObject {
     var transferAnimation: WalletSendTransferAnimation? { get set }
 }
-
-/// Debug Settings ▸ "Wallet: fake transfers", which only a dev account is offered and only a dev account is held to: the
-/// form shows a fixed balance (`walletFakeTransferBalance`), and a send closes it as a registered transfer would, with
-/// nothing sent.
-private func walletFakesTransfers(context: AccountContext) -> Bool {
-    guard context.sharedContext.immediateExperimentalUISettings.fakeWalletTransfers, let data = context.currentAppConfiguration.with({ $0 }).data, let isDev = data["dev"] as? Double, isDev == 1.0 else {
-        return false
-    }
-    return true
-}
-
-/// The balance a form shows while transfers are faked: 5 041.36 Grams, in nanograms.
-private let walletFakeTransferBalance: Int64 = 5_041_360_000_000
 
 @MainActor
 private func walletPresentSubmissionUnknown(on controller: ViewController, context: AccountContext, updatedPresentationData: (initial: PresentationData, signal: Signal<PresentationData, NoError>)) -> ViewController {
@@ -320,13 +306,9 @@ fileprivate final class WalletPeerTransferSubmission {
                             return .fail(.authorizationCancelled)
                         }
                         guard let balance = state.balance.currentValue, request.amount <= balance else {
-                            Logger.shared.log("WalletSendScreen", "event=wallet_send_ui_failed error=insufficient_balance reason=\(state.balance.currentValue == nil ? "balance_unknown" : "amount_exceeds_balance")")
                             return .fail(.insufficientBalance(required: request.amount))
                         }
-                        if request.sendAll && balance != request.amount {
-                            Logger.shared.log("WalletSendScreen", "event=wallet_send_ui_failed error=preview_failed reason=send_all_balance_changed")
-                            return .fail(.previewFailed)
-                        }
+                        if request.sendAll && balance != request.amount { return .fail(.previewFailed) }
                         return walletContext.prepareTransfer(
                             address: request.feeRequest.address,
                             amount: request.amount,
@@ -1180,8 +1162,7 @@ private final class WalletSendScreenComponent: Component {
         }
 
         func requestDismiss(completion: @escaping () -> Void) {
-            guard self.hasUnsavedInput, let component = self.component,
-                  let controller = self.environment?.controller() as? WalletSendScreen, controller.parentController() != nil else {
+            guard self.hasUnsavedInput, let component = self.component, let controller = self.environment?.controller() else {
                 completion()
                 return
             }
@@ -1519,10 +1500,6 @@ private final class WalletSendScreenComponent: Component {
         }
 
         private func send() {
-            if let component = self.component, walletFakesTransfers(context: component.context) {
-                self.sendFake(component: component)
-                return
-            }
             guard let component = self.component,
                   self.isVisible, self.transferPreviewController == nil, self.commentSessionAvailable,
                   self.amount > 0,
@@ -1568,23 +1545,6 @@ private final class WalletSendScreenComponent: Component {
             self.amountField.endEditing(true)
             self.requestUpdate(transition: .immediate)
             self.performSend(component: component)
-        }
-
-        /// A send while transfers are faked (`walletFakesTransfers`): the form shows its progress as a send does, then
-        /// closes as after a registered transfer, with nothing sent.
-        private func sendFake(component: WalletSendScreenComponent) {
-            guard let controller = self.environment?.controller() as? WalletSendScreen, self.amount > 0, !self.isPreparingTransfer else {
-                return
-            }
-            self.isPreparingTransfer = true
-            self.amountField.isUserInteractionEnabled = false
-            self.requestUpdate(transition: .immediate)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self, weak controller] in
-                guard let self, let controller else {
-                    return
-                }
-                self.closeAfterTransferRegistration(nil, component: component, controller: controller)
-            }
         }
 
         private func resolveSigningAccess(walletInfo: WalletContext.WalletInfo) {
@@ -1837,7 +1797,6 @@ private final class WalletSendScreenComponent: Component {
                       self.component?.walletContext === walletContext, self.component?.peer?.id == peerId,
                       self.currentFeeRequest == request.feeRequest else { return }
                 guard case let .wallet(info) = state.phase else {
-                    Logger.shared.log("WalletSendScreen", "event=wallet_send_ui_failed error=unavailable reason=no_wallet_phase")
                     self.cancelPendingSend()
                     self.requestUpdate(transition: .easeInOut(duration: 0.2))
                     self.presentTransferError(.unavailable)
@@ -2141,11 +2100,7 @@ private final class WalletSendScreenComponent: Component {
                             self.lastKnownFee = nil
                         }
                     }
-                    if let component = self.component, walletFakesTransfers(context: component.context) {
-                        self.walletBalance = walletFakeTransferBalance
-                    } else {
-                        self.walletBalance = walletState.balance.currentValue
-                    }
+                    self.walletBalance = walletState.balance.currentValue
                     self.gaslessInfo = walletState.gaslessInfo
                     if case .idle = walletState.gaslessInfo {
                         observedWalletContext.ensureGaslessInfo()

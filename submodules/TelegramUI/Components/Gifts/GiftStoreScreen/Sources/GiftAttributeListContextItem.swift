@@ -345,10 +345,7 @@ private final class GiftAttributeListContextItemNode: ASDisplayNode, ContextMenu
                 if self.actionNodes[itemId] == nil {
                     let selectAllAction = ContextMenuActionItem(text: presentationData.strings.Gift_Store_SelectAll, icon: { theme in
                         return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Select"), color: theme.contextMenu.primaryColor)
-                    }, iconPosition: .left, action: { [weak self] _, f in
-                        guard let self else {
-                            return
-                        }
+                    }, iconPosition: .left, action: { _, f in
                         self.getController()?.dismiss(result: .dismissWithoutContent, completion: nil)
                         self.item.selectAll()
                     })

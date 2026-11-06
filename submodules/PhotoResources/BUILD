@@ -27,7 +27,6 @@ swift_library(
         "//submodules/Svg/LegacyImpl",
         "//submodules/Utils/RangeSet:RangeSet",
         "//submodules/ImageCompression",
-        "//submodules/PassRenderer:PassRenderer",
     ],
     visibility = [
         "//visibility:public",

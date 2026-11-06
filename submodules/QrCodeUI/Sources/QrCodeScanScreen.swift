@@ -1024,7 +1024,7 @@ private final class QrCodeScanScreenNode: ViewControllerTracingNode, ASScrollVie
     
     private func openResolved(_ result: ResolvedUrl) -> Bool {
         switch result {
-            case .peer, .stickerPack, .join, .wallpaper, .theme, .noPaidMessagesToken:
+            case .peer, .stickerPack, .join, .wallpaper, .theme:
                 break
             default:
                 return false

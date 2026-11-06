@@ -21,8 +21,6 @@ final class UIKitScrollEngine: NSObject, ScrollEngine, UIScrollViewDelegate {
     var onFlightChanged: ((ScrollFlight?) -> Void)?
     var onWillBeginDragging: (() -> Void)?
     var onDidEndDragging: (() -> Void)?
-    var onDidEndDecelerating: (() -> Void)?
-    var isDecelerating: Bool { scrollView.isDecelerating }
     var shouldStopScrollingOnRelease: ((CGFloat) -> Bool)?
 
     /// Raised around programmatic writes so the re-entrant `scrollViewDidScroll` is suppressed.
@@ -166,10 +164,6 @@ final class UIKitScrollEngine: NSObject, ScrollEngine, UIScrollViewDelegate {
                                       uikitOpeningSamples,
                                       (CACurrentMediaTime() - uikitLaunchWall) * 1000,
                                       scrollView.contentOffset.y - uikitShiftAccum - uikitLaunchOffset))
-    }
-
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        onDidEndDecelerating?()
     }
 
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {

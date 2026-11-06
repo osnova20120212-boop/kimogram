@@ -2,11 +2,13 @@
 
 Kimogram — неофициальный мод Telegram для iPhone: функции популярных модов, красивее, плавнее и удобнее.
 
-Основан на открытом коде [Telegram для iOS](https://github.com/TelegramMessenger/Telegram-iOS) (версия 13.1.2, коммит `279f89e`) и распространяется по той же лицензии GPL v2. Kimogram не связан с Telegram FZ-LLC.
+Основан на открытом коде [Telegram для iOS](https://github.com/TelegramMessenger/Telegram-iOS) (версия 13.0.1, коммит `d687db6`) и распространяется по той же лицензии GPL v2. Kimogram не связан с Telegram FZ-LLC.
 
 Сборка: GitHub Actions (`.github/workflows/build.yml`) собирает неподписанный `Kimogram.ipa`. Нужны секреты репозитория `TELEGRAM_API_ID` и `TELEGRAM_API_HASH` (получить на https://my.telegram.org/apps). Установка на iPhone — через Sideloadly или AltStore.
 
 ---
+
+# Telegram iOS Source Code Compilation Guide
 
 # Telegram iOS Source Code Compilation Guide
 

@@ -10,9 +10,6 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//submodules/BuildConfig:BuildConfig",
-        "//submodules/CrashReporting:CrashReporting",
-        "//submodules/AsyncDisplayKit:AsyncDisplayKit",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/Display:Display",
         "//submodules/TelegramCore:TelegramCore",
@@ -22,8 +19,6 @@ swift_library(
         "//submodules/ItemListUI:ItemListUI",
         "//submodules/PresentationDataUtils:PresentationDataUtils",
         "//submodules/OverlayStatusController:OverlayStatusController",
-        "//submodules/UndoUI:UndoUI",
-        "//submodules/ContextUI:ContextUI",
         "//submodules/AccountContext:AccountContext",
         "//submodules/AppBundle:AppBundle",
         "//submodules/GZip:GZip",

@@ -1,6 +1,7 @@
 #if canImport(UIKit)
 import UIKit
 import RichTextEditorCore
+import MosaicLayout
 
 /// The grey "Add caption" hint shown under an image while its caption is empty. `rect` spans the full
 /// caption content width so a centered paragraph style centers the text horizontally.
@@ -27,8 +28,8 @@ final class MediaBlockBox: CanvasBlock {
 
     var frame: CGRect = .zero
     var nodeStart: Int = 0
-    let verticalInset: CGFloat = MediaSlotGeometry.verticalInset
-    let captionGap: CGFloat = MediaSlotGeometry.captionGap
+    let verticalInset: CGFloat = 8
+    let captionGap: CGFloat = 4
     /// The most-recently-set layout width (from `setWidth` or `init`). Used by `height`,
     /// `imageAreaHeight`, and `mediaRect` so they are correct before `frame` is assigned by
     /// `layoutSubviews`.
@@ -48,8 +49,8 @@ final class MediaBlockBox: CanvasBlock {
     /// A caption-less block renders as a fixed-height row (NOT aspect-scaled). Both heights match the V2
     /// renderer's frame height in `InstantPageV2Layout.swift` (`audioFrame` / `documentFrame`), so the
     /// editor preview equals the sent bubble.
-    static let audioRowHeight: CGFloat = MediaSlotGeometry.audioRowHeight
-    static let documentRowHeight: CGFloat = MediaSlotGeometry.documentRowHeight
+    static let audioRowHeight: CGFloat = 44.0
+    static let documentRowHeight: CGFloat = 52.0
 
     /// The full canvas width this image bleeds across: its content-strip frame width plus both page
     /// margins (the inverse of the inset top-level frame). The image draws edge-to-edge over this by
@@ -63,7 +64,7 @@ final class MediaBlockBox: CanvasBlock {
     var isCaptionless: Bool { items.first?.kind.isCaptionless ?? false }
     /// The fixed row height for a caption-less block. Meaningless for captioned media.
     var rowHeight: CGFloat {
-        MediaSlotGeometry.rowHeight(kind: items.first?.kind ?? .audio)
+        items.first?.kind == .document ? MediaBlockBox.documentRowHeight : MediaBlockBox.audioRowHeight
     }
     /// The primary medium's opaque key (single-media paths / control routing default).
     var mediaID: String { items.first?.mediaID ?? "" }
@@ -129,7 +130,12 @@ final class MediaBlockBox: CanvasBlock {
     /// aspect-preserving height CAPPED at `min(1000, maxWidth)` (media is never taller than its display
     /// width). A capped portrait becomes a `width × cap` slot; the renderer aspect-fits + blur-fills it.
     func imageDisplaySize(maxWidth: CGFloat) -> CGSize {
-        MediaSlotGeometry.imageDisplaySize(naturalSize: primaryNaturalSize, displayWidth: displayWidth, maxWidth: maxWidth)
+        let naturalW = CGFloat(primaryNaturalSize.width), naturalH = CGFloat(primaryNaturalSize.height)
+        let targetW = displayWidth.map { min(CGFloat($0), maxWidth) } ?? maxWidth
+        let cap = min(1000.0, maxWidth)
+        guard naturalW > 0, naturalH > 0 else { return CGSize(width: targetW, height: min(targetW * 0.5625, cap)) }
+        let aspectHeight = naturalH * (targetW / naturalW)
+        return CGSize(width: targetW, height: min(aspectHeight, cap))
     }
 
     /// Mosaic-assembled size for a multi-item container at `maxWidth`, using the SAME engine + cap the
@@ -137,14 +143,27 @@ final class MediaBlockBox: CanvasBlock {
     /// when the packed height exceeds `min(1000, maxWidth)`, the mosaic is reserved at full width × cap
     /// (the renderer scales the cells down + centers them).
     private func mosaicSize(maxWidth: CGFloat) -> CGSize {
-        MediaSlotGeometry.mosaicSize(itemSizes: items.map { CGSize(width: $0.naturalSize.width, height: $0.naturalSize.height) }, maxWidth: maxWidth)
+        let itemSizes = items.map { CGSize(width: $0.naturalSize.width, height: $0.naturalSize.height) }
+        let cap = min(1000.0, maxWidth)
+        let (_, size) = chatMessageBubbleMosaicLayout(maxSize: CGSize(width: maxWidth, height: cap), itemSizes: itemSizes)
+        if size.height > cap {
+            return CGSize(width: maxWidth, height: cap)
+        }
+        return size
     }
 
     /// Slideshow-assembled size for a multi-item container: full width × the TALLEST item's aspect height
     /// fitted to `maxWidth`, capped at `min(1000, maxWidth)` (matches `layoutSlideshow`'s per-image
     /// `fitted(width × 1200)` taking the max, and the mosaic cap). Each page renders aspect-fit within this.
     private func slideshowSize(maxWidth: CGFloat) -> CGSize {
-        MediaSlotGeometry.slideshowSize(itemSizes: items.map { CGSize(width: $0.naturalSize.width, height: $0.naturalSize.height) }, maxWidth: maxWidth)
+        let cap = min(1000.0, maxWidth)
+        var tallest: CGFloat = 0
+        for item in items {
+            let w = CGFloat(item.naturalSize.width), h = CGFloat(item.naturalSize.height)
+            let fitted = (w > 0 && h > 0) ? h * (maxWidth / w) : maxWidth * 0.5625
+            tallest = max(tallest, fitted)
+        }
+        return CGSize(width: maxWidth, height: min(tallest, cap))
     }
 
     /// The container size for the current mode (count >= 2 only): slideshow vs mosaic.

@@ -681,10 +681,6 @@ public final class MessageInputPanelComponent: Component {
             return self.likeButton.view
         }
         
-        public var inputActionButtonView: UIView? {
-            return self.inputActionButton.view
-        }
-        
         public var likeIconView: UIView? {
             return (self.likeButton.view as? MessageInputActionButtonComponent.View)?.likeIconView
         }
@@ -1241,7 +1237,6 @@ public final class MessageInputPanelComponent: Component {
             var mediaInsets = UIEdgeInsets(top: insets.top, left: textFieldSideInset, bottom: insets.bottom, right: 41.0)
             if case .gift = component.style {
                 mediaInsets.right = textFieldSideInset
-                insets.right = textFieldSideInset
             }
             if case .videoChat = component.style {
                 mediaInsets.right = 54.0
@@ -1337,7 +1332,7 @@ public final class MessageInputPanelComponent: Component {
                     fontSize: 17.0,
                     textColor: textColor,
                     accentColor: accentColor,
-                    insets: UIEdgeInsets(top: 9.0, left: 8.0, bottom: 10.0, right: component.style == .gift ? (component.displayGiftSendButton ? 32.0 + giftSendButtonContainerSize.width + giftSendButtonRightInset + 4.0 : 32.0) : 48.0),
+                    insets: UIEdgeInsets(top: 9.0, left: 8.0, bottom: 10.0, right: 48.0),
                     hideKeyboard: component.hideKeyboard,
                     customInputView: component.customInputView,
                     resetText: component.resetInputContents.flatMap { resetInputContents in
@@ -1890,8 +1885,6 @@ public final class MessageInputPanelComponent: Component {
                 if component.style == .gift && component.displayGiftSendButton {
                     let giftSendButtonCenterX = fieldBackgroundFrame.maxX - giftSendButtonRightInset - giftSendButtonContainerSize.width * 0.5
                     counterFrame.origin.x = floorToScreenPixels(giftSendButtonCenterX - counterSize.width * 0.5)
-                } else if component.style == .gift {
-                    counterFrame.origin.x = floorToScreenPixels(fieldBackgroundFrame.maxX - 20.0 - counterSize.width * 0.5)
                 } else if case .videoChat = component.style {
                     counterFrame.origin.x -= 7.0
                 }
@@ -2075,8 +2068,10 @@ public final class MessageInputPanelComponent: Component {
             let inputActionButtonMode: MessageInputActionButtonComponent.Mode
             if case .gift = component.style {
                 inputActionButtonAlpha = component.displayGiftSendButton ? 1.0 : 0.0
-                inputActionButtonMode = .send
-                inputActionButtonAvailableSize = giftSendButtonContainerSize
+                inputActionButtonMode = component.displayGiftSendButton ? .send : .apply
+                if component.displayGiftSendButton {
+                    inputActionButtonAvailableSize = giftSendButtonContainerSize
+                }
             } else if case .editor = component.style {
                 if isEditing {
                     inputActionButtonMode = .apply
@@ -2117,7 +2112,7 @@ public final class MessageInputPanelComponent: Component {
                 }
             }
             let inputActionButtonStyle: MessageInputActionButtonComponent.Style
-            if component.style == .gift {
+            if component.style == .gift && component.displayGiftSendButton {
                 inputActionButtonStyle = .accent
             } else if component.style == .videoChat {
                 inputActionButtonStyle = .glass(isTinted: true)
@@ -2251,7 +2246,7 @@ public final class MessageInputPanelComponent: Component {
                     inputActionButtonOriginX -= 46.0
                 }
             } else {
-                if component.style == .gift {
+                if component.style == .gift && component.displayGiftSendButton {
                     inputActionButtonOriginX = fieldBackgroundFrame.maxX - inputActionButtonSize.width - giftSendButtonRightInset
                 } else if component.setMediaRecordingActive != nil || isEditing || component.style == .videoChat {
                     switch component.style {
@@ -2283,12 +2278,6 @@ public final class MessageInputPanelComponent: Component {
                 transition.setPosition(view: inputActionButtonView, position: inputActionButtonFrame.center)
                 transition.setBounds(view: inputActionButtonView, bounds: CGRect(origin: CGPoint(), size: inputActionButtonFrame.size))
                 transition.setAlpha(view: inputActionButtonView, alpha: likeActionReplacesInputAction ? 0.0 : inputActionButtonAlpha)
-                if component.style == .gift {
-                    let targetScale: CGFloat = component.displayGiftSendButton ? 1.0 : 0.01
-                    let endRasterization: ((Bool) -> Void)? = transition.animation.isImmediate || inputActionButtonView.layer.transform.m11 == targetScale ? nil : inputActionButtonView.layer.beginRasterizedAnimation()
-                    transition.setScale(view: inputActionButtonView, scale: targetScale, completion: endRasterization)
-                    inputActionButtonView.isUserInteractionEnabled = component.displayGiftSendButton
-                }
                 
                 if rightButtonsOffsetX != 0.0 {
                     if hasLikeAction {
@@ -2351,7 +2340,7 @@ public final class MessageInputPanelComponent: Component {
         
             var fieldIconNextX = fieldBackgroundFrame.maxX - 4.0
             if component.style == .gift && component.displayGiftSendButton {
-                fieldIconNextX = fieldBackgroundFrame.maxX - inputActionButtonSize.width - giftSendButtonRightInset - 8.0
+                fieldIconNextX = fieldBackgroundFrame.maxX - inputActionButtonSize.width - 4.0
             }
             
             var inputModeVisible = false

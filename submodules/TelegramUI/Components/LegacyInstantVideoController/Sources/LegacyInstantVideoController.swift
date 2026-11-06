@@ -226,7 +226,7 @@ public func legacyInstantVideoController(theme: PresentationTheme, forStory: Boo
                         EngineTempBox.shared.dispose(tempFile)
                     }
                     if let data = compressImageToJPEG(previewImage, quality: 0.7, tempFilePath: tempFile.path) {
-                    context.engine.resources.storeCachedRepresentation(resource: EngineMediaResource(resource), representation: CachedVideoFirstFrameRepresentation(), data: data)
+                    context.account.postbox.mediaBox.storeCachedResourceRepresentation(resource, representation: CachedVideoFirstFrameRepresentation(), data: data)
                     }
                 }
                 

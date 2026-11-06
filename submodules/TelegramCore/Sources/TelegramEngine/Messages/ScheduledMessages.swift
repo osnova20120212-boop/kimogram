@@ -1,7 +1,7 @@
 import Foundation
 import Postbox
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 
 
 func _internal_sendScheduledMessageNowInteractively(postbox: Postbox, messageId: MessageId) -> Signal<Never, NoError> {

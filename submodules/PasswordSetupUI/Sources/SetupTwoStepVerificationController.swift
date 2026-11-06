@@ -39,7 +39,7 @@ public class SetupTwoStepVerificationController: ViewController {
         
         self.presentationData = self.context.sharedContext.currentPresentationData.with { $0 }
         
-        let navigationBarTheme = NavigationBarTheme(rootControllerTheme: self.presentationData.theme, edgeEffectColor: .clear)
+        let navigationBarTheme = NavigationBarTheme(rootControllerTheme: self.presentationData.theme, enableBackgroundBlur: false, hideBackground: true, edgeEffectColor: .clear, style: .glass)
         
         super.init(navigationBarPresentationData: NavigationBarPresentationData(theme: navigationBarTheme, strings: NavigationBarStrings(presentationStrings: self.presentationData.strings)))
         

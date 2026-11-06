@@ -669,8 +669,6 @@ final class ContextControllerExtractedPresentationNode: ASDisplayNode, ContextCo
     }
     
     func replaceItems(items: ContextController.Items, animated: Bool?) {
-        self.actionsStackNode.usesClearGlass = items.usesClearGlass
-        self.actionsStackNode.glassBlurRadius = items.glassBlurRadius
         if case .twoLists = items.content {
             let stackItems = makeContextControllerActionsStackItem(items: items)
             self.actionsStackNode.replace(item: stackItems.first!, animated: animated)
@@ -972,7 +970,7 @@ final class ContextControllerExtractedPresentationNode: ASDisplayNode, ContextCo
         var liquidMorphSource: (container: UIView, sourceRect: CGRect, sourcePath: UIBezierPath?)?
         // A morphing menu takes the source's place: it shares the source's top edge (bottom
         // edge when growing upward) and the side edge nearest the screen edge.
-        var morphMenuAnchor: (sourceFrame: CGRect, growsUpward: Bool, alignsRight: Bool, centered: Bool)?
+        var morphMenuAnchor: (sourceFrame: CGRect, growsUpward: Bool, alignsRight: Bool)?
         
         switch self.source {
         case let .location(location):
@@ -1013,7 +1011,7 @@ final class ContextControllerExtractedPresentationNode: ASDisplayNode, ContextCo
                 }
                 // Keep the placement for the menu's lifetime even if the source stops opting in.
                 if liquidMorphSource != nil || self.hasActiveLiquidMorph {
-                    morphMenuAnchor = (referenceRect, transitionInfo.actionsPosition == .top, referenceRect.midX >= layout.size.width * 0.5, transitionInfo.centersMorphedActions)
+                    morphMenuAnchor = (referenceRect, transitionInfo.actionsPosition == .top, referenceRect.midX >= layout.size.width * 0.5)
                 }
                 contentRect = referenceRect.insetBy(dx: -2.0, dy: 0.0)
                 contentRect.size.width += 5.0
@@ -1342,11 +1340,7 @@ final class ContextControllerExtractedPresentationNode: ASDisplayNode, ContextCo
             
             if let morphMenuAnchor {
                 let sourceFrame = morphMenuAnchor.sourceFrame
-                if morphMenuAnchor.centered {
-                    actionsFrame.origin.x = floor((layout.size.width - actionsFrame.width) * 0.5)
-                } else {
-                    actionsFrame.origin.x = morphMenuAnchor.alignsRight ? sourceFrame.maxX - actionsFrame.width : sourceFrame.minX
-                }
+                actionsFrame.origin.x = morphMenuAnchor.alignsRight ? sourceFrame.maxX - actionsFrame.width : sourceFrame.minX
                 actionsFrame.origin.x = max(actionsEdgeInset, min(layout.size.width - actionsEdgeInset - actionsFrame.width, actionsFrame.origin.x))
                 actionsFrame.origin.y = morphMenuAnchor.growsUpward ? sourceFrame.maxY - actionsFrame.height : sourceFrame.minY
             } else if case let .reference(reference) = self.source, let transitionInfo = reference.transitionInfo() ?? self.liquidMorphReferenceInfo, let customPosition = transitionInfo.customPosition {
@@ -1373,12 +1367,7 @@ final class ContextControllerExtractedPresentationNode: ASDisplayNode, ContextCo
             if additionalActionsSize.height > 0.0 {
                 if let morphMenuAnchor {
                     // The morphing stack stays on the source; the additional one follows it.
-                    let additionalX: CGFloat
-                    if morphMenuAnchor.centered {
-                        additionalX = floor((layout.size.width - additionalActionsSize.width) * 0.5)
-                    } else {
-                        additionalX = morphMenuAnchor.alignsRight ? actionsFrame.maxX - additionalActionsSize.width : actionsFrame.minX
-                    }
+                    let additionalX = morphMenuAnchor.alignsRight ? actionsFrame.maxX - additionalActionsSize.width : actionsFrame.minX
                     let additionalY = morphMenuAnchor.growsUpward ? actionsFrame.minY - 10.0 - additionalActionsSize.height : actionsFrame.maxY + 10.0
                     additionalActionsFrame = CGRect(origin: CGPoint(x: additionalX, y: additionalY), size: additionalActionsSize)
                 } else {
@@ -2124,10 +2113,7 @@ final class ContextControllerExtractedPresentationNode: ASDisplayNode, ContextCo
             }
             
             if self.hasActiveLiquidMorph {
-                // The source resolved in this pass, as the opening resolved it: an action applied before the menu
-                // closes can have resized it.
-                let currentSource = liquidMorphSource.map { (view: $0.container, sourceRect: $0.sourceRect, sourcePath: $0.sourcePath) }
-                self.actionsStackNode.animateOut(currentSource: currentSource, alongsideAnimations: { [weak self] in
+                self.actionsStackNode.animateOut(alongsideAnimations: { [weak self] in
                     self?.additionalActionsStackNode.alpha = 0.0
                 }, completion: { [weak self] in
                     self?.hasActiveLiquidMorph = false

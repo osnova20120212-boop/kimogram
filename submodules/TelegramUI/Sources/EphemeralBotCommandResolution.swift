@@ -1,8 +1,9 @@
 import Foundation
+import Postbox
 import TelegramCore
 
 struct ResolvedEphemeralBotCommand {
-    let botPeerId: EnginePeer.Id
+    let botPeerId: PeerId
     let text: String
     let entities: [MessageTextEntity]
 }
@@ -78,7 +79,7 @@ func mayContainTypedEphemeralBotCommand(_ text: String) -> Bool {
     return parseFirstBotCommandToken(text) != nil
 }
 
-func resolveEphemeralBotCommand(text: String, peerCommands: PeerCommands, forcedBotPeerId: EnginePeer.Id? = nil) -> ResolvedEphemeralBotCommand? {
+func resolveEphemeralBotCommand(text: String, peerCommands: PeerCommands, forcedBotPeerId: PeerId? = nil) -> ResolvedEphemeralBotCommand? {
     guard let parsed = parseFirstBotCommandToken(text) else {
         return nil
     }

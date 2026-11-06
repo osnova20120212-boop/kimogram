@@ -25,10 +25,6 @@ final class FakeInputGeometryClient: RichTextInputGeometryClient {
     private(set) var callCounts: [String: Int] = [:]
     private func bump(_ kind: String) { callCounts[kind, default: 0] += 1 }
 
-    /// TASK C2 ADDITION. Every bounded selection request, in order. The 500-block Select-All test
-    /// asserts on the visibleRect the backend passed, which no call *count* can express.
-    private(set) var receivedRequests: [RichTextInputSelectionGeometryRequest] = []
-
     func caretGeometry(at position: RichTextInputPosition, revision: UInt64,
                        purpose: RichTextInputGeometryPurpose) -> RichTextInputCaretGeometry? {
         bump("caretGeometry")
@@ -67,7 +63,6 @@ final class FakeInputGeometryClient: RichTextInputGeometryClient {
     }
     func selectionSegments(for request: RichTextInputSelectionGeometryRequest,
                           revision: UInt64) -> [RichTextInputSelectionSegment]? {
-        receivedRequests.append(request)
         bump("selectionSegments")
         log.record(.geometryQuery(kind: "selectionSegments", revision: revision, purpose: "\(request.purpose)"))
         return selectionSegmentsToReturn

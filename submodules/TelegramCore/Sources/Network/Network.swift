@@ -1,7 +1,7 @@
 import Foundation
 import WebProxyTransport
 import Postbox
-internal import TelegramApi
+import TelegramApi
 import SwiftSignalKit
 import MtProtoKit
 import NetworkLogging
@@ -532,9 +532,6 @@ private final class NetworkMainSessionDelegate: NetworkEngineSessionDelegate {
 }
 
 func initializedNetwork(accountId: AccountRecordId, arguments: NetworkInitializationArguments, supplementary: Bool, datacenterId: Int, keychain: Keychain, basePath: String, testingEnvironment: Bool, languageCode: String?, proxySettings: ProxySettings?, networkSettings: NetworkSettings?, networkEngine: NetworkEngineInputs, phoneNumber: String?, useRequestTimeoutTimers: Bool, appConfiguration: AppConfiguration) -> Signal<Network, NoError> {
-    // TelegramApi's field accessors are inlined into this module; trap if it was built against a
-    // different TelegramApi layout (stale objects from an incremental non-Bazel build).
-    tlVerifyClientLayout()
     return Signal { subscriber in
         let queue = Queue()
         queue.async {
@@ -1371,7 +1368,7 @@ public final class Network: NSObject {
         }
     }
     
-    func requestWithAdditionalInfo<T>(_ data: (FunctionDescription, Buffer, DeserializeFunctionResponse<T>), info: NetworkRequestAdditionalInfo, tag: NetworkRequestDependencyTag? = nil, automaticFloodWait: Bool = true, onFloodWaitError: ((String) -> Void)? = nil) -> Signal<NetworkRequestResult<T>, MTRpcError> {
+    public func requestWithAdditionalInfo<T>(_ data: (FunctionDescription, Buffer, DeserializeFunctionResponse<T>), info: NetworkRequestAdditionalInfo, tag: NetworkRequestDependencyTag? = nil, automaticFloodWait: Bool = true, onFloodWaitError: ((String) -> Void)? = nil) -> Signal<NetworkRequestResult<T>, MTRpcError> {
         let requestService = self.requestService
         return Signal { [requestService] subscriber in
             let request = NetworkEngineRequest(
@@ -1417,7 +1414,7 @@ public final class Network: NSObject {
         }
     }
     
-    func request<T>(_ data: (FunctionDescription, Buffer, DeserializeFunctionResponse<T>), tag: NetworkRequestDependencyTag? = nil, automaticFloodWait: Bool = true, onFloodWaitError: ((String) -> Void)? = nil) -> Signal<T, MTRpcError> {
+    public func request<T>(_ data: (FunctionDescription, Buffer, DeserializeFunctionResponse<T>), tag: NetworkRequestDependencyTag? = nil, automaticFloodWait: Bool = true, onFloodWaitError: ((String) -> Void)? = nil) -> Signal<T, MTRpcError> {
         let requestService = self.requestService
         return Signal { [requestService] subscriber in
             let request = NetworkEngineRequest(

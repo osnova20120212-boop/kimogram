@@ -39,7 +39,6 @@ swift_library(
         "//submodules/TelegramUI/Components/LottieComponent",
         "//submodules/TelegramUI/Components/Premium/PremiumDiamondComponent",
         "//submodules/TelegramUI/Components/Gifts/TableComponent",
-        "//submodules/TelegramUI/Components/Gifts/GiftAnimationComponent",
         "//submodules/TelegramUI/Components/GlassBarButtonComponent",
         "//submodules/TelegramUI/Components/GlassControls",
         "//submodules/TelegramUI/Components/ShimmeringMask",

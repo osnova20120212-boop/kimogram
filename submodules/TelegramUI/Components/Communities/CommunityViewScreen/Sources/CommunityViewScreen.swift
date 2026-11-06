@@ -2,6 +2,7 @@ import Foundation
 import UIKit
 import AsyncDisplayKit
 import Display
+import Postbox
 import AccountContext
 import TelegramCore
 import SwiftSignalKit
@@ -24,7 +25,6 @@ import AlertUI
 import UndoUI
 import ChatListUI
 import ChatListHeaderComponent
-import NavigationBarComponent
 import ChatListTitleView
 import ContextUI
 import SearchUI
@@ -629,7 +629,7 @@ private func communityChatCanRemovePeer(community: TelegramCommunity?, peer: Eng
     return communityChatPeerIsCreatedByAccount(peer)
 }
 
-private func communityCachedMemberCounts(_ data: [EnginePeer.Id: EngineCachedPeerData]) -> [EnginePeer.Id: Int32] {
+private func communityCachedMemberCounts(_ data: [EnginePeer.Id: CachedPeerData]) -> [EnginePeer.Id: Int32] {
     var result: [EnginePeer.Id: Int32] = [:]
     for (peerId, cachedData) in data {
         if let cachedData = cachedData as? CachedChannelData, let count = cachedData.participantsSummary.memberCount {
@@ -906,10 +906,10 @@ private final class CommunityViewContentComponent: Component {
     let community: TelegramCommunity?
     let cachedData: CachedCommunityData?
     let peers: [EnginePeer.Id: EnginePeer]
-    let cachedPeerData: [EnginePeer.Id: EngineCachedPeerData]
+    let cachedPeerData: [EnginePeer.Id: CachedPeerData]
     let previews: [EnginePeer.Id: CommunityChatPreviewData]
     let pendingRequests: CommunityPeerLinkRequests?
-    let pendingRequestCachedPeerData: [EnginePeer.Id: EngineCachedPeerData]
+    let pendingRequestCachedPeerData: [EnginePeer.Id: CachedPeerData]
     let pendingRequestInFlightPeerId: EnginePeer.Id?
     let pendingRequestInFlightApprove: Bool?
     let joinedPeerIds: Set<EnginePeer.Id>
@@ -928,10 +928,10 @@ private final class CommunityViewContentComponent: Component {
         community: TelegramCommunity?,
         cachedData: CachedCommunityData?,
         peers: [EnginePeer.Id: EnginePeer],
-        cachedPeerData: [EnginePeer.Id: EngineCachedPeerData],
+        cachedPeerData: [EnginePeer.Id: CachedPeerData],
         previews: [EnginePeer.Id: CommunityChatPreviewData],
         pendingRequests: CommunityPeerLinkRequests?,
-        pendingRequestCachedPeerData: [EnginePeer.Id: EngineCachedPeerData],
+        pendingRequestCachedPeerData: [EnginePeer.Id: CachedPeerData],
         pendingRequestInFlightPeerId: EnginePeer.Id?,
         pendingRequestInFlightApprove: Bool?,
         joinedPeerIds: Set<EnginePeer.Id>,
@@ -1290,7 +1290,7 @@ private final class CommunityViewContentComponent: Component {
             return nil
         }
 
-        private func memberCount(peerId: EnginePeer.Id, cachedPeerData: [EnginePeer.Id: EngineCachedPeerData]) -> Int32? {
+        private func memberCount(peerId: EnginePeer.Id, cachedPeerData: [EnginePeer.Id: CachedPeerData]) -> Int32? {
             guard let cachedData = cachedPeerData[peerId] else {
                 return nil
             }
@@ -1828,16 +1828,12 @@ private final class CommunityViewScreenComponent: Component {
     let communityId: EnginePeer.Id
     let mode: CommunityViewScreenMode
     let selectionOptions: CommunityPeerSelectionOptions?
-    /// Set once the community's first data is laid out: the screen's header (title, settings button) is lifted as it
-    /// is when a navigation transition starts, so a push must not start before it.
-    let ready: Promise<Bool>
 
-    init(context: AccountContext, communityId: EnginePeer.Id, mode: CommunityViewScreenMode, selectionOptions: CommunityPeerSelectionOptions?, ready: Promise<Bool>) {
+    init(context: AccountContext, communityId: EnginePeer.Id, mode: CommunityViewScreenMode, selectionOptions: CommunityPeerSelectionOptions?) {
         self.context = context
         self.communityId = communityId
         self.mode = mode
         self.selectionOptions = selectionOptions
-        self.ready = ready
     }
 
     static func ==(lhs: CommunityViewScreenComponent, rhs: CommunityViewScreenComponent) -> Bool {
@@ -1851,9 +1847,6 @@ private final class CommunityViewScreenComponent: Component {
             return false
         }
         if lhs.selectionOptions !== rhs.selectionOptions {
-            return false
-        }
-        if lhs.ready !== rhs.ready {
             return false
         }
         return true
@@ -1874,16 +1867,6 @@ private final class CommunityViewScreenComponent: Component {
         private let fullscreenBottomItem = ComponentView<Empty>()
         private let bottomEdgeEffectView = EdgeEffectView()
         private let navigationBarView = ComponentView<Empty>()
-
-        /// The chat-list-style header, for navigation transitions. None for the sheet: its header lies on the sheet, below
-        /// the top of the screen, and a transition would fly its buttons to the other screen's bar; it slides with the
-        /// sheet instead.
-        var navigationTransitionHeader: ChatListNavigationBar.View? {
-            guard let component = self.component, component.mode.usesFullscreenPresentation else {
-                return nil
-            }
-            return self.navigationBarView.view as? ChatListNavigationBar.View
-        }
         private let searchOverlayNode = ASDisplayNode()
         private let sheetBoundsUpdated = ActionSlot<ResizableSheetComponentEnvironment.BoundsUpdate>()
         /// iPhone Duo: how far the sheet's navigation bar moves its trailing buttons to clear a top-right corner block it
@@ -1911,11 +1894,11 @@ private final class CommunityViewScreenComponent: Component {
         private var community: TelegramCommunity?
         private var cachedData: CachedCommunityData?
         private var peers: [EnginePeer.Id: EnginePeer] = [:]
-        private var cachedPeerData: [EnginePeer.Id: EngineCachedPeerData] = [:]
+        private var cachedPeerData: [EnginePeer.Id: CachedPeerData] = [:]
         private var previews: [EnginePeer.Id: CommunityChatPreviewData] = [:]
         private var pendingRequests: CommunityPeerLinkRequests?
         private var pendingRequestsContext: CommunityPeerLinkRequestsContext?
-        private var pendingRequestCachedPeerData: [EnginePeer.Id: EngineCachedPeerData] = [:]
+        private var pendingRequestCachedPeerData: [EnginePeer.Id: CachedPeerData] = [:]
         private var pendingRequestActions: [EnginePeer.Id: PendingCommunityViewRequestAction] = [:]
         private weak var currentRequestUndoOverlayController: UndoOverlayController?
         private var joinedPeerIds = Set<EnginePeer.Id>()
@@ -1923,8 +1906,6 @@ private final class CommunityViewScreenComponent: Component {
         private var isAddActionInProgress = false
         private var removingPeerId: EnginePeer.Id?
         private var didRequestInitialData = false
-        private var didReceiveInitialData = false
-        private var didSetReady = false
         private var didRequestJoinedChats = false
 
         private var dataDisposable: Disposable?
@@ -2147,7 +2128,7 @@ private final class CommunityViewScreenComponent: Component {
                 guard let self else {
                     return
                 }
-                var cachedPeerData: [EnginePeer.Id: EngineCachedPeerData] = [:]
+                var cachedPeerData: [EnginePeer.Id: CachedPeerData] = [:]
                 for id in ids {
                     if let maybeCachedData = cachedDataById[id], let cachedData = maybeCachedData {
                         cachedPeerData[id] = cachedData
@@ -2199,7 +2180,7 @@ private final class CommunityViewScreenComponent: Component {
                 guard let self else {
                     return
                 }
-                var cachedPeerData: [EnginePeer.Id: EngineCachedPeerData] = [:]
+                var cachedPeerData: [EnginePeer.Id: CachedPeerData] = [:]
                 for id in ids {
                     if let maybeCachedData = cachedDataById[id], let cachedData = maybeCachedData {
                         cachedPeerData[id] = cachedData
@@ -2305,7 +2286,6 @@ private final class CommunityViewScreenComponent: Component {
                     if component.selectionOptions == nil {
                         self.updatePendingRequestsSignal(component: component)
                     }
-                    self.didReceiveInitialData = true
                     self.state?.updated(transition: transition)
                 })
             }
@@ -2852,29 +2832,34 @@ private final class CommunityViewScreenComponent: Component {
 
             let title = self.community?.title ?? environment.strings.Community_View_Title
                         
-            let leftButton: NavigationBarComponent.Button?
+            let leftButton: AnyComponentWithIdentity<NavigationButtonComponentEnvironment>?
             let backPressed: (() -> Void)?
+            let navigationBackTitle: String?
             if component.mode.isPreview {
                 leftButton = nil
                 backPressed = nil
+                navigationBackTitle = nil
             } else {
                 switch component.mode {
                 case .sheet:
-                    leftButton = NavigationBarComponent.Button(id: "close",
+                    leftButton = AnyComponentWithIdentity(id: "close", component: AnyComponent(NavigationButtonComponent(
                         content: .icon(imageName: "Navigation/Close"),
-                        action: { [weak self] _ in
+                        pressed: { [weak self] _ in
                             self?.dismiss(animated: true)
                         }
-                    )
+                    )))
                     backPressed = nil
+                    navigationBackTitle = nil
                 case .fullscreen:
                     leftButton = nil
                     backPressed = { [weak self] in
                         self?.dismiss(animated: true)
                     }
+                    navigationBackTitle = environment.strings.Common_Back
                 case .preview:
                     leftButton = nil
                     backPressed = nil
+                    navigationBackTitle = nil
                 }
             }
 
@@ -2889,26 +2874,27 @@ private final class CommunityViewScreenComponent: Component {
                 )), at: 0)
             }
             
-            var rightButtons: [NavigationBarComponent.Button] = []
+            var rightButtons: [AnyComponentWithIdentity<NavigationButtonComponentEnvironment>] = []
             if component.mode.usesSheetPresentation && !component.mode.isPreview && component.selectionOptions == nil {
-                rightButtons.append(NavigationBarComponent.Button(id: "search",
+                rightButtons.append(AnyComponentWithIdentity(id: "search", component: AnyComponent(NavigationButtonComponent(
                     content: .icon(imageName: "Navigation/Search"),
-                    action: { [weak self] _ in
+                    pressed: { [weak self] _ in
                         self?.activateSearch(searchContentNode: nil)
                     }
-                ))
+                ))))
             }
             if self.isAdmin && !component.mode.isPreview && component.selectionOptions == nil {
-                rightButtons.append(NavigationBarComponent.Button(id: "settings",
+                rightButtons.append(AnyComponentWithIdentity(id: "settings", component: AnyComponent(NavigationButtonComponent(
                     content: .icon(imageName: "Media Editor/Adjustments"),
-                    action: { [weak self] _ in
+                    pressed: { [weak self] _ in
                         self?.openEdit()
                     }
-                ))
+                ))))
             }
 
             let primaryContent = ChatListHeaderComponent.Content(
                 title: title,
+                navigationBackTitle: navigationBackTitle,
                 titleComponent: AnyComponent(
                     HStack(titleItems, spacing: 7.0)
                 ),
@@ -3426,16 +3412,6 @@ private final class CommunityViewScreenComponent: Component {
                 controller.presentationContext.containerLayoutUpdated(presentationContextLayout, transition: transition.containedViewLayoutTransition)
             }
 
-            if self.didReceiveInitialData && !self.didSetReady {
-                self.didSetReady = true
-                // After this update returns: ready can start the transition right away, and that lays the screen out
-                // again.
-                let ready = component.ready
-                DispatchQueue.main.async {
-                    ready.set(.single(true))
-                }
-            }
-
             return availableSize
         }
     }
@@ -3450,32 +3426,14 @@ private final class CommunityViewScreenComponent: Component {
 }
 
 public final class CommunityViewScreenImpl: ViewControllerComponentContainer, CommunityViewScreen {
-
-    /// Draws its own header (no Display bar); it takes part in navigation transitions itself.
-    override public var navigationBarTransitionSource: NavigationBarTransitionSource? {
-        guard self.isNodeLoaded else {
-            return nil
-        }
-        return (self.node.hostView.componentView as? CommunityViewScreenComponent.View)?.navigationTransitionHeader
-    }
-    private let readyValue = Promise<Bool>()
-    override public var ready: Promise<Bool> {
-        return self.readyValue
-    }
-
     public init(context: AccountContext, communityId: EnginePeer.Id, mode: CommunityViewScreenMode, selectionOptions: CommunityPeerSelectionOptions? = nil) {
-        let componentReady = Promise<Bool>()
         super.init(
             context: context,
-            component: CommunityViewScreenComponent(context: context, communityId: communityId, mode: mode, selectionOptions: selectionOptions, ready: componentReady),
+            component: CommunityViewScreenComponent(context: context, communityId: communityId, mode: mode, selectionOptions: selectionOptions),
             navigationBarAppearance: .none,
             theme: .default,
             updatedPresentationData: nil
         )
-
-        // Pushed once its header shows the community's first data (a push lifts the header as it is); a screen that
-        // is never laid out or never gets data does not hold the push up for long.
-        self.readyValue.set(componentReady.get() |> timeout(1.0, queue: .mainQueue(), alternate: .single(true)))
 
         self.automaticallyControlPresentationContextLayout = false
 

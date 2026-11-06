@@ -1,5 +1,5 @@
 import Postbox
-internal import TelegramApi
+import TelegramApi
 import SwiftSignalKit
 
 public enum UpdateChannelJoinToSendError {

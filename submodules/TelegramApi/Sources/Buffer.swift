@@ -317,7 +317,7 @@ public class Buffer: CustomStringConvertible {
 }
 
 public class BufferReader {
-    let buffer: Buffer
+    private let buffer: Buffer
     public private(set) var offset: UInt = 0
     
     public init(_ buffer: Buffer) {
@@ -326,11 +326,6 @@ public class BufferReader {
     
     public func reset() {
         self.offset = 0
-    }
-
-    /// For the table-driven engine, which reads from `buffer` directly.
-    func tlSetOffset(_ offset: UInt) {
-        self.offset = offset
     }
     
     public func skip(_ count: Int) {

@@ -1,6 +1,6 @@
 import Foundation
 import Postbox
-internal import TelegramApi
+import TelegramApi
 
 public final class CachedPeerBotInfo: PostboxCoding, Equatable {
     public let peerId: PeerId

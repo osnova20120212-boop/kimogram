@@ -1,6 +1,6 @@
 import Postbox
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 
 public final class MessageReadStats {
     public let reactionCount: Int

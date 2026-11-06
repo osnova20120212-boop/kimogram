@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import Postbox
 import SwiftSignalKit
 import TelegramCore
 
@@ -204,10 +205,10 @@ public struct MediaAutoSaveSettings: Codable, Equatable {
     }
     
     public struct ExceptionItem: Codable, Equatable {
-        public var id: EnginePeer.Id
+        public var id: PeerId
         public var configuration: MediaAutoSaveConfiguration
         
-        public init(id: EnginePeer.Id, configuration: MediaAutoSaveConfiguration) {
+        public init(id: PeerId, configuration: MediaAutoSaveConfiguration) {
             self.id = id
             self.configuration = configuration
         }
@@ -478,7 +479,7 @@ public func updateMediaDownloadSettingsInteractively(accountManager: AccountMana
                 currentSettings = MediaAutoDownloadSettings.defaultSettings
             }
             let updated = f(currentSettings)
-            return EnginePreferencesEntry(updated)
+            return PreferencesEntry(updated)
         })
     }
 }
@@ -514,7 +515,7 @@ public func effectiveAutodownloadCategories(settings: MediaAutoDownloadSettings,
     }
 }
 
-private func categoryAndSizeForMedia(_ media: EngineMedia?, isStory: Bool, categories: MediaAutoDownloadCategories) -> (MediaAutoDownloadCategory, Int32?)? {
+private func categoryAndSizeForMedia(_ media: Media?, isStory: Bool, categories: MediaAutoDownloadCategories) -> (MediaAutoDownloadCategory, Int32?)? {
     if isStory {
         return (categories.stories, 0)
     }
@@ -523,10 +524,9 @@ private func categoryAndSizeForMedia(_ media: EngineMedia?, isStory: Bool, categ
         return (categories.photo, 0)
     }
     
-    switch media {
-    case .image, .webFile:
+    if media is TelegramMediaImage || media is TelegramMediaWebFile {
         return (categories.photo, 0)
-    case let .file(file):
+    } else if let file = media as? TelegramMediaFile {
         for attribute in file.attributes {
             switch attribute {
                 case .Video:
@@ -542,7 +542,7 @@ private func categoryAndSizeForMedia(_ media: EngineMedia?, isStory: Bool, categ
             }
         }
         return (categories.file, file.size.flatMap(Int32.init))
-    default:
+    } else {
         return nil
     }
 }
@@ -564,14 +564,14 @@ public func isAutodownloadEnabledForAnyPeerType(category: MediaAutoDownloadCateg
     return category.contacts || category.otherPrivate || category.groups || category.channels
 }
 
-public func shouldDownloadMediaAutomatically(settings: MediaAutoDownloadSettings, peerType: MediaAutoDownloadPeerType, networkType: MediaAutoDownloadNetworkType, authorPeerId: EnginePeer.Id? = nil, contactsPeerIds: Set<EnginePeer.Id> = Set(), media: EngineMedia?, isStory: Bool = false, isAd: Bool = false) -> Bool {
+public func shouldDownloadMediaAutomatically(settings: MediaAutoDownloadSettings, peerType: MediaAutoDownloadPeerType, networkType: MediaAutoDownloadNetworkType, authorPeerId: PeerId? = nil, contactsPeerIds: Set<PeerId> = Set(), media: Media?, isStory: Bool = false, isAd: Bool = false) -> Bool {
     if isAd {
         return true
     }
     if (networkType == .cellular && !settings.cellular.enabled) || (networkType == .wifi && !settings.wifi.enabled) {
         return false
     }
-    if case let .file(file)? = media, file.isSticker {
+    if let file = media as? TelegramMediaFile, file.isSticker {
         return true
     }
     
@@ -583,7 +583,7 @@ public func shouldDownloadMediaAutomatically(settings: MediaAutoDownloadSettings
     if let (category, size) = categoryAndSizeForMedia(media, isStory: isStory, categories: effectiveAutodownloadCategories(settings: settings, networkType: networkType)) {
         if let size = size {
             var sizeLimit = category.sizeLimit
-            if case let .file(file)? = media, file.isVoice {
+            if let file = media as? TelegramMediaFile, file.isVoice {
                 sizeLimit = max(2 * 1024 * 1024, sizeLimit)
             } else if !isAutodownloadEnabledForPeerType(peerType, category: category) {
                 return false
@@ -601,7 +601,7 @@ public func shouldDownloadMediaAutomatically(settings: MediaAutoDownloadSettings
     }
 }
 
-public func shouldPredownloadMedia(settings: MediaAutoDownloadSettings, peerType: MediaAutoDownloadPeerType, networkType: MediaAutoDownloadNetworkType, media: EngineMedia) -> Bool {
+public func shouldPredownloadMedia(settings: MediaAutoDownloadSettings, peerType: MediaAutoDownloadPeerType, networkType: MediaAutoDownloadNetworkType, media: Media) -> Bool {
     if #available(iOSApplicationExtension 10.3, *) {
         if (networkType == .cellular && !settings.cellular.enabled) || (networkType == .wifi && !settings.wifi.enabled) {
             return false
@@ -630,7 +630,7 @@ public func updateMediaAutoSaveSettingsInteractively(account: Account, _ f: @esc
                 currentSettings = .default
             }
             let updated = f(currentSettings)
-            return EnginePreferencesEntry(updated)
+            return PreferencesEntry(updated)
         })
     }
     |> ignoreValues

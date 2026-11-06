@@ -1,5 +1,6 @@
 import Foundation
 import PasscodeCore
+import Postbox
 import SwiftSignalKit
 import TelegramCore
 import WalletEngineFFI
@@ -114,9 +115,9 @@ public extension WalletContext {
         Task { await self.impl.openTonConnectUrl(value) }
     }
 
-    func openTonConnectRequest(sessionId: Int64, messageId: EngineMessage.Id) {
+    func openTonConnectRequest(sessionId: Int64, messageId: MessageId) {
         guard messageId.namespace == Namespaces.Message.Cloud,
-              messageId.peerId == EnginePeer.Id(namespace: Namespaces.Peer.CloudUser, id: EnginePeer.Id.Id._internalFromInt64Value(777000)) else { return }
+              messageId.peerId == PeerId(namespace: Namespaces.Peer.CloudUser, id: PeerId.Id._internalFromInt64Value(777000)) else { return }
         Task { await self.impl.enqueueTonConnectRequest(sessionId: sessionId, msgId: messageId.id, userInitiated: true) }
     }
 

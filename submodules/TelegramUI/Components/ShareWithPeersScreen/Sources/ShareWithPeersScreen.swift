@@ -10,6 +10,7 @@ import ComponentDisplayAdapters
 import TelegramPresentationData
 import AccountContext
 import TelegramCore
+import Postbox
 import MultilineTextComponent
 import PresentationDataUtils
 import ButtonComponent
@@ -932,16 +933,16 @@ final class ShareWithPeersScreenComponent: Component {
                     if let story = folderPreview.item {
                         var imageSignal: Signal<UIImage?, NoError>?
                         
-                        var selectedMedia: EngineMedia?
+                        var selectedMedia: Media?
                         if let image = story.media._asMedia() as? TelegramMediaImage {
-                            selectedMedia = .image(image)
+                            selectedMedia = image
                         } else if let file = story.media._asMedia() as? TelegramMediaFile {
-                            selectedMedia = .file(file)
+                            selectedMedia = file
                         }
-
+                        
                         if let selectedMedia {
                             let directMediaImageCache = DirectMediaImageCache(account: component.context.account)
-                            if let result = directMediaImageCache.getImage(peer: peerReference, story: story, media: selectedMedia._asMedia(), width: 48, aspectRatio: 1.0, possibleWidths: [48], includeBlurred: false, synchronous: true) {
+                            if let result = directMediaImageCache.getImage(peer: peerReference, story: story, media: selectedMedia, width: 48, aspectRatio: 1.0, possibleWidths: [48], includeBlurred: false, synchronous: true) {
                                 if let loadSignal = result.loadSignal {
                                     imageSignal = .single(result.image) |> then(loadSignal)
                                 } else {

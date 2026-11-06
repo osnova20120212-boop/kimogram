@@ -9,6 +9,7 @@ import ViewControllerComponent
 import ComponentDisplayAdapters
 import TelegramPresentationData
 import AccountContext
+import Postbox
 import TelegramCore
 import MultilineTextComponent
 import DrawingUI
@@ -55,7 +56,6 @@ import GlassBarButtonComponent
 import GlassBackgroundComponent
 import Weather
 import UniformTypeIdentifiers
-import MediaAssetsContext
 
 /// iPhone Duo, sticker editor: the square sticker frame (0.97 of the preview's width), the undo button above it and the
 /// cut-out and outline buttons below it have to fit between the top of the screen and the editor's bottom bar, and keep
@@ -64,7 +64,7 @@ import MediaAssetsContext
 /// preview is narrowed and placed with the frame in that space. The sticker is the canvas-centred square either way, so
 /// only the preview's scale changes. Returns the preview's frame on iPhone Duo (reserved corners), nil elsewhere, where
 /// the usual placement is kept.
-func mediaEditorStickerPreviewFrame(screenSize: CGSize, safeInsets: UIEdgeInsets, reservedCorners: ContainerViewLayoutCorners, statusBarHeight: CGFloat, hasStatusIsland: Bool, homeIndicatorInset: CGFloat) -> CGRect? {
+func mediaEditorStickerPreviewFrame(screenSize: CGSize, safeInsets: UIEdgeInsets, reservedCorners: ContainerViewLayoutCorners, statusBarHeight: CGFloat, hasStatusIsland: Bool) -> CGRect? {
     if reservedCorners == .none {
         return nil
     }
@@ -72,9 +72,8 @@ func mediaEditorStickerPreviewFrame(screenSize: CGSize, safeInsets: UIEdgeInsets
     let spaceAboveFrame: CGFloat = 35.0 + 40.0
     let spaceBelowFrame: CGFloat = 35.0 + 40.0 + 16.0 + 40.0
     // The bottom bar's buttons start 8pt above where the editor's controls inset puts them (see the component's
-    // `controlsBottomInset`: mirrored on the status island's clock line beside the island, 62pt above the home
-    // indicator otherwise).
-    let controlsBottomInset: CGFloat = hasStatusIsland ? -(statusBarHeight + 31.0 + 30.0) : -62.0 - homeIndicatorInset
+    // `controlsBottomInset`: mirrored on the status island's clock line beside the island, 62pt up otherwise).
+    let controlsBottomInset: CGFloat = hasStatusIsland ? -(statusBarHeight + 31.0 + 30.0) : -62.0
     let bottomLimit = screenSize.height + 8.0 + controlsBottomInset - 8.0
     let topLimit = statusBarHeight + 8.0
     let available = bottomLimit - topLimit
@@ -868,11 +867,6 @@ final class MediaEditorScreenComponent: Component {
                         // Beside a status island the bottom bar mirrors the top row (see topRowY): its 44pt buttons
                         // centred compact status height + 31 above the bottom edge, as the drawing screen's are.
                         controlsBottomInset = min(controlsBottomInset, -(environment.statusBarHeight + 31.0 + 30.0))
-                    } else {
-                        // Elsewhere 62pt above the home indicator. The 62pt was set for home-button phones, the only phones
-                        // with a preview taller than the screen until iPhone Duo, whose folded screen it left with the
-                        // buttons on the indicator.
-                        controlsBottomInset -= component.bottomSafeInset
                     }
                     // Beside a status island the bottom buttons keep the top rows' 16pt side inset; so do they on the folded
                     // screen, whose outer corners (59pt) would clip a button 9pt from the edge (iPhone Duo).
@@ -892,7 +886,7 @@ final class MediaEditorScreenComponent: Component {
             // The sticker frame's buttons centre on the frame, which beside a side strip is the band's centre, not the screen's
             // (iPhone Duo folded: an erase and restore pair centred on the screen reached 16pt into the strip).
             var stickerButtonsCenterX: CGFloat = availableSize.width / 2.0
-            if !isTablet, case .stickerEditor = controller.mode, let stickerPreviewFrame = mediaEditorStickerPreviewFrame(screenSize: availableSize, safeInsets: environment.safeInsets, reservedCorners: environment.reservedCorners, statusBarHeight: environment.statusBarHeight, hasStatusIsland: environment.navigationBarTrailingButtonsInset > 0.0, homeIndicatorInset: component.bottomSafeInset) {
+            if !isTablet, case .stickerEditor = controller.mode, let stickerPreviewFrame = mediaEditorStickerPreviewFrame(screenSize: availableSize, safeInsets: environment.safeInsets, reservedCorners: environment.reservedCorners, statusBarHeight: environment.statusBarHeight, hasStatusIsland: environment.navigationBarTrailingButtonsInset > 0.0) {
                 // iPhone Duo: see `mediaEditorStickerPreviewFrame` (the node places the preview the same way).
                 previewSize = stickerPreviewFrame.size
                 previewFrame = stickerPreviewFrame
@@ -3203,8 +3197,6 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
         
         private let gradientView: UIImageView
         private var gradientColorsDisposable: Disposable?
-        private var sourceLoadStateDisposable: Disposable?
-        private weak var sourceLoadingTooltip: SaveProgressScreen?
         
         fileprivate var cropScrollView: CropScrollView?
         private var cropScrollViewFrame: CGRect = .zero
@@ -3628,7 +3620,6 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
         deinit {
             self.subjectDisposable?.dispose()
             self.gradientColorsDisposable?.dispose()
-            self.sourceLoadStateDisposable?.dispose()
             self.appInForegroundDisposable?.dispose()
             self.playbackPositionDisposable?.dispose()
             self.availableReactionsDisposable?.dispose()
@@ -3913,24 +3904,24 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
                 controller.stickerSelectedEmoji = emoji
             case .message, .gift:
                 var isGift = false
-                let messages: Signal<[EngineMessage], NoError>
+                let messages: Signal<[Message], NoError>
                 if case let .message(messageIds) = subject {
                     messages = self.context.engine.data.get(
                         EngineDataMap(messageIds.map(TelegramEngine.EngineData.Item.Messages.Message.init(id:)))
                     )
                     |> map { result in
-                        var messages: [EngineMessage] = []
+                        var messages: [Message] = []
                         for id in messageIds {
                             if let maybeMessage = result[id], let message = maybeMessage {
-                                messages.append(message)
+                                messages.append(message._asMessage())
                             }
                         }
                         return messages
                     }
                 } else if case let .gift(gift) = subject {
                     isGift = true
-                    let media: [EngineMedia] = [.action(TelegramMediaAction(action: .starGiftUnique(gift: .unique(gift), isUpgrade: false, isTransferred: false, savedToProfile: false, canExportDate: nil, transferStars: nil, isRefunded: false, isPrepaidUpgrade: false, peerId: nil, senderId: nil, savedId: nil, resaleAmount: nil, canTransferDate: nil, canResaleDate: nil, dropOriginalDetailsStars: nil, assigned: false, fromOffer: false, canCraftAt: nil, isCrafted: false, text: nil, entities: nil, nameHidden: false)))]
-                    let message = EngineMessage(stableId: 0, stableVersion: 0, id: EngineMessage.Id(peerId: self.context.account.peerId, namespace: Namespaces.Message.Cloud, id: -1), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], customTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: media, peers: [:], associatedMessages: [:], associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil, associatedStories: [:])
+                    let media: [Media] = [TelegramMediaAction(action: .starGiftUnique(gift: .unique(gift), isUpgrade: false, isTransferred: false, savedToProfile: false, canExportDate: nil, transferStars: nil, isRefunded: false, isPrepaidUpgrade: false, peerId: nil, senderId: nil, savedId: nil, resaleAmount: nil, canTransferDate: nil, canResaleDate: nil, dropOriginalDetailsStars: nil, assigned: false, fromOffer: false, canCraftAt: nil, isCrafted: false, text: nil, entities: nil, nameHidden: false))]
+                    let message = Message(stableId: 0, stableVersion: 0, id: MessageId(peerId: self.context.account.peerId, namespace: Namespaces.Message.Cloud, id: -1), globallyUniqueId: nil, groupingKey: nil, groupInfo: nil, threadId: nil, timestamp: 0, flags: [], tags: [], globalTags: [], localTags: [], customTags: [], forwardInfo: nil, author: nil, text: "", attributes: [], media: media, peers: SimpleDictionary(), associatedMessages: SimpleDictionary(), associatedMessageIds: [], associatedMedia: [:], associatedThreadInfo: nil, associatedStories: [:])
                     messages = .single([message])
                 } else {
                     fatalError()
@@ -3979,7 +3970,7 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
                         guard let self else {
                             return
                         }
-                        let renderer = DrawingMessageRenderer(context: self.context, messages: messages, parentView: self.view, isGift: isGift, wallpaperDayColor: wallpaperColors.0, wallpaperNightColor: wallpaperColors.1)
+                        let renderer = DrawingMessageRenderer(context: self.context, messages: messages.map(EngineMessage.init), parentView: self.view, isGift: isGift, wallpaperDayColor: wallpaperColors.0, wallpaperNightColor: wallpaperColors.1)
                         renderer.render(completion: { result in
                             if isDraft, let existingEntityView = self.entitiesView.getView(where: { entityView in
                                 if let stickerEntityView = entityView as? DrawingStickerEntityView {
@@ -4071,13 +4062,6 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
                     }
                 }
             })
-            // Reading the subject can mean an iCloud download. Report it, and if the media never
-            // arrives say so — the editor would otherwise sit on an empty canvas indefinitely.
-            self.sourceLoadStateDisposable = (mediaEditor.sourceLoadState
-            |> deliverOnMainQueue).start(next: { [weak self] state in
-                self?.updateSourceLoadState(state)
-            })
-            
             self.mediaEditor = mediaEditor
             self.updateCrop()
             self.mediaEditorPromise.set(.single(mediaEditor))
@@ -5126,36 +5110,6 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
             }
         }
         
-        private func updateSourceLoadState(_ state: MediaEditorSourceLoadState) {
-            guard let controller = self.controller else {
-                return
-            }
-            switch state {
-            case let .loading(progress):
-                guard let progress else {
-                    return
-                }
-                let text = self.presentationData.strings.Story_Editor_DownloadingMedia
-                if let tooltip = self.sourceLoadingTooltip {
-                    tooltip.content = .progress(text, progress)
-                } else {
-                    let tooltip = SaveProgressScreen(context: self.context, content: .progress(text, progress))
-                    tooltip.cancelled = { [weak self] in
-                        self?.sourceLoadingTooltip = nil
-                    }
-                    controller.present(tooltip, in: .window(.root))
-                    self.sourceLoadingTooltip = tooltip
-                }
-            case .ready:
-                self.sourceLoadingTooltip?.dismiss()
-                self.sourceLoadingTooltip = nil
-            case .unavailable:
-                self.sourceLoadingTooltip?.dismiss()
-                self.sourceLoadingTooltip = nil
-                controller.presentMediaUnavailableAlert()
-            }
-        }
-        
         func updateVideoExportProgress(_ progress: Float) {
             guard let controller = self.controller else {
                 return
@@ -5233,13 +5187,15 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
                 }
                 
                 if let asset = result as? PHAsset {
-                    let _ = (assetFullImage(asset)
-                    |> deliverOnMainQueue).start(next: { result in
-                        guard case let .result(image) = result else {
-                            return
+                    let options = PHImageRequestOptions()
+                    options.deliveryMode = .highQualityFormat
+                    PHImageManager.default().requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: .default, options: options) { image, _ in
+                        if let image {
+                            Queue.mainQueue().async {
+                                completeWithImage(image)
+                            }
                         }
-                        completeWithImage(image)
-                    })
+                    }
                 } else if let image = result as? UIImage {
                     completeWithImage(image)
                 }
@@ -5386,7 +5342,7 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
                         if case let .data(data) = state {
                             let path = data.path
                             
-                            ensureStoryDraftDirectory(peerId: self.context.engine.account.peerId)
+                            try? FileManager.default.createDirectory(atPath: draftPath(engine: self.context.engine), withIntermediateDirectories: true)
                             
                             var originalFileName: String = "audio_\(Int.random(in: 0 ..< .max)).mp3"
                             if let file = file.media as? TelegramMediaFile {
@@ -5428,7 +5384,7 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
                 }
                 isSettingTrack = true
                 
-                ensureStoryDraftDirectory(peerId: self.context.engine.account.peerId)
+                try? FileManager.default.createDirectory(atPath: draftPath(engine: self.context.engine), withIntermediateDirectories: true)
                 
                 let isScopedResource = url.startAccessingSecurityScopedResource()
                 Logger.shared.log("MediaEditor", "isScopedResource = \(isScopedResource)")
@@ -6128,7 +6084,7 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
             // `mediaEditorStickerPreviewFrame`; the component places them the same way). The insets above stay those of
             // the full-width preview, so the bottom bar keeps its place.
             var stickerPreviewOrigin: CGPoint?
-            if !isTablet, case .stickerEditor = controller.mode, let stickerPreviewFrame = mediaEditorStickerPreviewFrame(screenSize: layout.size, safeInsets: layout.safeInsets, reservedCorners: layout.reservedCorners, statusBarHeight: layout.navigationBarStatusBarHeight ?? 0.0, hasStatusIsland: layout.navigationBarTrailingButtonsInset > 0.0, homeIndicatorInset: layout.intrinsicInsets.bottom) {
+            if !isTablet, case .stickerEditor = controller.mode, let stickerPreviewFrame = mediaEditorStickerPreviewFrame(screenSize: layout.size, safeInsets: layout.safeInsets, reservedCorners: layout.reservedCorners, statusBarHeight: layout.navigationBarStatusBarHeight ?? 0.0, hasStatusIsland: layout.navigationBarTrailingButtonsInset > 0.0) {
                 previewSize = stickerPreviewFrame.size
                 stickerPreviewOrigin = stickerPreviewFrame.origin
             }
@@ -6883,7 +6839,7 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
         case collage(MediaEditorCollage)
         case asset(PHAsset)
         case draft(MediaEditorDraft, Int64?)
-        case message([EngineMessage.Id])
+        case message([MessageId])
         case gift(StarGift.UniqueGift)
         case sticker(TelegramMediaFile, [String])
         case multiple([Subject])
@@ -8092,6 +8048,10 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
                             self.stickerResultController?.disappeared = nil
                         }
                         
+                        if self.node.mediaEditor?.values.hasChanges == true {
+                            print()
+                        }
+                        
                         let _ = (imagesReady.get()
                         |> filter { $0 }
                         |> take(1)
@@ -8581,7 +8541,7 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
         })
     }
         
-    private func performSave(toStickerResource: TelegramMediaResource? = nil, collagePrepared: Bool = false) {
+    private func performSave(toStickerResource: MediaResource? = nil, collagePrepared: Bool = false) {
         guard let mediaEditor = self.node.mediaEditor, let subject = self.node.subject else {
             return
         }
@@ -8618,7 +8578,7 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
                 }
             }, completionHandler: { _, error in
                 if let error = error {
-                    Logger.shared.log("MediaEditor", "Failed to save to the photo library: \(error)")
+                    print("\(error)")
                 }
                 let _ = try? FileManager.default.removeItem(atPath: tempVideoPath)
             })
@@ -8677,17 +8637,14 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
                 case let .video(path, _):
                     assetSignal = .single(AVURLAsset(url: NSURL(fileURLWithPath: path) as URL))
                 case let .asset(asset):
-                    assetSignal = assetVideoAsset(asset)
-                    |> mapToSignal { [weak self] result -> Signal<AVAsset, NoError> in
-                        switch result {
-                        case let .result(avAsset):
-                            return .single(avAsset)
-                        case .unavailable:
-                            self?.presentMediaUnavailableAlert()
-                            return .complete()
-                        case .progress:
-                            return .complete()
+                    assetSignal = Signal { subscriber in
+                        PHImageManager.default().requestAVAsset(forVideo: asset, options: nil) { avAsset, _, _ in
+                            if let avAsset {
+                                subscriber.putNext(avAsset)
+                                subscriber.putCompletion()
+                            }
                         }
+                        return EmptyDisposable
                     }
                 default:
                     fatalError()
@@ -8699,32 +8656,25 @@ public final class MediaEditorScreenImpl: ViewController, MediaEditorScreen, UID
             case let .image(image, _, _, _, _):
                 exportSubject = .single(.image(image: image))
             case let .asset(asset):
-                if asset.mediaType == .video {
-                    exportSubject = assetVideoAsset(asset)
-                    |> mapToSignal { [weak self] result -> Signal<MediaEditorVideoExport.Subject, NoError> in
-                        switch result {
-                        case let .result(avAsset):
-                            return .single(.video(asset: avAsset, isStory: true))
-                        case .unavailable:
-                            self?.presentMediaUnavailableAlert()
-                            return .complete()
-                        case .progress:
-                            return .complete()
+                exportSubject = Signal { subscriber in
+                    if asset.mediaType == .video {
+                        PHImageManager.default().requestAVAsset(forVideo: asset, options: nil) { avAsset, _, _ in
+                            if let avAsset {
+                                subscriber.putNext(.video(asset: avAsset, isStory: true))
+                                subscriber.putCompletion()
+                            }
+                        }
+                    } else {
+                        let options = PHImageRequestOptions()
+                        options.deliveryMode = .highQualityFormat
+                        PHImageManager.default().requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: .default, options: options) { image, _ in
+                            if let image {
+                                subscriber.putNext(.image(image: image))
+                                subscriber.putCompletion()
+                            }
                         }
                     }
-                } else {
-                    exportSubject = assetFullImage(asset)
-                    |> mapToSignal { [weak self] result -> Signal<MediaEditorVideoExport.Subject, NoError> in
-                        switch result {
-                        case let .result(image):
-                            return .single(.image(image: image))
-                        case .unavailable:
-                            self?.presentMediaUnavailableAlert()
-                            return .complete()
-                        case .progress:
-                            return .complete()
-                        }
-                    }
+                    return EmptyDisposable
                 }
             case let .draft(draft, _):
                 if draft.isVideo {
@@ -9379,11 +9329,11 @@ public final class BlurredGradientComponent: Component {
 }
 
 func draftPath(engine: TelegramEngine) -> String {
-    return storyDraftDirectory(peerId: engine.account.peerId)
+    return NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0] + "/storyDrafts_\(engine.account.peerId.toInt64())"
 }
 
 private func fullDraftPath(peerId: EnginePeer.Id, path: String) -> String {
-    return storyDraftDirectory(peerId: peerId) + "/" + path
+    return NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0] + "/storyDrafts_\(peerId.toInt64())/" + path
 }
 
 func hasFirstResponder(_ view: UIView) -> Bool {
@@ -9559,7 +9509,7 @@ private func stickerFile(resource: TelegramMediaResource, thumbnailResource: Tel
         previewRepresentations.append(TelegramMediaImageRepresentation(dimensions: dimensions, resource: thumbnailResource, progressiveSizes: [], immediateThumbnailData: nil))
     }
     
-    return TelegramMediaFile(fileId: EngineMedia.Id(namespace: Namespaces.Media.LocalFile, id: Int64.random(in: Int64.min ... Int64.max)), partialReference: nil, resource: resource, previewRepresentations: previewRepresentations, videoThumbnails: [], immediateThumbnailData: nil, mimeType: isVideo ? "video/webm" : "image/webp", size: size, attributes: fileAttributes, alternativeRepresentations: [])
+    return TelegramMediaFile(fileId: MediaId(namespace: Namespaces.Media.LocalFile, id: Int64.random(in: Int64.min ... Int64.max)), partialReference: nil, resource: resource, previewRepresentations: previewRepresentations, videoThumbnails: [], immediateThumbnailData: nil, mimeType: isVideo ? "video/webm" : "image/webp", size: size, attributes: fileAttributes, alternativeRepresentations: [])
 }
 
 private struct MediaEditorConfiguration {

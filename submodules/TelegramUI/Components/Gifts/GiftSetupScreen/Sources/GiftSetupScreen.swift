@@ -341,12 +341,7 @@ private final class GiftSetupScreenComponent: Component {
         }
         
         @objc private func proceed() {
-            guard !self.inProgress, let component = self.component, let environment = self.environment else {
-                return
-            }
-            
-            if let inputPanelView = self.inputPanel.view as? MessageInputPanelComponent.View, !inputPanelView.canDeactivateInput() {
-                inputPanelView.animateError()
+            guard let component = self.component, let environment = self.environment else {
                 return
             }
                         
@@ -384,7 +379,7 @@ private final class GiftSetupScreenComponent: Component {
         }
         
         private func proceedWithPremiumGift() {
-            guard !self.inProgress, let component = self.component, case let .premium(product) = component.subject, let storeProduct = product.storeProduct, let inAppPurchaseManager = component.context.inAppPurchaseManager else {
+            guard let component = self.component, case let .premium(product) = component.subject, let storeProduct = product.storeProduct, let inAppPurchaseManager = component.context.inAppPurchaseManager else {
                 return
             }
             
@@ -454,7 +449,6 @@ private final class GiftSetupScreenComponent: Component {
                         guard let self, let controller = self.environment?.controller() else {
                             return
                         }
-                        self.inProgress = false
                         self.state?.updated(transition: .immediate)
 
                         var errorText: String?
@@ -490,7 +484,7 @@ private final class GiftSetupScreenComponent: Component {
         }
         
         private func proceedWithStarGift() {
-            guard !self.inProgress, let component = self.component, let environment = self.environment, let starsContext = component.context.starsContext, let starsState = starsContext.currentState else {
+            guard let component = self.component, let environment = self.environment, let starsContext = component.context.starsContext, let starsState = starsContext.currentState else {
                 return
             }
             
@@ -1043,6 +1037,7 @@ private final class GiftSetupScreenComponent: Component {
                         return false
                     },
                     sendEmoji: { _, _, _ in
+                        let _ = self
                     },
                     sendGif: { _, _, _, _, _ in
                         return false

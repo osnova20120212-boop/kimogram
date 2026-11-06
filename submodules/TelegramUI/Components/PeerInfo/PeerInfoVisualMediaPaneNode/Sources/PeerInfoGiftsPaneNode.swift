@@ -76,7 +76,6 @@ public final class PeerInfoGiftsPaneNode: ASDisplayNode, PeerInfoPaneNode, UIScr
     private let initialGiftCollectionId: Int64?
     
     private var resultsAreEmpty = false
-    public private(set) var isBottomPanelVisible = false
     
     private let chatControllerInteraction: ChatControllerInteraction
     
@@ -486,7 +485,7 @@ public final class PeerInfoGiftsPaneNode: ASDisplayNode, PeerInfoPaneNode, UIScr
         
         if let params = self.currentParams {
             let visibleBounds = self.scrollNode.bounds.insetBy(dx: 0.0, dy: -10.0)
-            let _ = self.giftsListView.update(size: params.size, sideInset: params.sideInset, bottomInset: params.bottomInset, deviceMetrics: params.deviceMetrics, visibleHeight: params.visibleHeight - self.frame.minY, isScrollingLockedAtTop: params.isScrollingLockedAtTop, expandProgress: params.expandProgress, presentationData: params.presentationData, synchronous: true, visibleBounds: visibleBounds, transition: .immediate)
+            let _ = self.giftsListView.update(size: params.size, sideInset: params.sideInset, bottomInset: params.bottomInset, deviceMetrics: params.deviceMetrics, visibleHeight: params.visibleHeight, isScrollingLockedAtTop: params.isScrollingLockedAtTop, expandProgress: params.expandProgress, presentationData: params.presentationData, synchronous: true, visibleBounds: visibleBounds, transition: .immediate)
         }
     }
     
@@ -744,7 +743,6 @@ public final class PeerInfoGiftsPaneNode: ASDisplayNode, PeerInfoPaneNode, UIScr
             if !self.canGift || self.resultsAreEmpty {
                 panelVisibility = 0.0
             }
-            self.isBottomPanelVisible = panelVisibility > 0.0
             
             if let current = self.panelContentContainer {
                 panelContentContainer = current
@@ -1202,7 +1200,7 @@ public final class PeerInfoGiftsPaneNode: ASDisplayNode, PeerInfoPaneNode, UIScr
                         return
                     }
                     let context = self.context
-                    let shareController = context.sharedContext.makeShareScreen(
+                    let shareController = context.sharedContext.makeShareController(
                         context: context,
                         params: ShareControllerParams(
                             subject: .url(link),
@@ -1370,8 +1368,6 @@ public final class PeerInfoGiftsPaneNode: ASDisplayNode, PeerInfoPaneNode, UIScr
                                     }
                                 })
                                 return profileGifts.transferStarGift(prepaid: transferStars == 0, reference: reference, peerId: peerId)
-                            }, withdraw: { reference, password in
-                                return profileGifts.withdrawStarGift(reference: reference, keepOnProfile: false, password: password)
                             })
                             self.parentController?.push(controller)
                         })
@@ -1449,7 +1445,7 @@ public final class PeerInfoGiftsPaneNode: ASDisplayNode, PeerInfoPaneNode, UIScr
         
         let visibleBounds = self.scrollNode.bounds.insetBy(dx: 0.0, dy: -10.0)
         
-        let contentHeight = self.giftsListView.update(size: size, sideInset: sideInset, bottomInset: bottomInset, deviceMetrics: deviceMetrics, visibleHeight: visibleHeight - self.frame.minY, isScrollingLockedAtTop: isScrollingLockedAtTop, expandProgress: expandProgress, presentationData: presentationData, synchronous: synchronous, visibleBounds: visibleBounds, transition: transition)
+        let contentHeight = self.giftsListView.update(size: size, sideInset: sideInset, bottomInset: bottomInset, deviceMetrics: deviceMetrics, visibleHeight: visibleHeight, isScrollingLockedAtTop: isScrollingLockedAtTop, expandProgress: expandProgress, presentationData: presentationData, synchronous: synchronous, visibleBounds: visibleBounds, transition: transition)
         transition.updateFrame(view: self.giftsListView, frame: CGRect(origin: CGPoint(), size: CGSize(width: size.width, height: max(size.height, contentHeight))))
         
         if isScrollingLockedAtTop {

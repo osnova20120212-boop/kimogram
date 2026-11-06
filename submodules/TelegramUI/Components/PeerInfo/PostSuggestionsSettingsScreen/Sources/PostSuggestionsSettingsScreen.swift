@@ -147,6 +147,10 @@ final class PostSuggestionsSettingsScreenComponent: Component {
             
             let navigationAlphaDistance: CGFloat = 16.0
             let navigationAlpha: CGFloat = max(0.0, min(1.0, (self.scrollView.contentOffset.y - navigationRevealOffsetY) / navigationAlphaDistance))
+            if let controller = self.environment?.controller(), let navigationBar = controller.navigationBar {
+                transition.setAlpha(layer: navigationBar.backgroundNode.layer, alpha: navigationAlpha)
+                transition.setAlpha(layer: navigationBar.stripeNode.layer, alpha: navigationAlpha)
+            }
             
             var scrolledUp = false
             if navigationAlpha < 0.5 {
@@ -196,7 +200,7 @@ final class PostSuggestionsSettingsScreenComponent: Component {
             }
             
             let context = component.context
-            let shareController = context.sharedContext.makeShareScreen(context: context, params: ShareControllerParams(subject: .url(link), updatedPresentationData: nil, actionCompleted: {
+            let shareController = context.sharedContext.makeShareController(context: context, params: ShareControllerParams(subject: .url(link), updatedPresentationData: nil, actionCompleted: {
                 let presentationData = context.sharedContext.currentPresentationData.with { $0 }
                 controller.present(UndoOverlayController(presentationData: presentationData, content: .linkCopied(title: nil, text: presentationData.strings.Conversation_LinkCopied), elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
             }, completed: { [weak controller] peerIds in

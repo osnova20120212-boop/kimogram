@@ -24,23 +24,17 @@ private final class MediaCutoutScreenComponent: Component {
     
     let context: AccountContext
     let mediaEditor: MediaEditor
-    let homeIndicatorInset: CGFloat
     
     init(
         context: AccountContext,
-        mediaEditor: MediaEditor,
-        homeIndicatorInset: CGFloat
+        mediaEditor: MediaEditor
     ) {
         self.context = context
         self.mediaEditor = mediaEditor
-        self.homeIndicatorInset = homeIndicatorInset
     }
     
     static func ==(lhs: MediaCutoutScreenComponent, rhs: MediaCutoutScreenComponent) -> Bool {
         if lhs.context !== rhs.context {
-            return false
-        }
-        if lhs.homeIndicatorInset != rhs.homeIndicatorInset {
             return false
         }
         return true
@@ -436,7 +430,7 @@ private final class MediaCutoutScreenComponent: Component {
                 // whole screen (iPhone Duo) that is not the visible area: it starts at the top, 44pt higher on a screen
                 // under 680pt, as in the editor's sticker mode.
                 var overlayFrame = previewContainerFrame
-                if !isTablet, let stickerPreviewFrame = mediaEditorStickerPreviewFrame(screenSize: availableSize, safeInsets: environment.safeInsets, reservedCorners: environment.reservedCorners, statusBarHeight: environment.statusBarHeight, hasStatusIsland: environment.navigationBarTrailingButtonsInset > 0.0, homeIndicatorInset: component.homeIndicatorInset) {
+                if !isTablet, let stickerPreviewFrame = mediaEditorStickerPreviewFrame(screenSize: availableSize, safeInsets: environment.safeInsets, reservedCorners: environment.reservedCorners, statusBarHeight: environment.statusBarHeight, hasStatusIsland: environment.navigationBarTrailingButtonsInset > 0.0) {
                     // iPhone Duo: the editor's narrowed sticker preview.
                     overlayFrame = stickerPreviewFrame
                 } else if previewSize.height > availableSize.height + 30.0 {
@@ -614,8 +608,7 @@ final class MediaCutoutScreen: ViewController {
                 component: AnyComponent(
                     MediaCutoutScreenComponent(
                         context: self.context,
-                        mediaEditor: controller.mediaEditor,
-                        homeIndicatorInset: layout.intrinsicInsets.bottom
+                        mediaEditor: controller.mediaEditor
                     )
                 ),
                 environment: {

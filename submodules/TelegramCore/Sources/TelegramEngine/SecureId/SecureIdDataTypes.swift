@@ -1,5 +1,5 @@
 import Foundation
-internal import TelegramApi
+import TelegramApi
 
 
 public struct SecureIdPersonName: Equatable {

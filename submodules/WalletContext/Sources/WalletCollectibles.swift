@@ -28,8 +28,7 @@ public extension WalletContext.Transaction.CollectibleTransfer {
             lottie: collectible.lottie,
             collectionName: collectible.collectionName,
             collectionUrl: collectible.collectionUrl,
-            kind: kind,
-            nft: collectible.nft
+            kind: kind
         )
     }
 }
@@ -52,13 +51,13 @@ func walletCollectible(from nft: WalletNftItem) -> WalletContext.Collectible {
         + extra.keys.sorted().filter { !urlKeys.contains($0) }.compactMap { extra[$0] as? String }
         + [nft.lottie, nft.image, nft.imageSmall, nft.contentUrl].compactMap { $0?.url })
         .compactMap(fragmentCollectibleUrl)
-    let collectionAddress = nft.collectionAddress.map(walletCollectibleAddressKey)
+    let collectionAddress = nft.collectionAddress.map(collectibleAddressKey)
     let kind: WalletContext.Collectible.Kind
     if collectionAddress == walletTelegramUsernamesCollection {
         kind = .username
     } else if collectionAddress == walletTelegramAnonymousNumbersCollection {
         kind = .anonymousNumber
-    } else if nft.gift != nil || urls.contains(where: { $0.path.lowercased().hasPrefix("/gift/") }) {
+    } else if urls.contains(where: { $0.path.lowercased().hasPrefix("/gift/") }) {
         kind = .gift
     } else if urls.contains(where: { $0.path.lowercased().hasPrefix("/username/") }) {
         kind = .username
@@ -75,16 +74,6 @@ func walletCollectible(from nft: WalletNftItem) -> WalletContext.Collectible {
             attributes[key] = value
         }
     }
-    if let gift = nft.gift {
-        for attribute in gift.attributes {
-            switch attribute {
-            case let .model(name, _, _, _): attributes["model"] = name
-            case let .pattern(name, _, _): attributes["pattern"] = name
-            case let .backdrop(name, _, _, _, _, _, _): attributes["backdrop"] = name
-            default: break
-            }
-        }
-    }
     let subtitle: String
     if kind == .gift, let model = attributes["model"], let backdrop = attributes["backdrop"] {
         subtitle = "\(model) on \(backdrop)"
@@ -96,7 +85,7 @@ func walletCollectible(from nft: WalletNftItem) -> WalletContext.Collectible {
         }
     }
     return WalletContext.Collectible(
-        address: walletCollectibleAddressKey(nft.address),
+        address: collectibleAddressKey(nft.address),
         name: name,
         subtitle: subtitle,
         kind: kind,
@@ -104,7 +93,7 @@ func walletCollectible(from nft: WalletNftItem) -> WalletContext.Collectible {
         collectionName: collectionName,
         collectionUrl: collectionUrl,
         attributes: attributes,
-        giftSlug: nft.gift?.slug ?? (kind == .gift ? walletCollectibleGiftSlug(name: name, urls: urls) : nil),
+        giftSlug: kind == .gift ? walletCollectibleGiftSlug(name: name, urls: urls) : nil,
         nft: nft
     )
 }
@@ -143,7 +132,7 @@ private func normalizedFragmentCollectibleUrl(_ value: String?) -> String? {
 }
 
 @available(macOS 10.15, *)
-func walletCollectibleAddressKey(_ address: String) -> String {
+private func collectibleAddressKey(_ address: String) -> String {
     return (try? convertTonAddress(value: address, format: .raw).lowercased()) ?? address
 }
 
@@ -172,11 +161,11 @@ extension WalletContext.CollectiblesState {
         var items = refresh ? [] : self.items
         var indices: [String: Int] = [:]
         for (index, item) in items.enumerated() {
-            indices[walletCollectibleAddressKey(item.address)] = index
+            indices[collectibleAddressKey(item.address)] = index
         }
         for nft in page.items {
             let item = walletCollectible(from: nft)
-            let key = walletCollectibleAddressKey(item.address)
+            let key = collectibleAddressKey(item.address)
             if let index = indices[key] {
                 items[index] = item
             } else {
@@ -193,9 +182,4 @@ extension WalletContext.CollectiblesState {
                     isLoadingMore: false,
                     error: error is CancellationError ? self.error : synchronizationError(error))
     }
-}
-
-@available(macOS 10.15, *)
-public extension WalletContext.Collectible {
-    init(nft: WalletNftItem) { self = walletCollectible(from: nft) }
 }

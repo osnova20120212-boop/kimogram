@@ -3,7 +3,6 @@ import AVFoundation
 import UIKit
 import SwiftSignalKit
 import Camera
-import TelegramCore
 
 final class PhotoCaptureContext: NSObject, AVCapturePhotoCaptureDelegate {
     private let ciContext: CIContext
@@ -28,7 +27,7 @@ final class PhotoCaptureContext: NSObject, AVCapturePhotoCaptureDelegate {
             self.pipe.putNext(.failed)
         } else {
             guard let photoPixelBuffer = photo.pixelBuffer else {
-                Logger.shared.log("Camera", "Photo capture produced no pixel buffer (\(String(describing: error)))")
+                print("Error occurred while capturing photo: Missing pixel buffer (\(String(describing: error)))")
                 self.pipe.putNext(.failed)
                 return
             }

@@ -2,7 +2,7 @@ import Foundation
 import Postbox
 import MtProtoKit
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 
 
 public func secureIdConfiguration(postbox: Postbox, network: Network) -> Signal<SecureIdConfiguration, NoError> {

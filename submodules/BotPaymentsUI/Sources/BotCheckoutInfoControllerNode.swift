@@ -334,6 +334,7 @@ final class BotCheckoutInfoControllerNode: ViewControllerTracingNode, ASScrollVi
     override func didLoad() {
         super.didLoad()
         
+        self.navigationBar?.updateBackgroundAlpha(0.0, transition: .immediate)
     }
     
     func updateCountry(_ iso2: String) {
@@ -570,6 +571,8 @@ final class BotCheckoutInfoControllerNode: ViewControllerTracingNode, ASScrollVi
         guard !self.scrollNode.view.ignoreUpdateBounds else {
             return
         }
+        let value = scrollView.contentOffset.y + scrollView.contentInset.top
+        self.navigationBar?.updateBackgroundAlpha(min(30.0, value) / 30.0, transition: .immediate)
     }
     
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {

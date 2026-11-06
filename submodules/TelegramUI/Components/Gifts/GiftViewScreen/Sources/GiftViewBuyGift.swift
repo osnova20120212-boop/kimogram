@@ -44,13 +44,6 @@ public func buyStarGiftImpl(
             return
         }
         
-        let finalPrice: CurrencyAmount
-        if let acceptedPrice, acceptedPrice.currency == currency {
-            finalPrice = acceptedPrice
-        } else {
-            finalPrice = resellAmount
-        }
-        
         let proceed: () -> Void = {
             updateProgress(true)
             
@@ -65,6 +58,7 @@ public func buyStarGiftImpl(
                 }
             }
             
+            let finalPrice = acceptedPrice ?? resellAmount
             let _ = (buyGiftImpl(uniqueGift.slug, recipientPeerId, finalPrice, message.hideName, message.text, message.entities)
             |> deliverOnMainQueue).start(error: { error in
                 guard let controller = getController() else {
@@ -81,11 +75,11 @@ public func buyStarGiftImpl(
                 case let .priceChanged(newPrice):
                     let errorTitle = presentationData.strings.Gift_Buy_ErrorPriceChanged_Title
                     let originalPriceString: String
-                    switch finalPrice.currency {
+                    switch resellAmount.currency {
                     case .stars:
-                        originalPriceString = presentationData.strings.Gift_Buy_ErrorPriceChanged_Text_Stars(Int32(clamping: finalPrice.amount.value))
+                        originalPriceString = presentationData.strings.Gift_Buy_ErrorPriceChanged_Text_Stars(Int32(clamping: resellAmount.amount.value))
                     case .ton:
-                        originalPriceString = formatTonAmountText(finalPrice.amount.value, dateTimeFormat: presentationData.dateTimeFormat, maxDecimalPositions: nil, formatString: presentationData.strings.Currency_Grams)
+                        originalPriceString = formatTonAmountText(resellAmount.amount.value, dateTimeFormat: presentationData.dateTimeFormat, maxDecimalPositions: nil, formatString: presentationData.strings.Currency_Grams)
                     }
                     
                     let newPriceString: String
@@ -93,7 +87,7 @@ public func buyStarGiftImpl(
                     switch newPrice.currency {
                     case .stars:
                         newPriceString = presentationData.strings.Gift_Buy_ErrorPriceChanged_Text_Stars(Int32(clamping: newPrice.amount.value))
-                        buttonText = presentationData.strings.Gift_Buy_Confirm_BuyFor(Int32(clamping: newPrice.amount.value))
+                        buttonText = presentationData.strings.Gift_Buy_Confirm_BuyFor(Int32(newPrice.amount.value))
                     case .ton:
                         let tonValueString = formatTonAmountText(newPrice.amount.value, dateTimeFormat: presentationData.dateTimeFormat, maxDecimalPositions: nil)
                         newPriceString = formatTonAmountText(newPrice.amount.value, dateTimeFormat: presentationData.dateTimeFormat, maxDecimalPositions: nil, formatString: presentationData.strings.Currency_Grams)
@@ -149,7 +143,7 @@ public func buyStarGiftImpl(
             })
         }
         
-        if finalPrice.currency == .stars, let starsContext = context.starsContext, let starsState = context.starsContext?.currentState, starsState.balance < finalPrice.amount {
+        if resellAmount.currency == .stars, let starsContext = context.starsContext, let starsState = context.starsContext?.currentState, starsState.balance < resellAmount.amount {
             let _ = (starsTopUpOptions
              |> filter { $0 != nil }
              |> take(1)
@@ -161,7 +155,7 @@ public func buyStarGiftImpl(
                     context: context,
                     starsContext: starsContext,
                     options: options ?? [],
-                    purpose: .buyStarGift(requiredStars: finalPrice.amount.value),
+                    purpose: .buyStarGift(requiredStars: resellAmount.amount.value),
                     targetPeerId: nil,
                     customTheme: nil,
                     completion: { stars in
@@ -177,7 +171,7 @@ public func buyStarGiftImpl(
                                 guard let starsContext = context.starsContext, let starsState = starsContext.currentState else {
                                     return
                                 }
-                                if starsState.balance < finalPrice.amount {
+                                if starsState.balance < resellAmount.amount {
                                     updateProgress(false)
                                     
                                     buyStarGiftImpl(
@@ -204,11 +198,11 @@ public func buyStarGiftImpl(
                 )
                 controller.push(purchaseController)
             })
-        } else if finalPrice.currency == .ton, let tonState = context.tonContext?.currentState, tonState.balance < finalPrice.amount {
+        } else if resellAmount.currency == .ton, let tonState = context.tonContext?.currentState, tonState.balance < resellAmount.amount {
             guard let controller = getController() else {
                 return
             }
-            let needed = finalPrice.amount - tonState.balance
+            let needed = resellAmount.amount - tonState.balance
             var fragmentUrl = "https://fragment.com/ads/topup"
             if let data = context.currentAppConfiguration.with({ $0 }).data, let value = data["ton_topup_url"] as? String {
                 fragmentUrl = value

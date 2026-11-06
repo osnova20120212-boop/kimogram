@@ -3,7 +3,7 @@ import UIKit
 import SwiftSignalKit
 import TelegramCore
 
-public final class CachedStickerAJpegRepresentation: EngineMediaResourceRepresentation {
+public final class CachedStickerAJpegRepresentation: EngineRawCachedMediaResourceRepresentation {
     public let size: CGSize?
     public let keepDuration: EngineCachedMediaRepresentationKeepDuration = .general
     
@@ -33,7 +33,7 @@ public enum CachedScaledImageRepresentationMode: Int32 {
     case aspectFit = 1
 }
 
-public final class CachedScaledImageRepresentation: EngineMediaResourceRepresentation {
+public final class CachedScaledImageRepresentation: EngineRawCachedMediaResourceRepresentation {
     public let keepDuration: EngineCachedMediaRepresentationKeepDuration = .general
     
     public let size: CGSize
@@ -57,7 +57,7 @@ public final class CachedScaledImageRepresentation: EngineMediaResourceRepresent
     }
 }
 
-public final class CachedVideoFirstFrameRepresentation: EngineMediaResourceRepresentation {
+public final class CachedVideoFirstFrameRepresentation: EngineRawCachedMediaResourceRepresentation {
     public let keepDuration: EngineCachedMediaRepresentationKeepDuration = .general
     
     public var uniqueId: String {
@@ -76,7 +76,7 @@ public final class CachedVideoFirstFrameRepresentation: EngineMediaResourceRepre
     }
 }
 
-public final class CachedVideoPrefixFirstFrameRepresentation: EngineMediaResourceRepresentation {
+public final class CachedVideoPrefixFirstFrameRepresentation: EngineRawCachedMediaResourceRepresentation {
     public let keepDuration: EngineCachedMediaRepresentationKeepDuration = .general
     
     public var uniqueId: String {
@@ -101,7 +101,7 @@ public final class CachedVideoPrefixFirstFrameRepresentation: EngineMediaResourc
     }
 }
 
-public final class CachedScaledVideoFirstFrameRepresentation: EngineMediaResourceRepresentation {
+public final class CachedScaledVideoFirstFrameRepresentation: EngineRawCachedMediaResourceRepresentation {
     public let keepDuration: EngineCachedMediaRepresentationKeepDuration = .general
     
     public let size: CGSize
@@ -123,7 +123,7 @@ public final class CachedScaledVideoFirstFrameRepresentation: EngineMediaResourc
     }
 }
 
-public final class CachedBlurredWallpaperRepresentation: EngineMediaResourceRepresentation {
+public final class CachedBlurredWallpaperRepresentation: EngineRawCachedMediaResourceRepresentation {
     public let keepDuration: EngineCachedMediaRepresentationKeepDuration = .general
     
     public var uniqueId: String {
@@ -142,7 +142,7 @@ public final class CachedBlurredWallpaperRepresentation: EngineMediaResourceRepr
     }
 }
 
-public final class CachedAlbumArtworkRepresentation: EngineMediaResourceRepresentation {
+public final class CachedAlbumArtworkRepresentation: EngineRawCachedMediaResourceRepresentation {
     public let keepDuration: EngineCachedMediaRepresentationKeepDuration = .general
     
     public let size: CGSize?
@@ -168,7 +168,7 @@ public final class CachedAlbumArtworkRepresentation: EngineMediaResourceRepresen
     }
 }
 
-public final class CachedEmojiThumbnailRepresentation: EngineMediaResourceRepresentation {
+public final class CachedEmojiThumbnailRepresentation: EngineRawCachedMediaResourceRepresentation {
     public let keepDuration: EngineCachedMediaRepresentationKeepDuration = .general
     
     public let outline: Bool
@@ -190,7 +190,7 @@ public final class CachedEmojiThumbnailRepresentation: EngineMediaResourceRepres
     }
 }
 
-public final class CachedEmojiRepresentation: EngineMediaResourceRepresentation {
+public final class CachedEmojiRepresentation: EngineRawCachedMediaResourceRepresentation {
     public let keepDuration: EngineCachedMediaRepresentationKeepDuration = .general
     
     public let tile: UInt8
@@ -239,7 +239,7 @@ public enum EmojiFitzModifier: Int32, Equatable {
     }
 }
 
-public final class CachedAnimatedStickerFirstFrameRepresentation: EngineMediaResourceRepresentation {
+public final class CachedAnimatedStickerFirstFrameRepresentation: EngineRawCachedMediaResourceRepresentation {
     public let keepDuration: EngineCachedMediaRepresentationKeepDuration = .general
     
     public let width: Int32
@@ -279,7 +279,7 @@ public final class CachedAnimatedStickerFirstFrameRepresentation: EngineMediaRes
     }
 }
 
-public final class CachedAnimatedStickerRepresentation: EngineMediaResourceRepresentation {
+public final class CachedAnimatedStickerRepresentation: EngineRawCachedMediaResourceRepresentation {
     public let keepDuration: EngineCachedMediaRepresentationKeepDuration = .shortLived
     
     public let width: Int32
@@ -319,7 +319,7 @@ public final class CachedAnimatedStickerRepresentation: EngineMediaResourceRepre
     }
 }
 
-public final class CachedVideoStickerRepresentation: EngineMediaResourceRepresentation {
+public final class CachedVideoStickerRepresentation: EngineRawCachedMediaResourceRepresentation {
     public let keepDuration: EngineCachedMediaRepresentationKeepDuration = .shortLived
     
     public let width: Int32
@@ -351,7 +351,7 @@ public final class CachedVideoStickerRepresentation: EngineMediaResourceRepresen
     }
 }
 
-public final class CachedPreparedPatternWallpaperRepresentation: EngineMediaResourceRepresentation {
+public final class CachedPreparedPatternWallpaperRepresentation: EngineRawCachedMediaResourceRepresentation {
     public let keepDuration: EngineCachedMediaRepresentationKeepDuration = .general
     
     public var uniqueId: String {
@@ -371,7 +371,7 @@ public final class CachedPreparedPatternWallpaperRepresentation: EngineMediaReso
 }
 
 
-public final class CachedPreparedSvgRepresentation: EngineMediaResourceRepresentation {
+public final class CachedPreparedSvgRepresentation: EngineRawCachedMediaResourceRepresentation {
     public let keepDuration: EngineCachedMediaRepresentationKeepDuration = .general
     
     public var uniqueId: String {
@@ -384,32 +384,6 @@ public final class CachedPreparedSvgRepresentation: EngineMediaResourceRepresent
     public func isEqual(to: EngineRawCachedMediaResourceRepresentation) -> Bool {
         if to is CachedPreparedSvgRepresentation {
             return true
-        } else {
-            return false
-        }
-    }
-}
-
-public final class CachedPassImageRepresentation: EngineRawCachedMediaResourceRepresentation {
-    public let keepDuration: EngineCachedMediaRepresentationKeepDuration = .general
-    
-    public let language: String
-    public let scale: Int
-    public let layoutVersion: Int
-    
-    public var uniqueId: String {
-        return "pass-image-v\(self.layoutVersion)-\(self.scale)x-\(self.language)"
-    }
-    
-    public init(language: String, scale: Int, layoutVersion: Int) {
-        self.language = String(language.filter { ($0.isASCII && $0.isLetter) || $0 == "-" }.prefix(16))
-        self.scale = scale
-        self.layoutVersion = layoutVersion
-    }
-    
-    public func isEqual(to: EngineRawCachedMediaResourceRepresentation) -> Bool {
-        if let to = to as? CachedPassImageRepresentation {
-            return self.language == to.language && self.scale == to.scale && self.layoutVersion == to.layoutVersion
         } else {
             return false
         }

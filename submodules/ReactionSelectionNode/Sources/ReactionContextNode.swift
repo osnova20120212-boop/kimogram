@@ -5,6 +5,7 @@ import AsyncDisplayKit
 import Display
 import AnimatedStickerNode
 import TelegramCore
+import Postbox
 import TelegramPresentationData
 import AccountContext
 import TelegramAnimatedStickerNode
@@ -1463,7 +1464,7 @@ public final class ReactionContextNode: ASDisplayNode, ASScrollViewDelegate {
                             }
                         }
                         if let emojiView = reactionSelectionComponentHost.findTaggedView(tag: EmojiPagerContentComponent.Tag(id: AnyHashable("emoji"))) as? EmojiPagerContentComponent.View {
-                            var initialPositionAndFrame: [EngineMedia.Id: (frame: CGRect, cornerRadius: CGFloat, frameIndex: Int, placeholder: UIImage)] = [:]
+                            var initialPositionAndFrame: [MediaId: (frame: CGRect, cornerRadius: CGFloat, frameIndex: Int, placeholder: UIImage)] = [:]
                             for (_, itemNode) in self.visibleItemNodes {
                                 guard let itemNode = itemNode as? ReactionNode else {
                                     continue
@@ -1738,7 +1739,7 @@ public final class ReactionContextNode: ASDisplayNode, ASScrollViewDelegate {
             openSearch: {
             },
             addGroupAction: { [weak self] groupId, isPremiumLocked, _ in
-                guard let strongSelf = self, let collectionId = groupId.base as? EngineItemCollectionId else {
+                guard let strongSelf = self, let collectionId = groupId.base as? ItemCollectionId else {
                     return
                 }
                 
@@ -2091,7 +2092,7 @@ public final class ReactionContextNode: ASDisplayNode, ASScrollViewDelegate {
                                         
                                         var items: [EmojiPagerContentComponent.Item] = []
                                         
-                                        var existingIds = Set<EngineMedia.Id>()
+                                        var existingIds = Set<MediaId>()
                                         for item in result {
                                             if let itemFile = item.1 {
                                                 if existingIds.contains(itemFile.fileId) {
@@ -2134,7 +2135,7 @@ public final class ReactionContextNode: ASDisplayNode, ASScrollViewDelegate {
                                         combinedSets = foundLocalPacks
                                         combinedSets = combinedSets.merge(with: foundPacks.sets)
                                         
-                                        var existingCollectionIds = Set<EngineItemCollectionId>()
+                                        var existingCollectionIds = Set<ItemCollectionId>()
                                         for (collectionId, info, _, _) in combinedSets.infos {
                                             if !existingCollectionIds.contains(collectionId) {
                                                 existingCollectionIds.insert(collectionId)
@@ -2355,7 +2356,7 @@ public final class ReactionContextNode: ASDisplayNode, ASScrollViewDelegate {
                         |> mapToSignal { files, isFinalResult -> Signal<(items: [EmojiPagerContentComponent.ItemGroup], isFinalResult: Bool), NoError> in
                             var items: [EmojiPagerContentComponent.Item] = []
                             
-                            var existingIds = Set<EngineMedia.Id>()
+                            var existingIds = Set<MediaId>()
                             for itemFile in files {
                                 if existingIds.contains(itemFile.fileId) {
                                     continue
@@ -3332,13 +3333,13 @@ public final class StandaloneReactionAnimation: ASDisplayNode {
         self.isUserInteractionEnabled = false
     }
     
-    public func animateReactionSelection(context: AccountContext, theme: PresentationTheme, animationCache: AnimationCache, reaction: ReactionItem, customEffectResource: TelegramMediaResource? = nil, avatarPeers: [EnginePeer], playHaptic: Bool, isLarge: Bool, playCenterReaction: Bool = true, forceSmallEffectAnimation: Bool = false, hideCenterAnimation: Bool = false, targetView: UIView, addStandaloneReactionAnimation: ((StandaloneReactionAnimation) -> Void)?, onHit: (() -> Void)? = nil, completion: @escaping () -> Void) {
+    public func animateReactionSelection(context: AccountContext, theme: PresentationTheme, animationCache: AnimationCache, reaction: ReactionItem, customEffectResource: MediaResource? = nil, avatarPeers: [EnginePeer], playHaptic: Bool, isLarge: Bool, playCenterReaction: Bool = true, forceSmallEffectAnimation: Bool = false, hideCenterAnimation: Bool = false, targetView: UIView, addStandaloneReactionAnimation: ((StandaloneReactionAnimation) -> Void)?, onHit: (() -> Void)? = nil, completion: @escaping () -> Void) {
         self.animateReactionSelection(context: context, theme: theme, animationCache: animationCache, reaction: reaction, customEffectResource: customEffectResource, avatarPeers: avatarPeers, playHaptic: playHaptic, isLarge: isLarge, playCenterReaction: playCenterReaction, forceSmallEffectAnimation: forceSmallEffectAnimation, hideCenterAnimation: hideCenterAnimation, targetView: targetView, addStandaloneReactionAnimation: addStandaloneReactionAnimation, currentItemNode: nil, onHit: onHit, completion: completion)
     }
         
     public var currentDismissAnimation: (() -> Void)?
     
-    public func animateReactionSelection(context: AccountContext, theme: PresentationTheme, animationCache: AnimationCache, reaction: ReactionItem, customEffectResource: TelegramMediaResource? = nil, avatarPeers: [EnginePeer], playHaptic: Bool, isLarge: Bool, playCenterReaction: Bool = true, forceSmallEffectAnimation: Bool = false, hideCenterAnimation: Bool = false, targetView: UIView, addStandaloneReactionAnimation: ((StandaloneReactionAnimation) -> Void)?, currentItemNode: ReactionNode?, onHit: (() -> Void)? = nil, completion: @escaping () -> Void) {
+    public func animateReactionSelection(context: AccountContext, theme: PresentationTheme, animationCache: AnimationCache, reaction: ReactionItem, customEffectResource: MediaResource? = nil, avatarPeers: [EnginePeer], playHaptic: Bool, isLarge: Bool, playCenterReaction: Bool = true, forceSmallEffectAnimation: Bool = false, hideCenterAnimation: Bool = false, targetView: UIView, addStandaloneReactionAnimation: ((StandaloneReactionAnimation) -> Void)?, currentItemNode: ReactionNode?, onHit: (() -> Void)? = nil, completion: @escaping () -> Void) {
         guard let sourceSnapshotView = targetView.snapshotContentTree() else {
             completion()
             return
@@ -3459,7 +3460,7 @@ public final class StandaloneReactionAnimation: ASDisplayNode {
             itemNode.updateLayout(size: expandedFrame.size, isExpanded: true, largeExpanded: isLarge, isPreviewing: false, transition: .immediate)
         }
         
-        var additionalAnimationResource: TelegramMediaResource?
+        var additionalAnimationResource: MediaResource?
         if isLarge && !forceSmallEffectAnimation {
             additionalAnimationResource = reaction.largeApplicationAnimation?._parse().resource
         } else if case .stars = reaction.reaction.rawValue {

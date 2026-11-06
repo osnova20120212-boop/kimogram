@@ -1,5 +1,5 @@
 import Foundation
-internal import TelegramApi
+import TelegramApi
 import Postbox
 import SwiftSignalKit
 
@@ -8,7 +8,7 @@ public enum StandaloneUploadMediaError {
     case generic
 }
 
-enum StandaloneUploadMediaThumbnailResult {
+public enum StandaloneUploadMediaThumbnailResult {
     case pending
     case file(Api.InputFile)
     case none

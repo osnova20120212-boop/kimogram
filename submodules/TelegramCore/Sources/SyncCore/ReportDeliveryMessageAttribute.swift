@@ -1,6 +1,6 @@
 import Foundation
 import Postbox
-internal import TelegramApi
+import TelegramApi
 
 public final class ReportDeliveryMessageAttribute: Equatable, MessageAttribute {
     public let untilDate: Int32

@@ -539,13 +539,13 @@ public enum DeviceMetrics: CaseIterable, Equatable {
 
     public var hasTopNotch: Bool {
         switch self {
-            case .iPhoneX, .iPhoneXSMax, .iPhoneXr, .iPhone12Mini, .iPhone12, .iPhone12ProMax, .iPhone13Mini, .iPhone13, .iPhone13Pro, .iPhone13ProMax:
+            case .iPhoneX, .iPhoneXSMax, .iPhoneXr, .iPhone12Mini, .iPhone12, .iPhone12ProMax:
                 return true
             default:
                 return false
         }
     }
-
+    
     public var hasDynamicIsland: Bool {
         switch self {
             case .iPhone14Pro, .iPhone14ProZoomed, .iPhone14ProMax, .iPhone14ProMaxZoomed, .iPhone16Pro, .iPhone16ProMax, .iPhoneAir, .iPhone18Pro, .iPhone18ProMax:
@@ -556,12 +556,9 @@ public enum DeviceMetrics: CaseIterable, Equatable {
     }
     
     public var showAppBadge: Bool {
-        // The minis are left out as they were while they matched the iPhone X by screen size.
-        switch self {
-        case .iPhoneX, .iPhone12Mini, .iPhone13Mini:
+        if case .iPhoneX = self {
             return false
-        default:
-            return self.hasTopNotch
         }
+        return self.hasTopNotch
     }
 }

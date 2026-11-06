@@ -38,7 +38,6 @@ final class GiftOptionsScreenComponent: Component {
     let peerId: EnginePeer.Id
     let premiumOptions: [CachedPremiumGiftOption]
     let hasBirthday: Bool
-    let opensCollectibles: Bool
     let completion: (() -> Void)?
     
     init(
@@ -48,7 +47,6 @@ final class GiftOptionsScreenComponent: Component {
         peerId: EnginePeer.Id,
         premiumOptions: [CachedPremiumGiftOption],
         hasBirthday: Bool,
-        opensCollectibles: Bool,
         completion: (() -> Void)?
     ) {
         self.context = context
@@ -57,7 +55,6 @@ final class GiftOptionsScreenComponent: Component {
         self.peerId = peerId
         self.premiumOptions = premiumOptions
         self.hasBirthday = hasBirthday
-        self.opensCollectibles = opensCollectibles
         self.completion = completion
     }
 
@@ -311,7 +308,7 @@ final class GiftOptionsScreenComponent: Component {
                     mainController = controller
                 }
                 if case let .generic(gift) = gift {
-                    if !skipDateCheck, let lockedUntilDate = gift.lockedUntilDate, currentTime < lockedUntilDate {
+                    if let lockedUntilDate = gift.lockedUntilDate, currentTime < lockedUntilDate {
                         self.loadingGiftId = gift.id
                         Queue.mainQueue().after(0.25) {
                             if self.loadingGiftId != nil {
@@ -1045,9 +1042,6 @@ final class GiftOptionsScreenComponent: Component {
                 }
                 
                 self.resaleConfiguration = StarsSubscriptionConfiguration.with(appConfiguration: component.context.currentAppConfiguration.with { $0 })
-                if component.opensCollectibles {
-                    self.starsFilter = .resale
-                }
             }
             self.component = component
             
@@ -1973,7 +1967,6 @@ open class GiftOptionsScreen: ViewControllerComponentContainer, GiftOptionsScree
         peerId: EnginePeer.Id,
         premiumOptions: [CachedPremiumGiftOption],
         hasBirthday: Bool,
-        opensCollectibles: Bool = false,
         completion: (() -> Void)? = nil
     ) {
         self.context = context
@@ -1987,7 +1980,6 @@ open class GiftOptionsScreen: ViewControllerComponentContainer, GiftOptionsScree
             peerId: peerId,
             premiumOptions: premiumOptions,
             hasBirthday: hasBirthday,
-            opensCollectibles: opensCollectibles,
             completion: completion
         ), navigationBarAppearance: .none, theme: .default, updatedPresentationData: nil)
         

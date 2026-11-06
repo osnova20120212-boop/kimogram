@@ -166,11 +166,6 @@ public struct Namespaces {
         public static let cachedExistingWaltBalance: Int8 = 57
         public static let notificationRequestMessageIds: Int8 = 58
         public static let cachedWalletUserAddresses: Int8 = 59
-        /// The News feed's caches, told apart by the first byte of the key (FeedCache.swift).
-        /// TelegramCore's ids must stay below 64, where applicationSpecificItemCacheCollectionId starts.
-        public static let feed: Int8 = 60
-        public static let shareThemeBackdrops: Int8 = 61
-        public static let cachedUniqueStarGifts: Int8 = 62
     }
     
     public struct UnorderedItemList {

@@ -398,10 +398,6 @@ final class MediaEditorComposerStickerEntity: MediaEditorComposerEntity {
                 completion(ciImage)
                 return
             }
-            // Neither branch applied — no frame rate has been resolved yet and nothing is cached.
-            // The caller counts completions to finish the frame, so it has to hear about this.
-            completion(self.image)
-            return
         } else if case .video = self.content {
             if self.videoOutput == nil {
                 self.setupVideoOutput()
@@ -468,10 +464,6 @@ final class MediaEditorComposerStickerEntity: MediaEditorComposerEntity {
                         
                         self.image = ciImage
                         completion(ciImage)
-                    } else {
-                        // Reader produced nothing and is not simply at its end. Reuse the last
-                        // frame rather than dropping the entity, matching `processFrame` below.
-                        completion(self.image)
                     }
                 }
             } else {
@@ -626,12 +618,10 @@ final class MediaEditorComposerStickerEntity: MediaEditorComposerEntity {
                 let _ = (self.imagePromise.get()
                 |> take(1)
                 |> deliverOn(self.queue)).start(next: { [weak self] image in
-                    guard let self else {
-                        completion(nil)
-                        return
+                    if let self {
+                        self.image = CIImage(image: image, options: [.colorSpace: self.colorSpace])
+                        completion(self.image)
                     }
-                    self.image = CIImage(image: image, options: [.colorSpace: self.colorSpace])
-                    completion(self.image)
                 })
             }
         }

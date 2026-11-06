@@ -1,5 +1,4 @@
 import Foundation
-import TelegramCore
 import UIKit
 import Metal
 import MetalPerformanceShaders
@@ -119,7 +118,7 @@ private final class EnhanceLUTGeneratorPass: RenderPass {
         do {
             self.pipelineState = try device.makeComputePipelineState(descriptor: pipelineDescriptor, options: .argumentInfo, reflection: nil)
         } catch {
-            Logger.shared.log("MediaEditor", "EnhanceRenderPass: failed to create pipeline state: \(error.localizedDescription)")
+            print(error.localizedDescription)
         }
     }
     

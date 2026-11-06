@@ -91,8 +91,6 @@ private final class GiftAuctionAcquiredScreenComponent: Component {
         private var isUpdating: Bool = false
         private var environment: ViewControllerComponentContainer.Environment?
         private var itemLayout: ItemLayout?
-        private var loadedAcquiredGifts: [GiftAuctionAcquiredGift]?
-        private var acquiredGiftsDisposable: Disposable?
         /// The container's bottom corners where the screen's differ (iPhone Duo's cover screen); nil elsewhere.
         private var containerBottomCornerRadii: CornerRadii?
                 
@@ -284,29 +282,11 @@ private final class GiftAuctionAcquiredScreenComponent: Component {
             }
         }
       
-        deinit {
-            self.acquiredGiftsDisposable?.dispose()
-        }
-        
         func update(component: GiftAuctionAcquiredScreenComponent, availableSize: CGSize, state: EmptyComponentState, environment: Environment<ViewControllerComponentContainer.Environment>, transition: ComponentTransition) -> CGSize {
             self.isUpdating = true
             defer {
                 self.isUpdating = false
             }
-            
-            if self.component == nil, component.acquiredGifts.isEmpty {
-                self.acquiredGiftsDisposable = (component.context.engine.payments.getGiftAuctionAcquiredGifts(giftId: component.gift.giftId)
-                |> deliverOnMainQueue).startStrict(next: { [weak self] acquiredGifts in
-                    guard let self else {
-                        return
-                    }
-                    self.loadedAcquiredGifts = acquiredGifts
-                    if !self.isUpdating {
-                        self.state?.updated(transition: .immediate)
-                    }
-                })
-            }
-            let acquiredGifts = self.loadedAcquiredGifts ?? component.acquiredGifts
             
             let environment = environment[ViewControllerComponentContainer.Environment.self].value
             let themeUpdated = self.environment?.theme !== environment.theme
@@ -345,7 +325,7 @@ private final class GiftAuctionAcquiredScreenComponent: Component {
             
             let tableTextColor = environment.theme.list.itemPrimaryTextColor
             
-            for gift in acquiredGifts {
+            for gift in component.acquiredGifts {
                 let id = gift.date
                 let itemView: ComponentView<Empty>
                 if let current = self.itemsViews[id] {
@@ -532,7 +512,7 @@ private final class GiftAuctionAcquiredScreenComponent: Component {
             let title = self.title
             let actionButton = self.actionButton
             
-            let titleText = environment.strings.Gift_Acquired_Title(Int32(acquiredGifts.count))
+            let titleText = environment.strings.Gift_Acquired_Title(Int32(component.acquiredGifts.count))
             let titleSize = title.update(
                 transition: .immediate,
                 component: AnyComponent(MultilineTextComponent(

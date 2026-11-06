@@ -3189,7 +3189,7 @@ final class TextContentItemLayer: SimpleLayer {
                 primaryColor: blockQuote.tintColor,
                 secondaryColor: blockQuote.secondaryTintColor,
                 thirdColor: blockQuote.tertiaryTintColor,
-                backgroundColor: blockQuote.data.fillColor,
+                backgroundColor: nil,
                 pattern: nil,
                 patternTopRightPosition: nil,
                 patternAlpha: 1.0,

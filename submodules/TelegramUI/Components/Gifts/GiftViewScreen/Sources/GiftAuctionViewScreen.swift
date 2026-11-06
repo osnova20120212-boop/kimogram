@@ -74,7 +74,7 @@ private final class GiftAuctionViewSheetContent: CombinedComponent {
         
         private var giftAuctionTimer: SwiftSignalKit.Timer?
         fileprivate var giftAuctionAcquiredGifts: [GiftAuctionAcquiredGift] = []
-        private var didLoadGiftAuctionAcquiredGifts = false
+        private var giftAuctionAcquiredGiftsPromise = ValuePromise<[GiftAuctionAcquiredGift]>()
         private var giftAuctionAcquiredGiftsDisposable = MetaDisposable()
         
         private(set) var giftUpgradeAttributes: [StarGift.UniqueGift.Attribute]?
@@ -224,7 +224,7 @@ private final class GiftAuctionViewSheetContent: CombinedComponent {
                     return
                 }
                 self.giftAuctionAcquiredGifts = acquiredGifts
-                self.didLoadGiftAuctionAcquiredGifts = true
+                self.giftAuctionAcquiredGiftsPromise.set(acquiredGifts)
                 self.updated(transition: .easeInOut(duration: 0.25))
             }))
         }
@@ -279,13 +279,7 @@ private final class GiftAuctionViewSheetContent: CombinedComponent {
                 compactUpgradeAttributes.append(contentsOf: self.previewSymbols)
             }
             
-            let acquiredGifts: Signal<[GiftAuctionAcquiredGift], NoError>
-            if self.didLoadGiftAuctionAcquiredGifts || (self.giftAuctionState?.myState.acquiredCount ?? 0) == 0 {
-                acquiredGifts = .single(self.giftAuctionAcquiredGifts)
-            } else {
-                acquiredGifts = self.context.engine.payments.getGiftAuctionAcquiredGifts(giftId: self.auctionContext.gift.giftId)
-            }
-            controller.completion(acquiredGifts, !compactUpgradeAttributes.isEmpty ? compactUpgradeAttributes : nil)
+            controller.completion(self.giftAuctionAcquiredGiftsPromise.get(), !compactUpgradeAttributes.isEmpty ? compactUpgradeAttributes : nil)
         }
         
         func openPeer(_ peer: EnginePeer, dismiss: Bool = true) {
@@ -336,7 +330,7 @@ private final class GiftAuctionViewSheetContent: CombinedComponent {
                 link = "https://t.me/auction/\(slug)"
             }
             
-            let shareController = self.context.sharedContext.makeShareScreen(
+            let shareController = self.context.sharedContext.makeShareController(
                 context: self.context,
                 params: ShareControllerParams(
                     subject: .url(link),
@@ -691,7 +685,7 @@ private final class GiftAuctionViewSheetContent: CombinedComponent {
                                 if case let .extendable(_, _, top, window) = round {
                                     var windowString: String
                                     if window % 60 == 0 {
-                                        windowString = strings.Gift_Auction_Minutes(window / 60)
+                                        windowString = strings.Gift_Auction_Minutes(window)
                                     } else {
                                         windowString = strings.Gift_Auction_Seconds(window)
                                     }

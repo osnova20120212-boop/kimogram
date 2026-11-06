@@ -458,12 +458,10 @@ public class ChatMessageReplyInfoNode: ASDisplayNode {
                 textLeftInset += 16.0
                 
                 todoItemCompleted = todo.completions.contains(where: { $0.id == todoItemId })
-            } else if let message = arguments.message, isText || arguments.quote.flatMap({ $0.quote.richText != nil && !$0.quote.text.isEmpty }) == true {
-                // A rich target reports `isText == false` (`descriptionStringForMessage` previews its
-                // page), but a rich quote has a flat form to show like any other quote.
+            } else if isText, let message = arguments.message {
                 var text: String
                 var messageEntities: [MessageTextEntity]
-
+                
                 if let quote = arguments.quote?.quote, !quote.text.isEmpty {
                     text = quote.text
                     messageEntities = quote.entities
@@ -471,9 +469,8 @@ public class ChatMessageReplyInfoNode: ASDisplayNode {
                     text = foldLineBreaks(message.text)
                     messageEntities = message.textEntitiesAttribute?.entities ?? []
                 }
-
-                // A rich message's translation is a page, not text to show in place of the quote.
-                if let translateToLanguage = arguments.associatedData.translateToLanguage, !text.isEmpty, arguments.quote?.quote.richText == nil {
+                
+                if let translateToLanguage = arguments.associatedData.translateToLanguage, !text.isEmpty {
                     for attribute in message.attributes {
                         if let attribute = attribute as? TranslationMessageAttribute, !attribute.text.isEmpty, attribute.toLang == translateToLanguage {
                             text = attribute.text

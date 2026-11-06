@@ -717,7 +717,8 @@ public func recentSessionsController(context: AccountContext, activeSessionsCont
         }
         
         removeSessionDisposable.set(((webSessionsContext.remove(hash: sessionId)
-        |> ignoreValues)
+        |> mapToSignal { _ -> Signal<Void, NoError> in
+        })
         |> deliverOnMainQueue).start(error: { _ in
         }, completed: {
             updateState {
@@ -993,9 +994,9 @@ public func recentSessionsController(context: AccountContext, activeSessionsCont
         
         if sessionsState.sessions.count > 1 {
             if state.terminatingOtherSessions {
-                rightNavigationButton = ItemListNavigationButton(content: .none, style: .activity, enabled: true, staysInRow: true, action: {})
+                rightNavigationButton = ItemListNavigationButton(content: .none, style: .activity, enabled: true, action: {})
             } else if state.editing {
-                rightNavigationButton = ItemListNavigationButton(content: .icon(.done), style: .bold, enabled: true, staysInRow: true, action: {
+                rightNavigationButton = ItemListNavigationButton(content: .icon(.done), style: .bold, enabled: true, action: {
                     updateState { state in
                         return state.withUpdatedEditing(false)
                     }

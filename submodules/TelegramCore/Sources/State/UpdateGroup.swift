@@ -1,5 +1,5 @@
 import Foundation
-internal import TelegramApi
+import TelegramApi
 import Postbox
 
 enum UpdateGroup {

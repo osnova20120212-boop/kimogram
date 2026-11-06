@@ -2,7 +2,7 @@ import Foundation
 import Postbox
 import SwiftSignalKit
 import MtProtoKit
-internal import TelegramApi
+import TelegramApi
 
 final class AccountTaskManager {
     private final class Impl {

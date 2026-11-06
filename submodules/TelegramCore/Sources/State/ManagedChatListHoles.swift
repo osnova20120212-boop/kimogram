@@ -1,7 +1,7 @@
 import Foundation
 import Postbox
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 
 private final class ManagedChatListHolesState {
     private var currentHole: (ChatListHolesEntry, Disposable)?

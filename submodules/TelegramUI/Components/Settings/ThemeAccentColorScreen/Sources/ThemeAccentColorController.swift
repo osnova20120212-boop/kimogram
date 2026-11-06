@@ -85,7 +85,7 @@ public final class ThemeAccentColorController: ViewController {
             self.initialBackgroundColor = nil
         }
         
-        super.init(navigationBarPresentationData: nil) //NavigationBarPresentationData(presentationData: self.presentationData))
+        super.init(navigationBarPresentationData: nil) //NavigationBarPresentationData(presentationData: self.presentationData, style: .glass))
         
         self.navigationPresentation = .modal
         self._hasGlassStyle = true

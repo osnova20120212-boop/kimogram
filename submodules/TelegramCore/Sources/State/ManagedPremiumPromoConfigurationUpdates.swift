@@ -1,7 +1,7 @@
 import Foundation
 import Postbox
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 import MtProtoKit
 
 public func updatePremiumPromoConfigurationOnce(account: Account) -> Signal<Void, NoError> {

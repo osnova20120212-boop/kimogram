@@ -1,6 +1,6 @@
 import Foundation
 import Postbox
-internal import TelegramApi
+import TelegramApi
 import SwiftSignalKit
 
 func _internal_importContactToken(account: Account, token: String) -> Signal<EnginePeer?, NoError> {

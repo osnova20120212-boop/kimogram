@@ -2,7 +2,7 @@ import Foundation
 import Postbox
 import MtProtoKit
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 
 
 func apiSecureValueType(value: SecureIdValue) -> Api.SecureValueType {

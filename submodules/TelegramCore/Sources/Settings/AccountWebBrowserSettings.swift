@@ -1,7 +1,7 @@
 import Foundation
 import Postbox
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 
 public struct AccountWebBrowserException: Codable, Equatable {
     public let domain: String
@@ -16,7 +16,7 @@ public struct AccountWebBrowserException: Codable, Equatable {
         self.favicon = favicon
     }
     
-    init(apiWebDomainException: Api.WebDomainException) {
+    public init(apiWebDomainException: Api.WebDomainException) {
         switch apiWebDomainException {
         case let .webDomainException(data):
             self.init(domain: data.domain, url: data.url, title: data.title, favicon: data.favicon)
@@ -41,7 +41,7 @@ public struct AccountWebBrowserSettings: Codable, Equatable {
         self.hash = hash
     }
     
-    init(apiWebBrowserSettings: Api.account.WebBrowserSettings, current: AccountWebBrowserSettings?) {
+    public init(apiWebBrowserSettings: Api.account.WebBrowserSettings, current: AccountWebBrowserSettings?) {
         switch apiWebBrowserSettings {
         case let .webBrowserSettings(data):
             self.init(

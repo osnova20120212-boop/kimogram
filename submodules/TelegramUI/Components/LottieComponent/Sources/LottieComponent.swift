@@ -19,10 +19,6 @@ public final class LottieComponent: Component {
     }
     
     open class Content: Equatable {
-        /// Color space of the raw pixels supplied by the animation renderer.
-        /// Nil preserves the existing display-space rendering for other content.
-        open var renderingColorSpace: CGColorSpace? { nil }
-
         open var frameRange: Range<Double> {
             preconditionFailure()
         }
@@ -439,8 +435,7 @@ public final class LottieComponent: Component {
             guard let animationInstance = self.animationInstance, let animationFrameRange = self.animationFrameRange, let currentDisplaySize = self.currentDisplaySize else {
                 return
             }
-            let colorSpace = self.component?.content.renderingColorSpace
-            guard let context = DrawingContext(size: currentDisplaySize, scale: 1.0, opaque: false, clear: true, colorSpace: colorSpace) else {
+            guard let context = DrawingContext(size: currentDisplaySize, scale: 1.0, opaque: false, clear: true) else {
                 return
             }
             
@@ -450,7 +445,7 @@ public final class LottieComponent: Component {
             
             animationInstance.renderFrame(with: Int32(effectiveFrameIndex), into: context.bytes.assumingMemoryBound(to: UInt8.self), width: Int32(currentDisplaySize.width), height: Int32(currentDisplaySize.height), bytesPerRow: Int32(context.bytesPerRow))
             
-            var image = context.generateImage(colorSpace: colorSpace)
+            var image = context.generateImage()
             if let _ = self.component?.color {
                 image = image?.withRenderingMode(.alwaysTemplate)
             }

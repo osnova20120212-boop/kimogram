@@ -12,7 +12,6 @@ import BundleIconComponent
 import MultilineTextComponent
 import LottieComponent
 import WalletCollectibleImageComponent
-import GiftItemComponent
 
 public func walletCollectibleFragmentUrl(_ value: String?) -> String? {
     guard let value,
@@ -27,7 +26,7 @@ public func walletCollectibleFragmentUrl(_ value: String?) -> String? {
 
 private let walletCollectibleLottieMaximumSize = 5 * 1024 * 1024
 
-public func walletCollectibleLottieData(_ data: Data) -> Data? {
+func walletCollectibleLottieData(_ data: Data) -> Data? {
     guard data.count <= walletCollectibleLottieMaximumSize else { return nil }
     let decoded: Data
     if data.starts(with: [0x1f, 0x8b]) {
@@ -41,44 +40,41 @@ public func walletCollectibleLottieData(_ data: Data) -> Data? {
     return decoded
 }
 
-public final class WalletRemoteLottieContent: LottieComponent.Content {
+private final class WalletRemoteLottieContent: LottieComponent.Content {
     let context: AccountContext
     let file: WalletNftFile
 
-    override public var frameRange: Range<Double> { return 0.0 ..< 1.0 }
-    // RLottie writes sRGB values directly; tagging them as Display P3 changes
-    // their appearance without converting the pixels and oversaturates gifts.
-    override public var renderingColorSpace: CGColorSpace? { CGColorSpace(name: CGColorSpace.sRGB) }
+    override var frameRange: Range<Double> { return 0.0 ..< 1.0 }
 
-    public init(context: AccountContext, file: WalletNftFile) {
+    init(context: AccountContext, file: WalletNftFile) {
         self.context = context
         self.file = file
         super.init()
     }
 
-    override public func isEqual(to other: LottieComponent.Content) -> Bool {
+    override func isEqual(to other: LottieComponent.Content) -> Bool {
         guard let other = other as? WalletRemoteLottieContent else { return false }
         return self.context === other.context && self.file == other.file
     }
 
-    override public func load(_ f: @escaping (LottieComponent.ContentData) -> Void) -> Disposable {
-        let resources = self.context.engine.resources
+    override func load(_ f: @escaping (LottieComponent.ContentData) -> Void) -> Disposable {
+        let mediaBox = self.context.account.postbox.mediaBox
         let resource = self.file.resource
         return Signal<Data, NoError> { subscriber in
-            let dataDisposable = (resources.data(resource: EngineMediaResource(resource))
+            let dataDisposable = (mediaBox.resourceData(resource)
             |> deliverOn(Queue.concurrentDefaultQueue())).start(next: { resourceData in
-                guard resourceData.availableSize <= Int64(walletCollectibleLottieMaximumSize) else {
+                guard resourceData.size <= Int64(walletCollectibleLottieMaximumSize) else {
                     subscriber.putCompletion()
                     return
                 }
-                guard resourceData.isComplete else { return }
+                guard resourceData.complete else { return }
                 if let data = try? Data(contentsOf: URL(fileURLWithPath: resourceData.path), options: .mappedIfSafe),
                    let decoded = walletCollectibleLottieData(data) {
                     subscriber.putNext(decoded)
                 }
                 subscriber.putCompletion()
             })
-            let fetchDisposable = resources.fetchedResource(resource: EngineMediaResource(resource)).start(error: { _ in
+            let fetchDisposable = mediaBox.fetchedResource(resource, parameters: nil).start(error: { _ in
                 subscriber.putCompletion()
             })
             return ActionDisposable {
@@ -100,22 +96,19 @@ public final class WalletCollectibleHeaderComponent: Component {
         public let lottie: WalletNftFile?
         public let collectionName: String?
         public let collectionUrl: String?
-        public let uniqueGift: StarGift.UniqueGift?
 
         public init(
             name: String,
             image: WalletNftFile?,
             lottie: WalletNftFile?,
             collectionName: String?,
-            collectionUrl: String?,
-            uniqueGift: StarGift.UniqueGift? = nil
+            collectionUrl: String?
         ) {
             self.name = name
             self.image = image
             self.lottie = lottie
             self.collectionName = collectionName
             self.collectionUrl = collectionUrl
-            self.uniqueGift = uniqueGift
         }
     }
 
@@ -148,7 +141,6 @@ public final class WalletCollectibleHeaderComponent: Component {
 
     public final class View: UIView {
         private let image = ComponentView<Empty>()
-        private let gift = ComponentView<Empty>()
         private var lottie = ComponentView<Empty>()
         private var lottieFile: WalletNftFile?
         private weak var lottieContext: AccountContext?
@@ -163,33 +155,8 @@ public final class WalletCollectibleHeaderComponent: Component {
             fatalError("init(coder:) has not been implemented")
         }
 
-        @objc private func giftTapped() {
-            (self.gift.view as? GiftItemComponent.View)?.playModelOnce()
-        }
-
         @objc private func lottieTapped() {
             (self.lottie.view as? LottieComponent.View)?.playOnce()
-        }
-
-        public var giftView: UIView? {
-            guard let view = self.gift.view, view.superview === self else { return nil }
-            return view
-        }
-
-        private var silhouetteView: UIImageView?
-
-        public func showModelSilhouette(image: UIImage, frame: CGRect, color: UIColor) {
-            guard let giftView = self.gift.view as? GiftItemComponent.View else { return }
-            giftView.setModelHidden(true)
-            let silhouetteView = self.silhouetteView ?? UIImageView()
-            self.silhouetteView = silhouetteView
-            silhouetteView.isUserInteractionEnabled = false
-            silhouetteView.image = image.withRenderingMode(.alwaysTemplate)
-            silhouetteView.tintColor = color
-            silhouetteView.frame = frame
-            if silhouetteView.superview !== giftView {
-                giftView.addSubview(silhouetteView)
-            }
         }
 
         public func setAnimationVisible(_ value: Bool) {
@@ -209,35 +176,7 @@ public final class WalletCollectibleHeaderComponent: Component {
                 width: mediaSide,
                 height: mediaSide
             )
-            let mediaCornerRadius: CGFloat = 32.0
-            if let uniqueGift = component.item.uniqueGift {
-                let _ = self.gift.update(
-                    transition: transition,
-                    component: AnyComponent(GiftItemComponent(
-                        context: component.context,
-                        theme: component.theme,
-                        strings: component.context.sharedContext.currentPresentationData.with { $0 }.strings,
-                        subject: .uniqueGift(gift: uniqueGift, price: nil),
-                        mode: .grid,
-                        cornerRadius: mediaCornerRadius,
-                        allowAnimations: true
-                    )),
-                    environment: {},
-                    containerSize: mediaSize
-                )
-                if let giftView = self.gift.view {
-                    if giftView.superview == nil {
-                        giftView.isUserInteractionEnabled = true
-                        giftView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(self.giftTapped)))
-                        self.addSubview(giftView)
-                    }
-                    transition.setFrame(view: giftView, frame: mediaFrame)
-                }
-                self.lottie.view?.isHidden = true
-            } else {
-                self.gift.view?.removeFromSuperview()
-                self.lottie.view?.isHidden = false
-            }
+            let mediaCornerRadius: CGFloat = 16.0
             let _ = self.image.update(
                 transition: transition,
                 component: AnyComponent(WalletCollectibleImageComponent(
@@ -254,7 +193,6 @@ public final class WalletCollectibleHeaderComponent: Component {
                     imageView.isUserInteractionEnabled = false
                     self.addSubview(imageView)
                 }
-                imageView.isHidden = component.item.uniqueGift != nil
                 transition.setFrame(view: imageView, frame: mediaFrame)
             }
 
@@ -265,7 +203,7 @@ public final class WalletCollectibleHeaderComponent: Component {
                 self.lottieFile = component.item.lottie
                 self.lottieContext = component.context
             }
-            if component.item.uniqueGift == nil, let lottie = component.item.lottie {
+            if let lottie = component.item.lottie {
                 let lottieContent = WalletRemoteLottieContent(context: component.context, file: lottie)
                 let lottieSize = self.lottie.update(
                     transition: transition,
@@ -403,11 +341,6 @@ public final class WalletCollectibleHeaderComponent: Component {
                let lottieView = self.lottie.view,
                result === lottieView || result.isDescendant(of: lottieView) {
                 return result
-            }
-            if let result,
-               let giftView = self.gift.view, giftView.superview === self,
-               result === giftView || result.isDescendant(of: giftView) {
-                return giftView
             }
             if let result,
                let collectionView = self.collection.view,

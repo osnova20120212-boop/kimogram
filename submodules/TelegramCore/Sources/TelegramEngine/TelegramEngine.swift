@@ -96,10 +96,6 @@ public final class TelegramEngine {
     public lazy var preferences: Preferences = {
         return Preferences(account: self.account)
     }()
-
-    public lazy var feed: Feed = {
-        return Feed(account: self.account)
-    }()
 }
 
 public final class TelegramEngineUnauthorized {

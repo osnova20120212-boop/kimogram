@@ -984,7 +984,7 @@ private final class NotificationServiceHandler {
                 let recipientAccountName: Signal<String?, NoError>
                 if notificationsNameRecipientAccount(records: records.records) {
                     recipientAccountName = stateManager.postbox.transaction { transaction -> String? in
-                        return notificationRecipientAccountName(accountPeer: transaction.getPeer(accountPeerId).flatMap(EnginePeer.init))
+                        return notificationRecipientAccountName(accountPeer: transaction.getPeer(accountPeerId))
                     }
                 } else {
                     recipientAccountName = .single(nil)

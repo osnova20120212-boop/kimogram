@@ -512,10 +512,7 @@ final class ChatReportPeerTitlePanelNode: ChatTitleAccessoryPanelNode {
         }
         
         var emojiStatus: PeerEmojiStatus?
-        // A suspicious user's emoji status is not shown, so neither is the note explaining it
-        // (`CachedUserData.isSuspiciousPeer`, here from the same settings that show this panel).
-        let isSuspiciousPeer = !(interfaceState.contactStatus?.peerStatusSettings?.flags.isDisjoint(with: .suspiciousPeer) ?? true)
-        if let user = interfaceState.renderedPeer?.peer as? TelegramUser, let emojiStatusValue = user.emojiStatus, !isSuspiciousPeer {
+        if let user = interfaceState.renderedPeer?.peer as? TelegramUser, let emojiStatusValue = user.emojiStatus {
             if user.isFake || user.isScam { 
             } else {
                 emojiStatus = emojiStatusValue

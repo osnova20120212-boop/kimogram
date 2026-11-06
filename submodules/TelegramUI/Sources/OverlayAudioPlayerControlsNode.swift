@@ -230,7 +230,6 @@ final class OverlayAudioPlayerControlsNode: ASDisplayNode {
     private var currentPosition: Double = 0.0
     
     private var validLayout: (width: CGFloat, leftInset: CGFloat, rightInset: CGFloat, bottomInset: CGFloat, maxHeight: CGFloat, savedMusic: Bool?)?
-    private var hasCompletedLayout = false
     
     init(account: Account, engine: TelegramEngine, accountManager: AccountManager<TelegramAccountManagerTypes>, presentationData: PresentationData, status: Signal<(Account, SharedMediaPlayerItemPlaybackStateOrLoading, MediaManagerPlayerType)?, NoError>, chatLocation: ChatLocation, source: ChatHistoryListSource, lottieSettings: LottieRenderingSettings) {
         self.accountManager = accountManager
@@ -834,7 +833,7 @@ final class OverlayAudioPlayerControlsNode: ASDisplayNode {
         self.validLayout = (width, leftInset, rightInset, bottomInset, maxHeight, savedMusic)
     
         var transition = transition
-        if !self.hasCompletedLayout || previousWidth == nil || previousWidth?.isZero == true {
+        if previousWidth == nil || previousWidth?.isZero == true {
             transition = .immediate
         }
         
@@ -970,7 +969,6 @@ final class OverlayAudioPlayerControlsNode: ASDisplayNode {
             }
         }
         
-        self.hasCompletedLayout = true
         return finalPanelHeight
     }
     

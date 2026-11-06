@@ -237,7 +237,7 @@ public final class PaneSearchContainerNode: ASDisplayNode, EntitySearchContainer
             guard let self else {
                 return
             }
-            let shareController = self.context.sharedContext.makeShareScreen(
+            let shareController = self.context.sharedContext.makeShareController(
                 context: self.context,
                 params: ShareControllerParams(
                     subject: .url(link),

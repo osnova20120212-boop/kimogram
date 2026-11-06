@@ -2,7 +2,7 @@ import Foundation
 import Postbox
 import MtProtoKit
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 
 public struct StarGiftCollection: Codable, Equatable {
     public let id: Int32

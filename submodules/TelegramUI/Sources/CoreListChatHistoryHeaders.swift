@@ -5,7 +5,6 @@ import SwiftSignalKit
 import CoreList
 import ComponentFlow
 import ComponentDisplayAdapters
-import CoreListComponentHost
 import TelegramPresentationData
 import ChatMessageItem
 import ChatMessageItemImpl

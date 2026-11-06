@@ -1,5 +1,4 @@
 import Foundation
-import TelegramCore
 import AVFoundation
 import Metal
 import MetalKit
@@ -330,7 +329,7 @@ final class VideoFinishPass: RenderPass {
             self.mainPipelineState = try device.makeRenderPipelineState(descriptor: mainDescriptor)
             self.gradientPipelineState = try device.makeRenderPipelineState(descriptor: gradientDescriptor)
         } catch {
-            Logger.shared.log("MediaEditor", "VideoFinishPass: failed to create pipeline state: \(error.localizedDescription)")
+            print(error.localizedDescription)
         }
     }
     

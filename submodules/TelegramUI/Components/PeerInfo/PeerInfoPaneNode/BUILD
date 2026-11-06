@@ -17,7 +17,6 @@ swift_library(
         "//submodules/AsyncDisplayKit",
         "//submodules/Display",
         "//submodules/TelegramPresentationData",
-        "//submodules/UIKitRuntimeUtils:UIKitRuntimeUtils",
     ],
     visibility = [
         "//visibility:public",
@@ -34,9 +33,6 @@ swift_library(
         ":PeerInfoPaneNode",
         "//submodules/TelegramCore",
         "//submodules/Postbox",
-        "//submodules/Display",
-        "//submodules/AsyncDisplayKit",
-        "//submodules/UIKitRuntimeUtils:UIKitRuntimeUtils",
     ],
 )
 

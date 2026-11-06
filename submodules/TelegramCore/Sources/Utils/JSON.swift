@@ -1,6 +1,6 @@
 import Foundation
 import Postbox
-internal import TelegramApi
+import TelegramApi
 
 extension JSON {
     private init?(_ object: Any) {
@@ -375,7 +375,7 @@ public extension JSON {
         }
     }
     
-    internal init?(apiJson: Api.JSONValue) {
+    init?(apiJson: Api.JSONValue) {
         self.init(apiJson: apiJson, root: true)
     }
 }

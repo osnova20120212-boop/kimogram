@@ -1,7 +1,7 @@
 import Foundation
 import SwiftSignalKit
 import Postbox
-internal import TelegramApi
+import TelegramApi
 
 public func canShareLinkToPeer(peer: EnginePeer) -> Bool {
     var isEnabled = false

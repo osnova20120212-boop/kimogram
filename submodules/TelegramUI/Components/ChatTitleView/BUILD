@@ -25,7 +25,6 @@ swift_library(
         "//submodules/PhoneNumberFormat",
         "//submodules/AccountContext",
         "//submodules/ComponentFlow",
-        "//submodules/TelegramUI/Components/News/NewsFeedSupport",
         "//submodules/AnimatedCountLabelNode",
         "//submodules/TelegramUI/Components/EmojiStatusComponent",
         "//submodules/TelegramUI/Components/AnimationCache:AnimationCache",

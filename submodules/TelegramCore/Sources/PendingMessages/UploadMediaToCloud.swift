@@ -1,7 +1,7 @@
 import Foundation
 import Postbox
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 
 /// A medium on its way to becoming cloud media.
 enum CloudUploadEvent {

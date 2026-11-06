@@ -116,9 +116,7 @@ public extension Document {
     /// the `document` setter, not a fragment splice.
     ///
     /// `.copyText` is left alone — its payload is self-contained text that still works anywhere.
-    /// PUBLIC because the engine editor's clipboard is a second consumer of this rule — a pasted
-    /// button must not carry an opaque action there either.
-    public func convertingUnsupportedButtonActions() -> Document {
+    func convertingUnsupportedButtonActions() -> Document {
         Document(schemaVersion: schemaVersion, blocks: convertUnsupportedButtonActions(blocks))
     }
 }

@@ -1,7 +1,7 @@
 import Foundation
 import Postbox
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 
 private struct PreparedEphemeralMessageSend {
     let peerId: PeerId
@@ -125,8 +125,31 @@ private func preparedEphemeralReply(replyTo replySubject: EngineMessageReplySubj
         replyFlags |= 1 << 1
     }
 
-    let quoteFields = apiReplyQuoteFields(replySubject.quote, peer: { transaction.getPeer($0) })
-    replyFlags |= quoteFields.flags
+    var quoteText: String?
+    var quoteEntities: [Api.MessageEntity]?
+    var quoteOffset: Int32?
+    if let replyQuote = replySubject.quote {
+        quoteText = replyQuote.text
+        replyFlags |= 1 << 2
+
+        if !replyQuote.entities.isEmpty {
+            var associatedPeers = SimpleDictionary<PeerId, Peer>()
+            for entity in replyQuote.entities {
+                for associatedPeerId in entity.associatedPeerIds {
+                    if associatedPeers[associatedPeerId] == nil, let associatedPeer = transaction.getPeer(associatedPeerId) {
+                        associatedPeers[associatedPeerId] = associatedPeer
+                    }
+                }
+            }
+            quoteEntities = apiEntitiesFromMessageTextEntities(replyQuote.entities, associatedPeers: associatedPeers)
+            replyFlags |= 1 << 3
+        }
+
+        quoteOffset = replyQuote.offset.flatMap { Int32(clamping: $0) }
+        if quoteOffset != nil {
+            replyFlags |= 1 << 4
+        }
+    }
 
     var replyTodoItemId: Int32?
     var replyPollOption: Buffer?
@@ -143,7 +166,7 @@ private func preparedEphemeralReply(replyTo replySubject: EngineMessageReplySubj
 
     let threadMessageId = topMsgId.flatMap { MessageId(peerId: peerId, namespace: Namespaces.Message.Cloud, id: $0) }
     return (
-        .inputReplyToMessage(.init(flags: replyFlags, replyToMsgId: replySubject.messageId.id, topMsgId: topMsgId, replyToPeerId: replyToPeerId, quoteText: quoteFields.text, quoteEntities: quoteFields.entities, quoteOffset: quoteFields.offset, monoforumPeerId: nil, todoItemId: replyTodoItemId, pollOption: replyPollOption, quoteRich: quoteFields.rich)),
+        .inputReplyToMessage(.init(flags: replyFlags, replyToMsgId: replySubject.messageId.id, topMsgId: topMsgId, replyToPeerId: replyToPeerId, quoteText: quoteText, quoteEntities: quoteEntities, quoteOffset: quoteOffset, monoforumPeerId: nil, todoItemId: replyTodoItemId, pollOption: replyPollOption)),
         ReplyMessageAttribute(messageId: replySubject.messageId, threadMessageId: threadMessageId, quote: replySubject.quote, isQuote: replySubject.quote != nil, innerSubject: replySubject.innerSubject)
     )
 }
@@ -203,7 +226,7 @@ private func preparedEphemeralMessageSend(account: Account, messageId: MessageId
 
         let replySubject: EngineMessageReplySubject?
         if let replyAttribute = currentMessage.attributes.first(where: { $0 is ReplyMessageAttribute }) as? ReplyMessageAttribute {
-            replySubject = resentReplySubject(replyAttribute)
+            replySubject = EngineMessageReplySubject(messageId: replyAttribute.messageId, quote: replyAttribute.quote, innerSubject: replyAttribute.innerSubject)
         } else {
             replySubject = nil
         }

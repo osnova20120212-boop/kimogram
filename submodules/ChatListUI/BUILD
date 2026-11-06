@@ -89,7 +89,6 @@ swift_library(
         "//submodules/AnimationUI:AnimationUI",
         "//submodules/PeerInfoUI",
         "//submodules/TelegramUI/Components/ChatListHeaderComponent",
-        "//submodules/TelegramUI/Components/NavigationBarComponent",
         "//submodules/TelegramUI/Components/SideColumnLayout",
         "//submodules/TelegramUI/Components/ChatListTitleView",
         "//submodules/AvatarNode:AvatarNode",

@@ -135,7 +135,12 @@ private final class ActiveSessionsContextImpl {
         
         return updateAccountSessionAcceptsSecretChats(account: self.account, hash: session.hash, accepts: accepts)
         |> deliverOnMainQueue
-        |> ignoreValues
+        |> mapToSignal { [weak self] _ -> Signal<Never, UpdateSessionError> in
+            if let strongSelf = self {
+                strongSelf._state = ActiveSessionsContextState(isLoadingMore: strongSelf._state.isLoadingMore, sessions: mergedSessions, ttlDays: strongSelf._state.ttlDays)
+            }
+            return .complete()
+        }
     }
     
     func updateSessionAcceptsIncomingCalls(_ session: RecentAccountSession, accepts: Bool) -> Signal<Never, UpdateSessionError> {
@@ -152,7 +157,12 @@ private final class ActiveSessionsContextImpl {
         
         return updateAccountSessionAcceptsIncomingCalls(account: self.account, hash: session.hash, accepts: accepts)
         |> deliverOnMainQueue
-        |> ignoreValues
+        |> mapToSignal { [weak self] _ -> Signal<Never, UpdateSessionError> in
+            if let strongSelf = self {
+                strongSelf._state = ActiveSessionsContextState(isLoadingMore: strongSelf._state.isLoadingMore, sessions: mergedSessions, ttlDays: strongSelf._state.ttlDays)
+            }
+            return .complete()
+        }
     }
     
     func updateAuthorizationTTL(days: Int32) -> Signal<Never, UpadteAuthorizationTTLError> {
@@ -160,7 +170,12 @@ private final class ActiveSessionsContextImpl {
         
         return setAuthorizationTTL(account: self.account, ttl: days)
         |> deliverOnMainQueue
-        |> ignoreValues
+        |> mapToSignal { [weak self] _ -> Signal<Never, UpadteAuthorizationTTLError> in
+            if let strongSelf = self {
+                strongSelf._state = ActiveSessionsContextState(isLoadingMore: strongSelf._state.isLoadingMore, sessions: strongSelf._state.sessions, ttlDays: days)
+            }
+            return .complete()
+        }
     }
 }
 
@@ -339,14 +354,14 @@ public final class WebSessionsContext {
         }))
     }
     
-    public func remove(hash: Int64) -> Signal<Bool, NoError> {
+    public func remove(hash: Int64) -> Signal<Never, NoError> {
         assert(Queue.mainQueue().isCurrent())
         
         return terminateWebSession(network: self.account.network, hash: hash)
         |> deliverOnMainQueue
-        |> map { [weak self] removed -> Bool in
-            guard removed, let strongSelf = self else {
-                return removed
+        |> mapToSignal { [weak self] _ -> Signal<Never, NoError> in
+            guard let strongSelf = self else {
+                return .complete()
             }
             
             var mergedSessions = strongSelf._state.sessions
@@ -358,20 +373,20 @@ public final class WebSessionsContext {
             }
             
             strongSelf._state = WebSessionsContextState(isLoadingMore: strongSelf._state.isLoadingMore, sessions: mergedSessions, peers: strongSelf._state.peers)
-            return true
+            return .complete()
         }
     }
     
-    public func removeAll() -> Signal<Bool, NoError> {
+    public func removeAll() -> Signal<Never, NoError> {
         return terminateAllWebSessions(network: self.account.network)
         |> deliverOnMainQueue
-        |> map { [weak self] removed -> Bool in
-            guard removed, let strongSelf = self else {
-                return removed
+        |> mapToSignal { [weak self] _ -> Signal<Never, NoError> in
+            guard let strongSelf = self else {
+                return .complete()
             }
             
             strongSelf._state = WebSessionsContextState(isLoadingMore: strongSelf._state.isLoadingMore, sessions: [], peers: [:])
-            return true
+            return .complete()
         }
     }
 }

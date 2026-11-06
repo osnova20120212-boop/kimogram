@@ -1,6 +1,6 @@
 import Foundation
 import Postbox
-internal import TelegramApi
+import TelegramApi
 
 extension ReactionsMessageAttribute {
     func withUpdatedResults(_ reactions: Api.MessageReactions) -> ReactionsMessageAttribute {

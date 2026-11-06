@@ -53,7 +53,6 @@ import Pasteboard
 import Speak
 import TranslateUI
 import TelegramUIPreferences
-import WalletContext
 
 private let giftViewTopOverscrollBackgroundHeight: CGFloat = 250.0
 
@@ -441,7 +440,7 @@ private final class GiftViewSheetContent: CombinedComponent {
         var inProgress = false
         var canSkip = false
         
-        var testUpgradeAnimation = !"".isEmpty
+        var testUpgradeAnimation = "".isEmpty
                 
         var upgradeForm: BotPaymentForm?
         var upgradeFormDisposable: Disposable?
@@ -504,9 +503,6 @@ private final class GiftViewSheetContent: CombinedComponent {
                 }
                 if let fromPeerId = arguments.fromPeerId, !peerIds.contains(fromPeerId) {
                     peerIds.append(fromPeerId)
-                }
-                if let reference = arguments.reference, case let .peer(peerId, _) = reference, !peerIds.contains(peerId) {
-                    peerIds.append(peerId)
                 }
                 if let messageGiftSenderPeerId = subject.messageGiftSenderPeerId, !peerIds.contains(messageGiftSenderPeerId) {
                     peerIds.append(messageGiftSenderPeerId)
@@ -869,7 +865,7 @@ private final class GiftViewSheetContent: CombinedComponent {
                 guard canCopy else {
                     return
                 }
-                let shareController = self.context.sharedContext.makeShareScreen(
+                let shareController = self.context.sharedContext.makeShareController(
                     context: self.context,
                     params: ShareControllerParams(
                         subject: .text(text.string),
@@ -969,119 +965,9 @@ private final class GiftViewSheetContent: CombinedComponent {
             }
         }
         
-        func isMyWalletGift(_ gift: StarGift.UniqueGift) -> Bool {
-            guard case let .address(address) = gift.owner, let walletAddress = self.context.walletContext?.stateValue.walletAddress else {
-                return false
-            }
-            return WalletContext.isSelfTransfer(recipient: address, walletAddress: walletAddress)
-        }
-        
-        func onchainProfileDisplayState(_ gift: StarGift.UniqueGift) -> Bool? {
-            if self.isMyWalletGift(gift) {
-                return gift.hostPeerId != nil
-            }
-            if let hostPeerId = gift.hostPeerId {
-                if hostPeerId == self.context.account.peerId {
-                    return true
-                }
-                if let reference = self.subject.arguments?.reference, case let .peer(peerId, _) = reference, peerId.namespace == Namespaces.Peer.CloudChannel, hostPeerId == peerId {
-                    return true
-                }
-            }
-            return nil
-        }
-
-        var canDeleteGift: Bool {
-            guard let arguments = self.subject.arguments, arguments.reference != nil, case let .generic(gift) = arguments.gift, gift.availability == nil else {
-                return false
-            }
-            if arguments.converted || arguments.upgraded || arguments.refunded {
-                return false
-            }
-            if let reference = arguments.reference, case let .peer(peerId, _) = reference, peerId.namespace == Namespaces.Peer.CloudChannel {
-                if case let .channel(channel) = self.peerMap[peerId], channel.flags.contains(.isCreator) {
-                    return true
-                }
-                return false
-            }
-            if let toPeerId = arguments.auctionToPeerId, toPeerId != self.context.account.peerId {
-                return false
-            }
-            return arguments.incoming || arguments.peerId == self.context.account.peerId
-        }
-
-        func deleteGift() {
+        func updateSavedToProfile(_ added: Bool) {
             guard let controller = self.getController() as? GiftViewScreen, let arguments = self.subject.arguments, let reference = arguments.reference else {
                 return
-            }
-            let presentationData = self.context.sharedContext.currentPresentationData.with { $0 }
-            let navigationController = controller.navigationController as? NavigationController
-            let alertController = textAlertController(
-                context: self.context,
-                title: presentationData.strings.Gift_Delete_Title,
-                text: presentationData.strings.Gift_Delete_Text,
-                actions: [
-                    TextAlertAction(type: .genericAction, title: presentationData.strings.Common_Cancel, action: {}),
-                    TextAlertAction(type: .destructiveAction, title: presentationData.strings.Common_Delete, action: { [weak self, weak controller, weak navigationController] in
-                        guard let self else {
-                            return
-                        }
-                        if let profileGiftsContext = controller?.profileGiftsContext {
-                            profileGiftsContext.deleteStarGift(reference: reference)
-                        } else {
-                            let _ = self.context.engine.payments.deleteStarGift(reference: reference).startStandalone()
-                        }
-
-                        controller?.dismissAnimated()
-
-                        if let navigationController {
-                            Queue.mainQueue().after(0.5) { [navigationController] in
-                                if let lastController = navigationController.viewControllers.last as? ViewController {
-                                    let resultController = UndoOverlayController(
-                                        presentationData: presentationData,
-                                        content: .universalImage(
-                                            image: generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Delete"), color: .white)!,
-                                            size: nil,
-                                            title: nil,
-                                            text: presentationData.strings.Gift_Delete_Success,
-                                            customUndoText: nil,
-                                            timeout: nil
-                                        ),
-                                        elevatedLayout: !(lastController is ChatController) && !(lastController is PeerInfoScreen),
-                                        appearance: (lastController as? PeerInfoScreen)?.isGiftsBottomPanelVisible == true ? UndoOverlayController.Appearance(bottomInset: 57.0) : nil,
-                                        action: { _ in return true }
-                                    )
-                                    lastController.present(resultController, in: .current)
-                                }
-                            }
-                        }
-                    })
-                ]
-            )
-            controller.present(alertController, in: .window(.root))
-        }
-
-        func updateSavedToProfile(_ added: Bool) {
-            guard let controller = self.getController() as? GiftViewScreen, let arguments = self.subject.arguments else {
-                return
-            }
-            
-            if case let .unique(gift) = arguments.gift, self.onchainProfileDisplayState(gift) != nil {
-                let profileGiftsContext = controller.profileGiftsContext
-                let _ = (self.context.engine.payments.displayStarGift(peerId: added ? self.context.account.peerId : nil, slug: gift.slug)
-                |> deliverOnMainQueue).startStandalone(completed: {
-                    profileGiftsContext?.reload()
-                })
-            } else {
-                guard let reference = arguments.reference else {
-                    return
-                }
-                if let updateSavedToProfile = controller.updateSavedToProfile {
-                    updateSavedToProfile(reference, added)
-                } else {
-                    let _ = (self.context.engine.payments.updateStarGiftAddedToProfile(reference: reference, added: added)
-                    |> deliverOnMainQueue).startStandalone()
-                }
             }
             
             var animationFile: TelegramMediaFile?
@@ -1095,6 +981,13 @@ private final class GiftViewSheetContent: CombinedComponent {
                         break
                     }
                 }
+            }
+            
+            if let updateSavedToProfile = controller.updateSavedToProfile {
+                updateSavedToProfile(reference, added)
+            } else {
+                let _ = (self.context.engine.payments.updateStarGiftAddedToProfile(reference: reference, added: added)
+                |> deliverOnMainQueue).startStandalone()
             }
             
             controller.dismissAnimated()
@@ -1125,8 +1018,7 @@ private final class GiftViewSheetContent: CombinedComponent {
                                 undoText: presentationData.strings.Gift_Displayed_View,
                                 customAction: nil
                             ),
-                            elevatedLayout: !(lastController is ChatController) && !(lastController is PeerInfoScreen),
-                            appearance: (lastController as? PeerInfoScreen)?.isGiftsBottomPanelVisible == true ? UndoOverlayController.Appearance(bottomInset: 57.0) : nil,
+                            elevatedLayout: !(lastController is ChatController),
                             action: { [weak navigationController] action in
                                 if case .undo = action, let navigationController, let giftsPeerId {
                                     let _ = (self.context.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: giftsPeerId))
@@ -1514,7 +1406,7 @@ private final class GiftViewSheetContent: CombinedComponent {
                 }
             }
             let link = "https://t.me/nft/\(gift.slug)"
-            let shareController = self.context.sharedContext.makeShareScreen(
+            let shareController = self.context.sharedContext.makeShareController(
                 context: self.context,
                 params: ShareControllerParams(
                     subject: .url(link),
@@ -1752,35 +1644,7 @@ private final class GiftViewSheetContent: CombinedComponent {
             }
         }
         
-        func depositGift(_ gift: StarGift.UniqueGift) {
-            guard let controller = self.getController() as? GiftViewScreen else {
-                return
-            }
-            controller.dismissAllTooltips()
-            
-            let context = self.context
-            let _ = (context.account.stateManager.contactBirthdays
-            |> take(1)
-            |> deliverOnMainQueue).start(next: { [weak controller] birthdays in
-                guard let controller else {
-                    return
-                }
-                let transferController = context.sharedContext.makePremiumGiftController(context: context, source: .starGiftDeposit(birthdays, gift), completion: { peerIds in
-                    guard let peerId = peerIds.first else {
-                        return .complete()
-                    }
-                    return depositStarGiftFromWallet(context: context, gift: gift, peerId: peerId)
-                    |> deliverOnMainQueue
-                })
-                controller.push(transferController)
-            })
-        }
-        
         func transferGift() {
-            if let arguments = self.subject.arguments, case let .unique(gift) = arguments.gift, self.isMyWalletGift(gift) {
-                self.depositGift(gift)
-                return
-            }
             guard let arguments = self.subject.arguments, let controller = self.getController() as? GiftViewScreen, case let .unique(gift) = arguments.gift, let reference = arguments.reference, let transferStars = arguments.transferStars else {
                 return
             }
@@ -1823,7 +1687,6 @@ private final class GiftViewSheetContent: CombinedComponent {
                 }
                 
                 let tranfserGiftImpl = controller.transferGift
-                let profileGiftsContext = controller.profileGiftsContext
                 
                 let transferController = self.context.sharedContext.makePremiumGiftController(context: context, source: .starGiftTransfer(birthdays, reference, gift, transferStars, arguments.canExportDate, showSelf), completion: { peerIds in
                     guard let peerId = peerIds.first else {
@@ -1841,10 +1704,6 @@ private final class GiftViewSheetContent: CombinedComponent {
                         return (context.engine.payments.transferStarGift(prepaid: transferStars == 0, reference: reference, peerId: peerId)
                         |> deliverOnMainQueue)
                     }
-                }, withdraw: profileGiftsContext.flatMap { profileGiftsContext in
-                    return { reference, password in
-                        return profileGiftsContext.withdrawStarGift(reference: reference, keepOnProfile: false, password: password)
-                    }
                 })
                 controller.push(transferController)
             })
@@ -1855,7 +1714,7 @@ private final class GiftViewSheetContent: CombinedComponent {
                 return
             }
             
-            guard gift.hostPeerId == nil && !self.isMyWalletGift(gift) else {
+            guard gift.hostPeerId == nil else {
                 self.presentActionLockedForHostedGift(gift: gift)
                 return
             }
@@ -2138,29 +1997,12 @@ private final class GiftViewSheetContent: CombinedComponent {
                 return
             }
             
-            guard let arguments = self.subject.arguments else {
+            
+            guard let arguments = self.subject.arguments, case let .unique(gift) = arguments.gift else {
                 return
             }
             
             let presentationData = self.context.sharedContext.currentPresentationData.with { $0 }
-            
-            guard case let .unique(gift) = arguments.gift else {
-                if self.canDeleteGift {
-                    let items: [ContextMenuItem] = [
-                        .action(ContextMenuActionItem(text: presentationData.strings.Gift_View_Context_Delete, textColor: .destructive, icon: { theme in
-                            return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Delete"), color: theme.contextMenu.destructiveColor)
-                        }, action: { [weak self] c, _ in
-                            c?.dismiss(completion: nil)
-                            
-                            self?.deleteGift()
-                        }))
-                    ]
-                    let contextController = makeContextController(presentationData: presentationData, source: .reference(GiftViewContextReferenceContentSource(controller: controller, sourceView: sourceView)), items: .single(ContextController.Items(content: .list(items))), gesture: nil)
-                    controller.presentInGlobalOverlay(contextController)
-                }
-                return
-            }
-            
             let link = "https://t.me/nft/\(gift.slug)"
             
             let _ = (self.context.engine.data.get(
@@ -2225,16 +2067,6 @@ private final class GiftViewSheetContent: CombinedComponent {
                     
                     self?.shareGift()
                 })))
-                
-                if let displayed = self.onchainProfileDisplayState(gift) {
-                    items.append(.action(ContextMenuActionItem(text: displayed ? strings.Gift_View_Context_HideFromProfile : strings.Gift_View_Context_ShowOnProfile, icon: { theme in
-                        return generateTintedImage(image: UIImage(bundleImageName: displayed ? "Peer Info/HideIcon" : "Peer Info/ShowIcon"), color: theme.contextMenu.primaryColor)
-                    }, action: { [weak self] c, _ in
-                        c?.dismiss(completion: nil)
-                        
-                        self?.updateSavedToProfile(!displayed)
-                    })))
-                }
                           
                 if let _ = arguments.canCraftDate {
                     items.append(.action(ContextMenuActionItem(text: presentationData.strings.Gift_View_Context_Craft, icon: { theme in
@@ -2266,7 +2098,7 @@ private final class GiftViewSheetContent: CombinedComponent {
                     })))
                 }
                 
-                if arguments.transferStars != nil || self.isMyWalletGift(gift) {
+                if let _ = arguments.transferStars {
                     if case let .channel(channel) = peer, !channel.flags.contains(.isCreator) {
                         
                     } else {
@@ -3232,7 +3064,6 @@ private final class GiftViewSheetContent: CombinedComponent {
             var isChannelGift = false
             var isMyOwnedUniqueGift = false
             var isMyHostedUniqueGift = false
-            var isMyWalletGift = false
             var releasedByPeer: EnginePeer?
             var canGiftUpgrade = false
             var isDismantled = false
@@ -3287,7 +3118,6 @@ private final class GiftViewSheetContent: CombinedComponent {
                     limitTotal = nil
                     convertStars = nil
                     uniqueGift = gift
-                    isMyWalletGift = state.isMyWalletGift(gift)
                     if let hostPeerId = gift.hostPeerId {
                         if hostPeerId == component.context.account.peerId {
                             isMyHostedUniqueGift = true
@@ -3451,7 +3281,7 @@ private final class GiftViewSheetContent: CombinedComponent {
             }
                                     
             var originY: CGFloat = 0.0
-            let displaysHeaderButtons = isMyOwnedUniqueGift || isMyHostedUniqueGift || isMyWalletGift || isChannelGift
+            let displaysHeaderButtons = isMyOwnedUniqueGift || isMyHostedUniqueGift || isChannelGift
             let headerButtonHeight: CGFloat = 58.0
             let headerButtonsBottomInset: CGFloat = 16.0
                         
@@ -4614,9 +4444,6 @@ private final class GiftViewSheetContent: CombinedComponent {
                 var tableItems: [TableComponent.Item] = []
                 
                 var isWearing = state.pendingWear
-                if !isWearing, !state.pendingTakeOff, isChannelGift, let uniqueGift, let emojiStatus = state.peerMap[wearOwnerPeerId]?.emojiStatus, case let .starGift(id, _, _, _, _, _, _, _, _) = emojiStatus.content, id == uniqueGift.id {
-                    isWearing = true
-                }
                 
                 if !soldOut {
                     if let uniqueGift {
@@ -4655,6 +4482,7 @@ private final class GiftViewSheetContent: CombinedComponent {
                                         }
                                     } else {
                                         animationContent = .premium(color: tableLinkColor)
+                                        state.pendingTakeOff = false
                                     }
                                     
                                     ownerComponent = AnyComponent(
@@ -4856,7 +4684,7 @@ private final class GiftViewSheetContent: CombinedComponent {
                                 canTransfer = false
                             }
                             canResell = false
-                        } else if subject.arguments?.transferStars == nil && !isMyWalletGift {
+                        } else if subject.arguments?.transferStars == nil {
                             canTransfer = false
                         }
                         
@@ -4884,7 +4712,7 @@ private final class GiftViewSheetContent: CombinedComponent {
                                     title: strings.Gift_View_Header_Transfer,
                                     buttonColor: buttonColor,
                                     iconName: "Premium/Collectible/Transfer",
-                                    isLocked: isMyHostedUniqueGift && !isMyWalletGift,
+                                    isLocked: isMyHostedUniqueGift,
                                     action: { [weak state] in
                                         state?.transferGift()
                                     }
@@ -4968,7 +4796,7 @@ private final class GiftViewSheetContent: CombinedComponent {
                                     title: (uniqueGift.resellAmounts ?? []).isEmpty ? strings.Gift_View_Sell : strings.Gift_View_Unlist,
                                     buttonColor: buttonColor,
                                     iconName: (uniqueGift.resellAmounts ?? []).isEmpty ? "Premium/Collectible/Sell" : "Premium/Collectible/Unlist",
-                                    isLocked: isMyHostedUniqueGift || isMyWalletGift,
+                                    isLocked: isMyHostedUniqueGift,
                                     action: { [weak state] in
                                         state?.resellGift()
                                     }
@@ -5540,7 +5368,6 @@ private final class GiftViewSheetContent: CombinedComponent {
                 }
                 
                 var addressToOpen: String?
-                var toggledSavedToProfile = !savedToProfile
                 var descriptionText: String
                 if isChatTheme {
                     descriptionText = strings.Gift_View_OpenChatTheme
@@ -5552,12 +5379,6 @@ private final class GiftViewSheetContent: CombinedComponent {
                         ownerName = ""
                     }
                     descriptionText = strings.Gift_View_SellingGiftInfo(ownerName).string
-                } else if let uniqueGift, let displayed = state.onchainProfileDisplayState(uniqueGift) {
-                    toggledSavedToProfile = !displayed
-                    descriptionText = displayed ? strings.Gift_View_DisplayedInfoNew : strings.Gift_View_HiddenInfoNew
-                    if !displayed {
-                        descriptionText = "#   \(descriptionText)"
-                    }
                 } else if let uniqueGift, let address = uniqueGift.giftAddress, case .address = uniqueGift.owner, !isMyHostedUniqueGift {
                     addressToOpen = address
                     descriptionText = strings.Gift_View_TonGiftAddressInfo
@@ -5615,7 +5436,7 @@ private final class GiftViewSheetContent: CombinedComponent {
                                 } else if let addressToOpen {
                                     state?.openAddress(addressToOpen)
                                 } else {
-                                    state?.updateSavedToProfile(toggledSavedToProfile)
+                                    state?.updateSavedToProfile(!savedToProfile)
                                     Queue.mainQueue().after(0.6, {
                                         state?.dismiss(animated: false)
                                     })
@@ -6206,18 +6027,6 @@ private final class GiftViewSheetContent: CombinedComponent {
                     ))
                 }
 
-                rightControlItems.append(GlassControlGroupComponent.Item(
-                    id: AnyHashable("more"),
-                    content: .animation("anim_morewide"),
-                    action: { [weak state] in
-                        guard let state else {
-                            return
-                        }
-                        state.openMore()
-                    }
-                ))
-            }
-            if uniqueGift == nil && !showUpgradePreview && state.canDeleteGift {
                 rightControlItems.append(GlassControlGroupComponent.Item(
                     id: AnyHashable("more"),
                     content: .animation("anim_morewide"),
@@ -7185,10 +6994,7 @@ public class GiftViewScreen: ViewControllerComponentContainer {
     public func dismissAnimated() {
         self.dismissAllTooltips()
 
-        let sheetTag = SheetComponent<ViewControllerComponentContainer.Environment>.View.Tag()
-        if let pagerView = self.node.hostView.componentView as? GiftPagerComponent.View, let view = pagerView.centeredItemView?.findTaggedView(tag: sheetTag) as? SheetComponent<ViewControllerComponentContainer.Environment>.View {
-            view.dismissAnimated()
-        } else if let view = self.node.hostView.findTaggedView(tag: sheetTag) as? SheetComponent<ViewControllerComponentContainer.Environment>.View {
+        if let view = self.node.hostView.findTaggedView(tag: SheetComponent<ViewControllerComponentContainer.Environment>.View.Tag()) as? SheetComponent<ViewControllerComponentContainer.Environment>.View {
             view.dismissAnimated()
         }
         

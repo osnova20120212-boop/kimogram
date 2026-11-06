@@ -1,7 +1,7 @@
 import Foundation
 import Postbox
 import SwiftSignalKit
-internal import TelegramApi
+import TelegramApi
 import MtProtoKit
 
 private func _internal_updateExtendedMediaById(account: Account, peerId: EnginePeer.Id, messageIds: [EngineMessage.Id]) -> Signal<Never, NoError> {

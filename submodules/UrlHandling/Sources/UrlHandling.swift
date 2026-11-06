@@ -114,7 +114,6 @@ public enum ParsedInternalPeerUrlParameter {
     case referrer(String)
     case storyFolder(Int64)
     case giftCollection(Int64)
-    case noPaidMessagesToken(String)
 }
 
 public enum ParsedInternalUrl {
@@ -145,9 +144,9 @@ public enum ParsedInternalUrl {
     case share(url: String?, text: String?, to: String?)
     case wallpaper(WallpaperUrlParameter)
     case theme(String)
-    case phone(String, String?, String?, String?, String?)
+    case phone(String, String?, String?, String?)
     case startAttach(String, String?, String?)
-    case contactToken(String, String?)
+    case contactToken(String)
     case chatFolder(slug: String)
     case premiumOffer(reference: String)
     case premiumGiftCode(slug: String)
@@ -209,7 +208,6 @@ public func parseInternalUrl(sharedContext: SharedAccountContext, context: Accou
                     var attach: String?
                     var startAttach: String?
                     var text: String?
-                    var noPaidMessagesToken: String?
                     if let queryItems = components.queryItems {
                         for queryItem in queryItems {
                             if let value = queryItem.value {
@@ -219,14 +217,12 @@ public func parseInternalUrl(sharedContext: SharedAccountContext, context: Accou
                                     startAttach = value
                                 } else if queryItem.name == "text" {
                                     text = value
-                                } else if queryItem.name == "free" {
-                                    noPaidMessagesToken = value
                                 }
                             }
                         }
                     }
                     
-                    return .phone(component.replacingOccurrences(of: "+", with: ""), attach, startAttach, text, noPaidMessagesToken)
+                    return .phone(component.replacingOccurrences(of: "+", with: ""), attach, startAttach, text)
                 } else {
                     return .join(String(component.dropFirst()))
                 }
@@ -347,9 +343,6 @@ public func parseInternalUrl(sharedContext: SharedAccountContext, context: Accou
                             return .oauth(url: "https://t.me/\(query)")
                         }
                     } else {
-                        if let value = queryItems.first(where: { $0.name == "free" })?.value, !value.isEmpty {
-                            return .peer(.name(peerName), .noPaidMessagesToken(value))
-                        }
                         for queryItem in queryItems {
                             if let value = queryItem.value {
                                 if queryItem.name == "text" {
@@ -532,8 +525,7 @@ public func parseInternalUrl(sharedContext: SharedAccountContext, context: Accou
                         return .confirmationCode(code)
                     }
                 } else if peerName == "contact" {
-                    let noPaidMessagesToken = components.queryItems?.first(where: { $0.name == "free" })?.value
-                    return .contactToken(pathComponents[1], noPaidMessagesToken.flatMap { $0.isEmpty ? nil : $0 })
+                    return .contactToken(pathComponents[1])
                 } else if pathComponents[0] == "share" && pathComponents[1] == "url" {
                     if let queryItems = components.queryItems {
                         var url: String?
@@ -854,13 +846,6 @@ public func parseInternalUrl(sharedContext: SharedAccountContext, context: Accou
     return nil
 }
 
-private func resolveNoPaidMessagesToken(context: AccountContext, peer: EnginePeer, token: String) -> Signal<ResolveInternalUrlResult, NoError> {
-    guard case let .user(user) = peer, user.botInfo == nil, peer.id != context.account.peerId else {
-        return .single(.result(.peer(peer._asPeer(), .chat(textInputState: nil, subject: nil, peekData: nil))))
-    }
-    return .single(.result(.noPaidMessagesToken(peer: peer._asPeer(), token: token)))
-}
-
 private enum ResolveInternalUrlResult {
     case progress
     case result(ResolvedUrl?)
@@ -946,12 +931,9 @@ private func resolveInternalUrl(context: AccountContext, url: ParsedInternalUrl)
                 }
                 return .single(.result(.sendGrams(transfer: WalletSendRequest(recipient: .address(recipient), amountNanograms: link.amountNanograms))))
             }
-        case let .phone(phone, attach, startAttach, text, noPaidMessagesToken):
+        case let .phone(phone, attach, startAttach, text):
             return context.engine.peers.resolvePeerByPhone(phone: phone)
             |> mapToSignal { peer -> Signal<ResolveInternalUrlResult, NoError> in
-                if let noPaidMessagesToken, let peer {
-                    return resolveNoPaidMessagesToken(context: context, peer: peer, token: noPaidMessagesToken)
-                }
                 if let peer = peer?._asPeer() {
                     var textInputState: ChatTextInputState?
                     if let text, !text.isEmpty {
@@ -1024,8 +1006,6 @@ private func resolveInternalUrl(context: AccountContext, url: ParsedInternalUrl)
                 if let peer = peer {
                     if let parameter = parameter {
                         switch parameter {
-                            case let .noPaidMessagesToken(token):
-                                return resolveNoPaidMessagesToken(context: context, peer: peer, token: token)
                             case .profile:
                                 return .single(.result(.peer(peer._asPeer(), .info(nil))))
                             case .direct:
@@ -1227,12 +1207,9 @@ private func resolveInternalUrl(context: AccountContext, url: ParsedInternalUrl)
                     return .single(.result(.inaccessiblePeer))
                 }
             }
-        case let .contactToken(token, noPaidMessagesToken):
+        case let .contactToken(token):
         return .single(.progress) |> then(context.engine.peers.importContactToken(token: token)
             |> mapToSignal { peer -> Signal<ResolveInternalUrlResult, NoError> in
-                if let noPaidMessagesToken, let peer {
-                    return resolveNoPaidMessagesToken(context: context, peer: peer, token: noPaidMessagesToken)
-                }
                 if let peer = peer {
                     return .single(.result(.peer(peer._asPeer(), .info(nil))))
                 } else {
