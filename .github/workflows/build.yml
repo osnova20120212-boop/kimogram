@@ -1,0 +1,121 @@
+name: Build Kimogram (iOS)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kimogram-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 360
+
+    steps:
+      - name: Check Telegram API keys
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: |
+          if [ -z "$TELEGRAM_API_ID" ] || [ -z "$TELEGRAM_API_HASH" ]; then
+            echo "::error::Add TELEGRAM_API_ID and TELEGRAM_API_HASH in Settings -> Secrets and variables -> Actions (get them at https://my.telegram.org/apps)"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Free disk space
+        run: |
+          df -h /
+          # Keep only the newest Xcode; remove simulators and caches we do not need.
+          ls -d /Applications/Xcode*.app || true
+          sudo rm -rf ~/Library/Developer/CoreSimulator/Caches || true
+          sudo rm -rf /Users/runner/Library/Android /usr/local/share/dotnet /usr/local/lib/node_modules || true
+          df -h /
+
+      - name: Select Xcode
+        run: |
+          WANTED=$(python3 -c 'import json;print(json.load(open("versions.json"))["xcode"])')
+          if [ -d "/Applications/Xcode_$WANTED.app" ]; then
+            XCODE="/Applications/Xcode_$WANTED.app"
+          else
+            XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -n 1)
+            echo "::warning::Xcode $WANTED not found on runner, using $XCODE"
+          fi
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+
+      - name: Create canonical source directory
+        run: |
+          sudo mkdir -p /Users/Shared
+          sudo chown "$USER" /Users/Shared
+          cp -R "$GITHUB_WORKSPACE" /Users/Shared/telegram-ios
+
+      - name: Write Kimogram configuration
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: |
+          cd /Users/Shared/telegram-ios
+          python3 - <<'EOF'
+          import json, os
+          cfg = json.load(open("build-system/appstore-configuration.json"))
+          cfg["api_id"] = os.environ["TELEGRAM_API_ID"].strip()
+          cfg["api_hash"] = os.environ["TELEGRAM_API_HASH"].strip()
+          cfg["is_appstore_build"] = "false"
+          cfg["appstore_id"] = "0"
+          cfg["premium_iap_product_id"] = ""
+          json.dump(cfg, open("build-system/kimogram-configuration.json", "w"), indent=2)
+          EOF
+
+      - name: Build
+        run: |
+          set -x
+          cd /Users/Shared/telegram-ios
+          BUILD_NUMBER="$(( $(git rev-list --count HEAD) + 100000 ))"
+          APP_VERSION=$(python3 -c 'import json;print(json.load(open("versions.json"))["app"])')
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$APP_VERSION" >> "$GITHUB_ENV"
+
+          python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
+          python3 -u build-system/Make/Make.py \
+            --overrideXcodeVersion \
+            --bazelUserRoot="/private/var/tmp/_bazel_kimogram" \
+            build \
+            --configurationPath="build-system/kimogram-configuration.json" \
+            --codesigningInformationPath=build-system/fake-codesigning \
+            --configuration=release_arm64 \
+            --buildNumber="$BUILD_NUMBER"
+
+          mkdir -p build/artifacts
+          for f in bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Telegram.ipa; do
+            cp "$f" build/artifacts/Kimogram.ipa
+          done
+          ls -lh build/artifacts
+
+      - name: Upload IPA (workflow artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kimogram-${{ env.APP_VERSION }}-${{ env.BUILD_NUMBER }}
+          path: /Users/Shared/telegram-ios/build/artifacts/Kimogram.ipa
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ env.BUILD_NUMBER }}
+          name: Kimogram ${{ env.APP_VERSION }} (${{ env.BUILD_NUMBER }})
+          body: |
+            Unsigned Kimogram build for iPhone. Install it with Sideloadly or AltStore.
+          files: /Users/Shared/telegram-ios/build/artifacts/Kimogram.ipa
