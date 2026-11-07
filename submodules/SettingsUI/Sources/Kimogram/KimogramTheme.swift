@@ -46,6 +46,10 @@ public func kimogramApplyThemeIfNeeded(sharedContext: SharedAccountContext) {
                 }
             }
         }
+        // Softer, rounder bubbles, unless the user changed them already.
+        if updated.chatBubbleSettings == PresentationChatBubbleSettings.default {
+            updated.chatBubbleSettings = PresentationChatBubbleSettings(mainRadius: 17, auxiliaryRadius: 6, mergeBubbleCorners: true)
+        }
         return updated
     }).start()
 }
