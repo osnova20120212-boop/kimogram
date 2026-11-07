@@ -917,6 +917,22 @@ func infoItems(
         }, requestLayout: { animated in
             interaction.requestLayout(animated)
         }))
+        
+        let ru = presentationData.strings.baseLanguageCode == "ru"
+        // The data center that stores the profile photo is the account's home data center.
+        if let resource = peer.smallProfileImage?.resource as? CloudPeerPhotoSizeMediaResource {
+            let dcText = kimogramDataCenterName(resource.datacenterId, ru: ru)
+            items[.peerInfoTrailing]!.append(PeerInfoScreenLabeledValueItem(id: AnyHashable("kimogram_peer_dc"), label: ru ? "Дата-центр" : "Data Center", text: dcText, textColor: .primary, action: { _, _ in
+                UIPasteboard.general.string = dcText
+            }, requestLayout: { animated in
+                interaction.requestLayout(animated)
+            }))
+        }
+        if case let .user(user) = peer, user.botInfo == nil, let registered = kimogramApproximateRegistrationText(userId: rawId, ru: ru) {
+            items[.peerInfoTrailing]!.append(PeerInfoScreenLabeledValueItem(id: AnyHashable("kimogram_peer_registered"), label: ru ? "Регистрация (примерно)" : "Joined (approximately)", text: registered, textColor: .primary, action: nil, requestLayout: { animated in
+                interaction.requestLayout(animated)
+            }))
+        }
     }
     
     var result: [(AnyHashable, [PeerInfoScreenItem])] = []
@@ -1883,4 +1899,68 @@ func editingItems(data: PeerInfoScreenData?, boostStatus: ChannelBoostStatus?, s
         }
     }
     return result
+}
+
+/// Kimogram: where a data center is, as Telegram documents them.
+private func kimogramDataCenterName(_ id: Int, ru: Bool) -> String {
+    switch id {
+    case 1, 3:
+        return "DC\(id) · " + (ru ? "Майами, США" : "Miami, USA")
+    case 2, 4:
+        return "DC\(id) · " + (ru ? "Амстердам, Нидерланды" : "Amsterdam, Netherlands")
+    case 5:
+        return "DC5 · " + (ru ? "Сингапур" : "Singapore")
+    default:
+        return "DC\(id)"
+    }
+}
+
+/// Kimogram: user ids grow over time, so an id dates the account to within a few months.
+/// The points are (id, unix time) pairs sampled from accounts with a known sign-up date.
+private func kimogramApproximateRegistrationText(userId: Int64, ru: Bool) -> String? {
+    let points: [(Double, Double)] = [
+        (0, 1375315200),            // 2013-08
+        (10_000_000, 1388534400),   // 2014-01
+        (50_000_000, 1406851200),   // 2014-08
+        (100_000_000, 1425168000),  // 2015-03
+        (200_000_000, 1454284800),  // 2016-02
+        (300_000_000, 1480550400),  // 2016-12
+        (400_000_000, 1501545600),  // 2017-08
+        (500_000_000, 1514764800),  // 2018-01
+        (700_000_000, 1543622400),  // 2018-12
+        (900_000_000, 1564617600),  // 2019-08
+        (1_000_000_000, 1572566400), // 2019-11
+        (1_200_000_000, 1585699200), // 2020-04
+        (1_400_000_000, 1601510400), // 2020-10
+        (1_600_000_000, 1612137600), // 2021-02
+        (1_800_000_000, 1619827200), // 2021-05
+        (2_000_000_000, 1630454400), // 2021-09
+        (2_147_483_647, 1635724800), // 2021-11
+        (5_000_000_000, 1638316800), // 2021-12
+        (5_500_000_000, 1654041600), // 2022-06
+        (6_000_000_000, 1672531200), // 2023-01
+        (6_500_000_000, 1690848000), // 2023-08
+        (7_000_000_000, 1709251200), // 2024-03
+        (7_500_000_000, 1725148800), // 2024-09
+        (8_000_000_000, 1743465600), // 2025-04
+        (8_500_000_000, 1761955200)  // 2025-11
+    ]
+    let id = Double(userId)
+    guard id > 0 else {
+        return nil
+    }
+    var timestamp = points[points.count - 1].1
+    for i in 1 ..< points.count {
+        let (x1, y1) = points[i - 1]
+        let (x2, y2) = points[i]
+        if id <= x2 {
+            timestamp = y1 + (id - x1) / (x2 - x1) * (y2 - y1)
+            break
+        }
+    }
+    timestamp = min(timestamp, Date().timeIntervalSince1970)
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: ru ? "ru_RU" : "en_US")
+    formatter.dateFormat = "LLLL yyyy"
+    return formatter.string(from: Date(timeIntervalSince1970: timestamp))
 }
