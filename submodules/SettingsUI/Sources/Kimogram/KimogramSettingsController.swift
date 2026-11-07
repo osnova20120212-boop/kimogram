@@ -261,7 +261,7 @@ private func countLabel(_ keys: [KimogramSettings.Key], _ ru: Bool) -> String {
 }
 
 private let ghostKeys: [KimogramSettings.Key] = [.ghostReadReceipts, .ghostOnline, .ghostTyping, .ghostStories, .ghostVoiceListened]
-private let historyKeys: [KimogramSettings.Key] = [.saveDeletedMessages, .saveEditHistory, .saveProtected]
+private let historyKeys: [KimogramSettings.Key] = [.saveDeletedMessages, .saveEditHistory, .keepSelfDestructing, .saveProtected]
 
 private func doubleTapTitles(_ ru: Bool) -> [String] {
     return ru ? ["Реакция", "Ответить", "Открыть меню", "Ничего"] : ["Reaction", "Reply", "Open Menu", "Nothing"]
@@ -294,7 +294,8 @@ private func historyPage(context: AccountContext) -> ViewController {
         return [
             KimogramPageSection(header: ru ? "СООБЩЕНИЯ" : "MESSAGES", rows: [
                 .toggle(.saveDeletedMessages, title: ru ? "Сохранять удалённые" : "Keep Deleted Messages", text: ru ? "Останутся у вас с пометкой 🗑" : "They stay with a 🗑 mark"),
-                .toggle(.saveEditHistory, title: ru ? "Сохранять историю правок" : "Keep Edit History", text: ru ? "Под исправленным видно, что было раньше" : "See what an edited message said before")
+                .toggle(.saveEditHistory, title: ru ? "Сохранять историю правок" : "Keep Edit History", text: ru ? "Под исправленным видно, что было раньше" : "See what an edited message said before"),
+                .toggle(.keepSelfDestructing, title: ru ? "Не удалять исчезающие" : "Keep Self-Destructing", text: ru ? "Сообщения с таймером и одноразовые фото останутся" : "Timed messages and view-once media stay")
             ], footer: ru ? "Работает для сообщений, которые пришли, пока настройка включена." : "Works for messages received while this is on."),
             KimogramPageSection(header: ru ? "ЗАЩИЩЁННОЕ" : "PROTECTED", rows: [
                 .toggle(.saveProtected, title: ru ? "Сохранять защищённое" : "Save Protected Content", text: ru ? "Копировать, сохранять и снимать скриншоты где запрещено, сохранять чужие истории" : "Copy, save and screenshot where it is restricted; save others' stories")
