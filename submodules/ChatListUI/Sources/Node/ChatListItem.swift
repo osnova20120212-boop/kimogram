@@ -3824,6 +3824,12 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                 textMaxWidth -= 18.0
             }
             
+            // Kimogram: a locked chat never shows its last message in the list.
+            if case let .peer(peerData) = item.content, KimogramSettings.isChatLocked(peerData.peer.peerId) {
+                let lockedText = item.presentationData.strings.baseLanguageCode == "ru" ? "🔒 Чат заблокирован" : "🔒 Chat is locked"
+                textAttributedString = NSAttributedString(string: lockedText, font: textFont, textColor: theme.messageTextColor)
+            }
+            
             let textLineSpacing: CGFloat = min(0.2, item.presentationData.fontSize.itemListBaseFontSize * 0.2 / 17.0)
             let (textLayout, textApply) = textLayout(TextNodeLayoutArguments(
                 attributedString: textAttributedString,

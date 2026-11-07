@@ -545,6 +545,16 @@ func chatContextMenuItems(context: AccountContext, peerId: EnginePeer.Id, promoI
                             }
                         }
                         
+                        // Kimogram: lock a chat behind Face ID, Touch ID or the passcode.
+                        if peerId != context.account.peerId {
+                            let isLocked = KimogramSettings.isChatLocked(peerId)
+                            let ru = strings.baseLanguageCode == "ru"
+                            items.append(.action(ContextMenuActionItem(text: isLocked ? (ru ? "Снять блокировку" : "Unlock Chat") : (ru ? "Заблокировать чат" : "Lock Chat"), icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Lock"), color: theme.contextMenu.primaryColor) }, action: { _, f in
+                                KimogramSettings.setChatLocked(peerId, !isLocked)
+                                f(.default)
+                            })))
+                        }
+                        
                         let appendDeleteOrUngroupItem = {
                             if case .community = peer {
                                 items.append(.action(ContextMenuActionItem(text: strings.ChatList_Context_Ungroup, textColor: .destructive, icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Ungroup"), color: theme.contextMenu.destructiveColor) }, action: { _, f in

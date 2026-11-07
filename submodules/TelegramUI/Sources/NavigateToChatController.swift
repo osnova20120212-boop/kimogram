@@ -22,6 +22,13 @@ import ChatMessageNotificationItem
 import FaceScanScreen
 
 public func navigateToChatControllerImpl(_ params: NavigateToChatControllerParams) {
+    // Kimogram: a locked chat opens after Face ID, Touch ID or the passcode.
+    KimogramChatLockGate.shared.unlock(peerId: params.chatLocation.peerId, completion: {
+        navigateToChatControllerUnlocked(params)
+    })
+}
+
+private func navigateToChatControllerUnlocked(_ params: NavigateToChatControllerParams) {
     if case let .peer(peer) = params.chatLocation {
         let _ = params.context.engine.peers.ensurePeerIsLocallyAvailable(peer: peer).startStandalone()
     }

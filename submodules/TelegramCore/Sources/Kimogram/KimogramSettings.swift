@@ -1,5 +1,6 @@
 import Foundation
 import SwiftSignalKit
+import Postbox
 
 /// Kimogram: the mod's own switches.
 ///
@@ -135,5 +136,30 @@ public final class KimogramSettings {
             defaults.set(newValue.rawValue, forKey: stickerSizeKey)
             updatesPipe.putNext(Void())
         }
+    }
+
+    // MARK: Locked chats
+
+    private static let lockedChatsKey = "kimogram.lockedChats"
+
+    /// Chats that open only after Face ID, Touch ID or the device passcode.
+    public static func isChatLocked(_ peerId: PeerId) -> Bool {
+        let ids = defaults.array(forKey: lockedChatsKey) as? [String] ?? []
+        return ids.contains("\(peerId.toInt64())")
+    }
+
+    public static func setChatLocked(_ peerId: PeerId, _ locked: Bool) {
+        var ids = defaults.array(forKey: lockedChatsKey) as? [String] ?? []
+        let id = "\(peerId.toInt64())"
+        ids.removeAll(where: { $0 == id })
+        if locked {
+            ids.append(id)
+        }
+        defaults.set(ids, forKey: lockedChatsKey)
+        updatesPipe.putNext(Void())
+    }
+
+    public static var lockedChatCount: Int {
+        return (defaults.array(forKey: lockedChatsKey) as? [String] ?? []).count
     }
 }

@@ -401,7 +401,7 @@ public func kimogramSettingsController(context: AccountContext) -> ViewControlle
                 .link(title: ru ? "Сохранение" : "Keep History", icon: PresentationResourcesSettings.savedMessages, label: countLabel(historyKeys, ru), action: { environment in
                     environment.push(historyPage(context: environment.context))
                 })
-            ]),
+            ], footer: ru ? "Любой чат можно закрыть Face ID: зажмите его в списке чатов и выберите «Заблокировать чат». Сейчас заблокировано: \(KimogramSettings.lockedChatCount)." : "Any chat can be locked with Face ID: press and hold it in the chat list and choose Lock Chat. Locked now: \(KimogramSettings.lockedChatCount)."),
             KimogramPageSection(header: ru ? "УДОБСТВО" : "COMFORT", rows: [
                 .link(title: ru ? "Сообщения и чаты" : "Messages and Chats", icon: PresentationResourcesSettings.privateChats, label: "", action: { environment in
                     environment.push(chatsPage(context: environment.context))
