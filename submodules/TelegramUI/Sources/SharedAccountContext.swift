@@ -2276,8 +2276,8 @@ public final class SharedAccountContextImpl: SharedAccountContext {
         // Kimogram: "Open Links Without Asking" skips the "open this link?" question for links whose
         // text differs from the address. Forced prompts and the login-part check in the external
         // opener still run.
-        let skipConcealedAlert = skipConcealedAlert || (KimogramSettings.get(.openLinksDirectly) && !forceConcealed)
-        return OpenUserGeneratedUrl.openUserGeneratedUrl(context: context, peerId: peerId, url: url, webpage: webpage, concealed: concealed, forceConcealed: forceConcealed, skipUrlAuth: skipUrlAuth, skipConcealedAlert: skipConcealedAlert, forceDark: forceDark, present: present, openResolved: openResolved, progress: progress, alertDisplayUpdated: alertDisplayUpdated, concealedAlertOption: concealedAlertOption)
+        let kimogramSkipConcealedAlert = skipConcealedAlert || (KimogramSettings.get(.openLinksDirectly) && !forceConcealed)
+        return OpenUserGeneratedUrl.openUserGeneratedUrl(context: context, peerId: peerId, url: url, webpage: webpage, concealed: concealed, forceConcealed: forceConcealed, skipUrlAuth: skipUrlAuth, skipConcealedAlert: kimogramSkipConcealedAlert, forceDark: forceDark, present: present, openResolved: openResolved, progress: progress, alertDisplayUpdated: alertDisplayUpdated, concealedAlertOption: concealedAlertOption)
     }
 
     public func makeDeviceContactInfoController(context: ShareControllerAccountContext, environment: ShareControllerEnvironment, subject: DeviceContactInfoSubject, completed: (() -> Void)?, cancelled: (() -> Void)?) -> ViewController {
