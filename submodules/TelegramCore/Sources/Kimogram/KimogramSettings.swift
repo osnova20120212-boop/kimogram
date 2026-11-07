@@ -28,6 +28,7 @@ public final class KimogramSettings {
         case extendedMessageMenu = "kimogram.extendedMessageMenu"
         case confirmStickers = "kimogram.confirmStickers"
         case confirmVoice = "kimogram.confirmVoice"
+        case disableSwipeReply = "kimogram.disableSwipeReply"
     }
 
     /// Switches that are on until the user turns them off. Everything else starts off,
@@ -75,5 +76,25 @@ public final class KimogramSettings {
         defaults.set(value, forKey: Key.ghostStories.rawValue)
         defaults.set(value, forKey: Key.ghostVoiceListened.rawValue)
         updatesPipe.putNext(Void())
+    }
+
+    /// What a double tap on a message does.
+    public enum DoubleTapAction: Int, CaseIterable {
+        case reaction = 0
+        case reply = 1
+        case menu = 2
+        case nothing = 3
+    }
+
+    private static let doubleTapActionKey = "kimogram.doubleTapAction"
+
+    public static var doubleTapAction: DoubleTapAction {
+        get {
+            return DoubleTapAction(rawValue: defaults.integer(forKey: doubleTapActionKey)) ?? .reaction
+        }
+        set {
+            defaults.set(newValue.rawValue, forKey: doubleTapActionKey)
+            updatesPipe.putNext(Void())
+        }
     }
 }

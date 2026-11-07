@@ -5819,6 +5819,22 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         super.animateFrameTransition(progress, currentValue)
     }
     
+    /// Kimogram: what a double tap on a message does. Returns false to keep Telegram's quick reaction.
+    private func kimogramHandleDoubleTap(item: ChatMessageItem, message: Message) -> Bool {
+        switch KimogramSettings.doubleTapAction {
+        case .reaction:
+            return false
+        case .reply:
+            item.controllerInteraction.setupReply(message.id)
+            return true
+        case .menu:
+            item.controllerInteraction.openMessageContextMenu(message, false, self, self.backgroundNode.frame, nil, nil)
+            return true
+        case .nothing:
+            return true
+        }
+    }
+    
     @objc private func tapLongTapOrDoubleTapGesture(_ recognizer: TapLongTapOrDoubleTapGestureRecognizer) {
         switch recognizer.state {
         case .ended:
@@ -5833,7 +5849,8 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                     case let .optionalAction(f):
                         f()
                     case let .openContextMenu(openContextMenu):
-                        if canAddMessageReactions(message: EngineMessage(openContextMenu.tapMessage)) {
+                        if self.kimogramHandleDoubleTap(item: item, message: openContextMenu.tapMessage) {
+                        } else if canAddMessageReactions(message: EngineMessage(openContextMenu.tapMessage)) {
                             item.controllerInteraction.updateMessageReaction(openContextMenu.tapMessage, .default, false, nil)
                         } else {
                             item.controllerInteraction.openMessageContextMenu(openContextMenu.tapMessage, openContextMenu.selectAll, self, openContextMenu.subFrame, nil, nil)
@@ -5842,7 +5859,8 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                 } else if case .tap = gesture {
                     item.controllerInteraction.clickThroughMessage(self.view, location)
                 } else if case .doubleTap = gesture {
-                    if canAddMessageReactions(message: EngineMessage(item.message)) {
+                    if self.kimogramHandleDoubleTap(item: item, message: item.message) {
+                    } else if canAddMessageReactions(message: EngineMessage(item.message)) {
                         item.controllerInteraction.updateMessageReaction(item.message, .default, false, nil)
                     }
                 }

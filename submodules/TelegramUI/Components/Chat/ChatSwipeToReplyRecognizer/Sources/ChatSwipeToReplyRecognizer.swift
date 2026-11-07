@@ -23,7 +23,10 @@ public class ChatSwipeToReplyRecognizer: UIPanGestureRecognizer {
     override public func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
         super.touchesBegan(touches, with: event)
         
-        if let shouldBegin = self.shouldBegin, !shouldBegin() {
+        // Kimogram: KimogramSettings.Key.disableSwipeReply (read directly, this module sits below TelegramCore).
+        if UserDefaults.standard.bool(forKey: "kimogram.disableSwipeReply") {
+            self.state = .failed
+        } else if let shouldBegin = self.shouldBegin, !shouldBegin() {
             self.state = .failed
         } else {
             let touch = touches.first!
