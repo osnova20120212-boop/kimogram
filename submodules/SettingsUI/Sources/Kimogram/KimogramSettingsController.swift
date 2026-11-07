@@ -330,6 +330,7 @@ private func chatsPage(context: AccountContext) -> ViewController {
                 .toggle(.hideStoriesBar, title: ru ? "Скрыть истории над чатами" : "Hide Stories Row", text: nil),
                 .toggle(.hideReactions, title: ru ? "Скрыть реакции" : "Hide Reactions", text: ru ? "Под сообщениями не будет реакций" : "No reactions under messages"),
                 .toggle(.hideSimilarChannels, title: ru ? "Скрыть похожие каналы" : "Hide Similar Channels", text: nil),
+                .toggle(.hideShareButton, title: ru ? "Без кнопки «Поделиться» у постов" : "No Share Button on Posts", text: nil),
                 .toggle(.openLinksDirectly, title: ru ? "Открывать ссылки без вопроса" : "Open Links Without Asking", text: ru ? "Даже если текст ссылки не совпадает с адресом" : "Even when the link text differs from the address")
             ])
         ]

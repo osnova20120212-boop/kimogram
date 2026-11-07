@@ -1990,6 +1990,10 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
             needsShareButton = false
             needsSummarizeButton = false
         }
+        // Kimogram: no round share button next to channel posts (comments stay).
+        if KimogramSettings.get(.hideShareButton) && !hasCommentButton(item: item) {
+            needsShareButton = false
+        }
         let isAd = item.content.firstMessage.adAttribute != nil
         if isAd {
             needsShareButton = true

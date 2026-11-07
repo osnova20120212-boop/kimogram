@@ -37,6 +37,7 @@ public final class KimogramSettings {
         case openLinksDirectly = "kimogram.openLinksDirectly"
         case keepSelfDestructing = "kimogram.keepSelfDestructing"
         case hideFolderBadges = "kimogram.hideFolderBadges"
+        case hideShareButton = "kimogram.hideShareButton"
     }
 
     /// Switches that are on until the user turns them off. Everything else starts off,
