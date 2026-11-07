@@ -13,11 +13,25 @@
         <view contentMode="scaleToFill" id="O8c-13-3vw">
             <rect key="frame" x="0.0" y="0.0" width="1366" height="1024"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+            <subviews>
+                <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="KimogramLaunch" translatesAutoresizingMaskIntoConstraints="NO" id="kmg-lg-001">
+                    <rect key="frame" x="635" y="464" width="96" height="96"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="96" id="kmg-w-001"/>
+                        <constraint firstAttribute="height" constant="96" id="kmg-h-001"/>
+                    </constraints>
+                </imageView>
+            </subviews>
             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+            <constraints>
+                <constraint firstItem="kmg-lg-001" firstAttribute="centerX" secondItem="O8c-13-3vw" secondAttribute="centerX" id="kmg-cx-001"/>
+                <constraint firstItem="kmg-lg-001" firstAttribute="centerY" secondItem="O8c-13-3vw" secondAttribute="centerY" id="kmg-cy-001"/>
+            </constraints>
             <point key="canvasLocation" x="139" y="117"/>
         </view>
     </objects>
     <resources>
+        <image name="KimogramLaunch" width="96" height="96"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
