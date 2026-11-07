@@ -2419,7 +2419,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
                 shouldAnimateMessageTransition = true
             }
             
-            strongSelf.presentPaidMessageAlertIfNeeded(completion: { [weak strongSelf] postpone in
+            strongSelf.kimogramConfirmStickerThenPresentPaidMessageAlertIfNeeded(isGif: false, completion: { [weak strongSelf] postpone in
                 guard let strongSelf else {
                     return
                 }
@@ -2675,7 +2675,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
                     }
                 }
                 
-                strongSelf.presentPaidMessageAlertIfNeeded(completion: { [weak self] postpone in
+                strongSelf.kimogramConfirmStickerThenPresentPaidMessageAlertIfNeeded(isGif: true, completion: { [weak self] postpone in
                     guard let strongSelf = self else {
                         return
                     }

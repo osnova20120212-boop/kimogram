@@ -26,6 +26,8 @@ public final class KimogramSettings {
         case ghostVoiceListened = "kimogram.ghost.voiceListened"
         case saveProtected = "kimogram.saveProtected"
         case extendedMessageMenu = "kimogram.extendedMessageMenu"
+        case confirmStickers = "kimogram.confirmStickers"
+        case confirmVoice = "kimogram.confirmVoice"
     }
 
     /// Switches that are on until the user turns them off. Everything else starts off,

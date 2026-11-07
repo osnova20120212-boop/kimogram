@@ -257,6 +257,11 @@ extension ChatControllerImpl {
             updatedAction = .preview
         }
         
+        // Kimogram: releasing the microphone opens the preview to listen before sending.
+        if KimogramSettings.get(.confirmVoice), case .send = action {
+            updatedAction = .preview
+        }
+        
         var sendImmediately = false
         if let _ = self.presentationInterfaceState.sendPaidMessageStars, case .send = action {
             updatedAction = .preview
