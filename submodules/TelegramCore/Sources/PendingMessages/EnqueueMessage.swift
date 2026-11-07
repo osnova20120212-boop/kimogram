@@ -695,6 +695,10 @@ private func opportunisticallyTransformOutgoingMedia(network: Network, postbox: 
 }
 
 public func enqueueMessages(account: Account, peerId: PeerId, messages: [EnqueueMessage]) -> Signal<[MessageId?], NoError> {
+    // Kimogram ghost mode: replying marks the chat as read for the other side.
+    if KimogramSettings.get(.ghostReadReceipts) && KimogramSettings.get(.ghostReadOnReply) {
+        kimogramMarkReadOnReply(account: account, peerId: peerId)
+    }
     let signal: Signal<[(Bool, EnqueueMessage)], NoError>
     if let transformOutgoingMessageMedia = account.transformOutgoingMessageMedia {
         signal = opportunisticallyTransformOutgoingMedia(network: account.network, postbox: account.postbox, transformOutgoingMessageMedia: transformOutgoingMessageMedia, messages: messages, userInteractive: true)

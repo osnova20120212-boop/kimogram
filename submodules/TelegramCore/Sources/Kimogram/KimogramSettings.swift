@@ -22,6 +22,7 @@ public final class KimogramSettings {
         case hidePremiumRows = "kimogram.hidePremiumRows"
         case timestampSeconds = "kimogram.timestampSeconds"
         case fastDownloads = "kimogram.fastDownloads"
+        case ghostReadOnReply = "kimogram.ghost.readOnReply"
     }
 
     private static let defaults = UserDefaults.standard

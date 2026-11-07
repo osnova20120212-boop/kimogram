@@ -1,5 +1,7 @@
 import Foundation
 import Postbox
+import SwiftSignalKit
+import TelegramApi
 
 private var kimogramIsRussian: Bool {
     let language = Locale.preferredLanguages.first ?? ""
@@ -58,4 +60,46 @@ func kimogramTextKeepingEditHistory(previousText: String, updatedText: String) -
         return nil
     }
     return updatedText + marker + previousText
+}
+
+/// Kimogram ghost mode: answering a chat is the moment to let it know you read it. Pushes the
+/// local read position of that chat to the server once, as a regular client would.
+func kimogramMarkReadOnReply(account: Account, peerId: PeerId) {
+    if peerId.namespace == Namespaces.Peer.SecretChat {
+        return
+    }
+    let network = account.network
+    let _ = (account.postbox.transaction { transaction -> (Peer, MessageId.Id)? in
+        guard let peer = transaction.getPeer(peerId), let states = transaction.getPeerReadStates(peerId) else {
+            return nil
+        }
+        for (namespace, state) in states where namespace == Namespaces.Message.Cloud {
+            if case let .idBased(maxIncomingReadId, _, _, _, _) = state, maxIncomingReadId > 0 {
+                return (peer, maxIncomingReadId)
+            }
+        }
+        return nil
+    }
+    |> mapToSignal { value -> Signal<Never, NoError> in
+        guard let value else {
+            return .complete()
+        }
+        let peer = value.0
+        let maxId = value.1
+        if let inputChannel = apiInputChannel(peer) {
+            return network.request(Api.functions.channels.readHistory(channel: inputChannel, maxId: maxId))
+            |> `catch` { _ -> Signal<Api.Bool, NoError> in
+                return .complete()
+            }
+            |> ignoreValues
+        } else if let inputPeer = apiInputPeer(peer) {
+            return network.request(Api.functions.messages.readHistory(peer: inputPeer, maxId: maxId))
+            |> `catch` { _ -> Signal<Api.messages.AffectedMessages, NoError> in
+                return .complete()
+            }
+            |> ignoreValues
+        } else {
+            return .complete()
+        }
+    }).start()
 }

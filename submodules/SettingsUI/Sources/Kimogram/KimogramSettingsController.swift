@@ -225,6 +225,7 @@ private func kimogramSettingsEntries(theme: PresentationTheme, autoProxyEnabled:
     entries.append(.ghostHeader(theme, ru ? "РЕЖИМ ПРИЗРАКА" : "GHOST MODE"))
     entries.append(.ghostMaster(theme, ru ? "Режим призрака" : "Ghost Mode", KimogramSettings.ghostModeEnabled))
     entries.append(.ghostOption(0, theme, .ghostReadReceipts, ru ? "Не отправлять «прочитано»" : "Don't Send Read Receipts", KimogramSettings.get(.ghostReadReceipts)))
+    entries.append(.ghostOption(4, theme, .ghostReadOnReply, ru ? "Отмечать прочитанным, когда отвечаю" : "Mark Read When I Reply", KimogramSettings.get(.ghostReadOnReply)))
     entries.append(.ghostOption(1, theme, .ghostOnline, ru ? "Не показывать «в сети»" : "Hide Online Status", KimogramSettings.get(.ghostOnline)))
     entries.append(.ghostOption(2, theme, .ghostTyping, ru ? "Не показывать «печатает»" : "Hide Typing", KimogramSettings.get(.ghostTyping)))
     entries.append(.ghostOption(3, theme, .ghostStories, ru ? "Смотреть истории тайно" : "View Stories Secretly", KimogramSettings.get(.ghostStories)))
