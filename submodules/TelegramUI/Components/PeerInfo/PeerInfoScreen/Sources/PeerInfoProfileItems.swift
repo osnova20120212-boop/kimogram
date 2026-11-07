@@ -900,6 +900,25 @@ func infoItems(
         }
     }
     
+    // Kimogram: show the chat's ID (as bots and the Bot API see it), tap to copy.
+    if KimogramSettings.get(.showPeerId), let peer = data.peer {
+        let rawId = peer.id.id._internalGetInt64Value()
+        let idText: String
+        switch peer {
+        case .channel:
+            idText = "-100\(rawId)"
+        case .legacyGroup:
+            idText = "-\(rawId)"
+        default:
+            idText = "\(rawId)"
+        }
+        items[.peerInfoTrailing]!.append(PeerInfoScreenLabeledValueItem(id: AnyHashable("kimogram_peer_id"), label: "ID", text: idText, textColor: .primary, action: { _, _ in
+            UIPasteboard.general.string = idText
+        }, requestLayout: { animated in
+            interaction.requestLayout(animated)
+        }))
+    }
+    
     var result: [(AnyHashable, [PeerInfoScreenItem])] = []
     for section in InfoSection.allCases {
         if let sectionItems = items[section], !sectionItems.isEmpty {

@@ -149,7 +149,7 @@ public func dictFromLocalization(_ value: Localization) -> [String: String] {
                 dict["\(key)_any"] = other
         }
     }
-    return dict
+    return kimogramRebrandStrings(dict)
 }
 
 private func currentDateTimeFormat() -> PresentationDateTimeFormat {

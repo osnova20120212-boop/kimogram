@@ -13,6 +13,7 @@ import DeviceAccess
 import TelegramStringFormatting
 import PeerNameColorItem
 import WalletContext
+import SettingsUI
 
 enum SettingsSection: Int, CaseIterable {
     case edit
@@ -20,6 +21,7 @@ enum SettingsSection: Int, CaseIterable {
     case accounts
     case myProfile
     case wallet
+    case kimogram
     case proxy
     case apps
     case shortcuts
@@ -175,9 +177,17 @@ func settingsItems(data: PeerInfoScreenData?, context: AccountContext, presentat
             }))
         }
         
-        if !settings.proxySettings.servers.isEmpty {
+        // Kimogram: the mod's own settings, right under "Money".
+        items[.kimogram]!.append(PeerInfoScreenDisclosureItem(id: 0, text: kimogramSettingsTitle(), icon: UIImage(bundleImageName: "Settings/Kimogram"), action: {
+            interaction.openSettings(.kimogram)
+        }))
+        
+        // Kimogram: the proxy row is always there, because Auto Proxy lives behind it.
+        do {
             let proxyType: String
-            if settings.proxySettings.enabled, let activeServer = settings.proxySettings.activeServer {
+            if KimogramAutoProxy.shared.isEnabled {
+                proxyType = KimogramAutoProxy.isRussian ? "Авто" : "Auto"
+            } else if settings.proxySettings.enabled, let activeServer = settings.proxySettings.activeServer {
                 switch activeServer.connection {
                 case .mtp:
                     proxyType = presentationData.strings.SocksProxySetup_ProxyTelegram

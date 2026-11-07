@@ -76,7 +76,9 @@ public enum ProxySettingsEntryTag: ItemListItemTag, Equatable {
 }
 
 private enum ProxySettingsControllerEntry: ItemListNodeEntry {
+    case modeHeader(PresentationTheme, String)
     case autoProxy(PresentationTheme, String, Bool)
+    case manualProxy(PresentationTheme, String, Bool)
     case autoProxyInfo(PresentationTheme, String)
     case enabled(PresentationTheme, String, Bool, Bool)
     case serversHeader(PresentationTheme, String)
@@ -88,7 +90,7 @@ private enum ProxySettingsControllerEntry: ItemListNodeEntry {
     
     var section: ItemListSectionId {
         switch self {
-            case .autoProxy, .autoProxyInfo:
+            case .modeHeader, .autoProxy, .manualProxy, .autoProxyInfo:
                 return ProxySettingsControllerSection.autoProxy.rawValue
             case .enabled:
                 return ProxySettingsControllerSection.enabled.rawValue
@@ -121,11 +123,27 @@ private enum ProxySettingsControllerEntry: ItemListNodeEntry {
                 return .index(6)
             case .autoProxyInfo:
                 return .index(7)
+            case .manualProxy:
+                return .index(8)
+            case .modeHeader:
+                return .index(9)
         }
     }
     
     static func ==(lhs: ProxySettingsControllerEntry, rhs: ProxySettingsControllerEntry) -> Bool {
         switch lhs {
+            case let .modeHeader(lhsTheme, lhsText):
+                if case let .modeHeader(rhsTheme, rhsText) = rhs, lhsTheme === rhsTheme, lhsText == rhsText {
+                    return true
+                } else {
+                    return false
+                }
+            case let .manualProxy(lhsTheme, lhsText, lhsValue):
+                if case let .manualProxy(rhsTheme, rhsText, rhsValue) = rhs, lhsTheme === rhsTheme, lhsText == rhsText, lhsValue == rhsValue {
+                    return true
+                } else {
+                    return false
+                }
             case let .autoProxy(lhsTheme, lhsText, lhsValue):
                 if case let .autoProxy(rhsTheme, rhsText, rhsValue) = rhs, lhsTheme === rhsTheme, lhsText == rhsText, lhsValue == rhsValue {
                     return true
@@ -185,8 +203,12 @@ private enum ProxySettingsControllerEntry: ItemListNodeEntry {
     
     private var sortIndex: (Int, Int) {
         switch self {
-            case .autoProxy:
+            case .modeHeader:
                 return (0, 0)
+            case .autoProxy:
+                return (0, 1)
+            case .manualProxy:
+                return (0, 2)
             case .autoProxyInfo:
                 return (1, 0)
             case .enabled:
@@ -213,9 +235,15 @@ private enum ProxySettingsControllerEntry: ItemListNodeEntry {
     func item(presentationData: ItemListPresentationData, arguments: Any) -> ListViewItem {
         let arguments = arguments as! ProxySettingsControllerArguments
         switch self {
+            case let .modeHeader(_, text):
+                return ItemListSectionHeaderItem(presentationData: presentationData, text: text, sectionId: self.section)
             case let .autoProxy(_, text, value):
-                return ItemListSwitchItem(presentationData: presentationData, systemStyle: .glass, title: text, value: value, enableInteractiveChanges: true, enabled: true, sectionId: self.section, style: .blocks, updated: { value in
-                    arguments.toggleAutoProxy(value)
+                return ItemListCheckboxItem(presentationData: presentationData, systemStyle: .glass, title: text, subtitle: KimogramAutoProxy.autoModeSubtitle, style: .left, checked: value, zeroSeparatorInsets: false, sectionId: self.section, action: {
+                    arguments.toggleAutoProxy(true)
+                })
+            case let .manualProxy(_, text, value):
+                return ItemListCheckboxItem(presentationData: presentationData, systemStyle: .glass, title: text, subtitle: KimogramAutoProxy.manualModeSubtitle, style: .left, checked: value, zeroSeparatorInsets: false, sectionId: self.section, action: {
+                    arguments.toggleAutoProxy(false)
                 })
             case let .autoProxyInfo(_, text):
                 return ItemListTextItem(presentationData: presentationData, text: .plain(text), sectionId: self.section)
@@ -260,8 +288,21 @@ private enum ProxySettingsControllerEntry: ItemListNodeEntry {
 private func proxySettingsControllerEntries(theme: PresentationTheme, strings: PresentationStrings, state: ProxySettingsControllerState, proxySettings: ProxySettings, statuses: [ProxyServerSettings: ProxyServerStatus], connectionStatus: ConnectionStatus, autoProxyEnabled: Bool) -> [ProxySettingsControllerEntry] {
     var entries: [ProxySettingsControllerEntry] = []
 
+    entries.append(.modeHeader(theme, KimogramAutoProxy.modeHeaderTitle))
     entries.append(.autoProxy(theme, KimogramAutoProxy.toggleTitle, autoProxyEnabled))
-    entries.append(.autoProxyInfo(theme, KimogramAutoProxy.toggleInfo))
+    entries.append(.manualProxy(theme, KimogramAutoProxy.manualTitle, !autoProxyEnabled))
+    if autoProxyEnabled {
+        // Auto mode: Kimogram manages the proxy, so the manual list is hidden; show what it is doing.
+        let statusText = KimogramAutoProxy.statusText(proxySettings: proxySettings, connectionStatus: connectionStatus, ping: proxySettings.activeServer.flatMap { server -> Double? in
+            if case let .available(rtt)? = statuses[server] {
+                return rtt
+            }
+            return nil
+        })
+        entries.append(.autoProxyInfo(theme, statusText + "\n\n" + KimogramAutoProxy.toggleInfo))
+        return entries
+    }
+    entries.append(.autoProxyInfo(theme, KimogramAutoProxy.manualInfo))
 
     entries.append(.enabled(theme, strings.ChatSettings_ConnectionType_UseProxy, proxySettings.enabled, proxySettings.servers.isEmpty))
     entries.append(.serversHeader(theme, strings.SocksProxySetup_SavedProxies))

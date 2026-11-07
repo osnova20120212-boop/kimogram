@@ -88,9 +88,58 @@ public final class KimogramAutoProxy {
 
     public static var toggleInfo: String {
         if isRussian {
-            return "Если Telegram не подключается, Kimogram сам найдёт бесплатный прокси, проверит его и включит. Когда прокси перестаёт работать, он сразу заменяется новым. Ваши собственные прокси не трогаются. Сообщения шифруются, но владелец прокси видит ваш IP-адрес и то, что вы пользуетесь Telegram."
+            return "Если подключиться не получается, Kimogram сам найдёт бесплатный прокси, проверит его и включит. Когда прокси перестаёт работать, он сразу заменяется новым. Сообщения остаются зашифрованными, но владелец прокси видит ваш IP-адрес."
         } else {
-            return "If Telegram cannot connect, Kimogram finds a free proxy, checks it and turns it on. When the proxy stops working, it is replaced right away. Your own proxies are never changed. Messages stay encrypted, but the proxy owner can see your IP address and that you use Telegram."
+            return "If Kimogram cannot connect, it finds a free proxy, checks it and turns it on. When the proxy stops working, it is replaced right away. Messages stay encrypted, but the proxy owner can see your IP address."
+        }
+    }
+
+    public static var modeHeaderTitle: String {
+        return isRussian ? "ТИП ПРОКСИ" : "PROXY TYPE"
+    }
+
+    public static var manualTitle: String {
+        return isRussian ? "Свой прокси" : "My Own Proxy"
+    }
+
+    public static var autoModeSubtitle: String {
+        return isRussian ? "Сам находит и меняет прокси" : "Finds and switches proxies for you"
+    }
+
+    public static var manualModeSubtitle: String {
+        return isRussian ? "Вставьте адрес своего прокси" : "Add the address of your own proxy"
+    }
+
+    public static var manualInfo: String {
+        if isRussian {
+            return "Добавьте свой прокси ниже: вставьте ссылку tg://proxy или введите адрес вручную."
+        } else {
+            return "Add your own proxy below: paste a tg://proxy link or enter the address by hand."
+        }
+    }
+
+    /// One line on what auto mode is doing right now.
+    public static func statusText(proxySettings: ProxySettings, connectionStatus: ConnectionStatus, ping: Double?) -> String {
+        let ru = isRussian
+        var viaProxy: String?
+        if proxySettings.enabled, let active = proxySettings.activeServer {
+            viaProxy = "\(active.host):\(active.port)"
+        }
+        switch connectionStatus {
+        case .waitingForNetwork:
+            return ru ? "Сейчас: нет интернета на устройстве." : "Now: the device is offline."
+        case .connecting:
+            return ru ? "Сейчас: ищу рабочий прокси…" : "Now: looking for a working proxy…"
+        case .updating, .online:
+            if let viaProxy {
+                var text = ru ? "Сейчас: подключено через прокси \(viaProxy)" : "Now: connected through proxy \(viaProxy)"
+                if let ping {
+                    text += ru ? ", пинг \(Int(ping * 1000.0)) мс" : ", ping \(Int(ping * 1000.0)) ms"
+                }
+                return text + "."
+            } else {
+                return ru ? "Сейчас: подключено напрямую, прокси не нужен." : "Now: connected directly, no proxy needed."
+            }
         }
     }
 
@@ -170,8 +219,8 @@ public final class KimogramAutoProxy {
         let ru = KimogramAutoProxy.isRussian
         let title = ru ? "Включить авто-прокси?" : "Turn on Auto Proxy?"
         let text = ru
-            ? "Если Telegram в вашей стране блокируют или он плохо подключается, Kimogram сам подберёт бесплатный прокси и будет менять его, если он перестанет работать.\n\nВладелец прокси видит ваш IP-адрес, но не ваши сообщения. Выключить можно в Настройки ▸ Данные и память ▸ Прокси."
-            : "If Telegram is blocked in your country or connects poorly, Kimogram picks a free proxy for you and replaces it whenever it stops working.\n\nThe proxy owner can see your IP address, but not your messages. You can turn it off in Settings ▸ Data and Storage ▸ Proxy."
+            ? "Если в вашей стране блокируют мессенджер или он плохо подключается, Kimogram сам подберёт бесплатный прокси и будет менять его, если он перестанет работать.\n\nВладелец прокси видит ваш IP-адрес, но не ваши сообщения. Выключить можно в Настройки ▸ Настройки Kimogram ▸ Прокси."
+            : "If messaging is blocked in your country or connects poorly, Kimogram picks a free proxy for you and replaces it whenever it stops working.\n\nThe proxy owner can see your IP address, but not your messages. You can turn it off in Settings ▸ Kimogram Settings ▸ Proxy."
         let alert = textAlertController(sharedContext: sharedContext, title: title, text: text, actions: [
             TextAlertAction(type: .genericAction, title: ru ? "Не сейчас" : "Not Now", action: {}),
             TextAlertAction(type: .defaultAction, title: ru ? "Включить" : "Turn On", action: { [weak self] in
