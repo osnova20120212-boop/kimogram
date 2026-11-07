@@ -1013,6 +1013,21 @@ public final class AccountContextImpl: AccountContext {
     }
     
     public func requestCall(peerId: PeerId, isVideo: Bool, completion: @escaping () -> Void) {
+        // Kimogram: optionally ask before calling, so a stray tap never rings anyone.
+        if KimogramSettings.get(.confirmCalls) {
+            let presentationData = self.sharedContext.currentPresentationData.with { $0 }
+            let language = Locale.preferredLanguages.first ?? ""
+            let ru = language.hasPrefix("ru") || language.hasPrefix("uk") || language.hasPrefix("be")
+            let title = ru ? (isVideo ? "Начать видеозвонок?" : "Позвонить?") : (isVideo ? "Start a video call?" : "Start a call?")
+            self.sharedContext.mainWindow?.present(textAlertController(context: self, title: nil, text: title, actions: [TextAlertAction(type: .genericAction, title: presentationData.strings.Common_Cancel, action: {}), TextAlertAction(type: .defaultAction, title: ru ? "Позвонить" : "Call", action: { [weak self] in
+                self?.performRequestCall(peerId: peerId, isVideo: isVideo, completion: completion)
+            })]), on: .root)
+            return
+        }
+        self.performRequestCall(peerId: peerId, isVideo: isVideo, completion: completion)
+    }
+    
+    private func performRequestCall(peerId: PeerId, isVideo: Bool, completion: @escaping () -> Void) {
         guard let callResult = self.sharedContext.callManager?.requestCall(context: self, peerId: peerId, isVideo: isVideo, endCurrentIfAny: false) else {
             return
         }

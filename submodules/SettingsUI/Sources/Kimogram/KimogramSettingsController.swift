@@ -241,6 +241,7 @@ private func kimogramSettingsEntries(theme: PresentationTheme, autoProxyEnabled:
     entries.append(.chatsOption(2, theme, .timestampSeconds, ru ? "Время с секундами" : "Show Seconds in Time", KimogramSettings.get(.timestampSeconds)))
     entries.append(.chatsOption(3, theme, .hideStoriesBar, ru ? "Скрыть истории над чатами" : "Hide Stories Row", KimogramSettings.get(.hideStoriesBar)))
     entries.append(.chatsOption(4, theme, .hidePhoneNumber, ru ? "Скрыть мой номер в настройках" : "Hide My Number in Settings", KimogramSettings.get(.hidePhoneNumber)))
+    entries.append(.chatsOption(6, theme, .confirmCalls, ru ? "Спрашивать перед звонком" : "Confirm Before Calling", KimogramSettings.get(.confirmCalls)))
     entries.append(.chatsOption(5, theme, .hidePremiumRows, ru ? "Скрыть Premium и подарки" : "Hide Premium and Gifts", KimogramSettings.get(.hidePremiumRows)))
     entries.append(.chatsInfo(theme, ru ? "ID копируется нажатием в профиле. Скрытый номер удобен для скриншотов." : "Tap an ID in a profile to copy it. A hidden number keeps it off screenshots."))
 
