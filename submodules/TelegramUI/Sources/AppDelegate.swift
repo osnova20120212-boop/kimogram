@@ -731,6 +731,11 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             performAppGroupUpgrades(appGroupPath: appGroupUrl.path, rootPath: rootPath)
         }
         
+        // Kimogram: performAppGroupUpgrades creates rootPath asynchronously, so on a first launch
+        // in a fresh container the database key below could be written into a directory that
+        // does not exist yet and be lost, leaving the next launch with a database it cannot open.
+        let _ = try? FileManager.default.createDirectory(atPath: rootPath, withIntermediateDirectories: true, attributes: nil)
+        
         let deviceSpecificEncryptionParameters = BuildConfig.deviceSpecificEncryptionParameters(rootPath, baseAppBundleId: baseAppBundleId)
         let encryptionParameters = ValueBoxEncryptionParameters(forceEncryptionIfNoSet: false, key: ValueBoxEncryptionParameters.Key(data: deviceSpecificEncryptionParameters.key)!, salt: ValueBoxEncryptionParameters.Salt(data: deviceSpecificEncryptionParameters.salt)!)
         
