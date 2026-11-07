@@ -5849,7 +5849,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                     case let .optionalAction(f):
                         f()
                     case let .openContextMenu(openContextMenu):
-                        if self.kimogramHandleDoubleTap(item: item, message: openContextMenu.tapMessage) {
+                        if case .doubleTap = gesture, self.kimogramHandleDoubleTap(item: item, message: openContextMenu.tapMessage) {
                         } else if canAddMessageReactions(message: EngineMessage(openContextMenu.tapMessage)) {
                             item.controllerInteraction.updateMessageReaction(openContextMenu.tapMessage, .default, false, nil)
                         } else {
