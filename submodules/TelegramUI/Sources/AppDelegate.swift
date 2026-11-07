@@ -350,6 +350,12 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         precondition(!testIsLaunched)
         testIsLaunched = true
         
+        // Kimogram: the previous launch failed, show its report instead of starting.
+        if KimogramDiagnostics.prepareLaunch() {
+            return true
+        }
+        KimogramDiagnostics.mark("запуск")
+        
         let _ = voipTokenPromise.get().start(next: { token in
             self.voipDeviceToken.set(.single(token))
         })
@@ -698,9 +704,11 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         )
         
         guard let appGroupUrl = maybeAppGroupUrl else {
+            KimogramDiagnostics.mark("нет папки данных (Error 2)")
             self.mainWindow?.presentNative(UIAlertController(title: nil, message: "Error 2", preferredStyle: .alert))
             return true
         }
+        KimogramDiagnostics.mark("папка данных: \(appGroupUrl.lastPathComponent)")
         
         var isDebugConfiguration = false
         #if DEBUG
@@ -711,11 +719,9 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             isDebugConfiguration = true
         }
         
-        if isDebugConfiguration || buildConfig.isInternalBuild {
-            LoggingSettings.defaultSettings = LoggingSettings(logToFile: true, logToConsole: false, redactSensitiveData: true)
-        } else {
-            LoggingSettings.defaultSettings = LoggingSettings(logToFile: false, logToConsole: false, redactSensitiveData: true)
-        }
+        // Kimogram: always keep a (redacted) log file, so a failed launch can be diagnosed.
+        let _ = isDebugConfiguration
+        LoggingSettings.defaultSettings = LoggingSettings(logToFile: true, logToConsole: false, redactSensitiveData: true)
         
         let isUITest = CommandLine.arguments.contains("--ui-test")
 
@@ -739,6 +745,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         let deviceSpecificEncryptionParameters = BuildConfig.deviceSpecificEncryptionParameters(rootPath, baseAppBundleId: baseAppBundleId)
         let encryptionParameters = ValueBoxEncryptionParameters(forceEncryptionIfNoSet: false, key: ValueBoxEncryptionParameters.Key(data: deviceSpecificEncryptionParameters.key)!, salt: ValueBoxEncryptionParameters.Salt(data: deviceSpecificEncryptionParameters.salt)!)
         
+        KimogramDiagnostics.mark("ключ базы получен")
         TempBox.initializeShared(basePath: rootPath, processType: "app", launchSpecificId: Int64.random(in: Int64.min ... Int64.max))
         
         let writeAbilityTestFile = TempBox.shared.tempFile(fileName: "test.bin")
@@ -789,6 +796,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         let logsPath = rootPath + "/logs/app-logs"
         let _ = try? FileManager.default.createDirectory(atPath: logsPath, withIntermediateDirectories: true, attributes: nil)
         Logger.setSharedLogger(Logger(rootPath: rootPath, basePath: logsPath))
+        KimogramDiagnostics.mark("журнал включён")
 
         setManagedAudioSessionLogger({ s in
             Logger.shared.log("ManagedAudioSession", s)
@@ -1147,6 +1155,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             })
             
             var setPresentationCall: ((PresentationCall?) -> Void)?
+            KimogramDiagnostics.mark("создание общего контекста")
             let sharedContext = SharedAccountContextImpl(mainWindow: self.mainWindow, sharedContainerPath: legacyBasePath, basePath: rootPath, encryptionParameters: encryptionParameters, accountManager: accountManager, appLockContext: appLockContext, notificationController: nil, applicationBindings: applicationBindings, initialPresentationDataAndSettings: initialPresentationDataAndSettings, networkArguments: networkArguments, hasInAppPurchases: buildConfig.isAppStoreBuild && buildConfig.apiId == 1, rootPath: rootPath, legacyBasePath: legacyBasePath, apsNotificationToken: self.notificationTokenPromise.get() |> map(Optional.init), voipNotificationToken: self.voipTokenPromise.get() |> map(Optional.init), firebaseSecretStream: self.firebaseSecretStream.get(), setNotificationCall: { call in
                 setPresentationCall?(call)
             }, navigateToChat: { accountId, peerId, messageId, alwaysKeepMessageId in
@@ -1415,6 +1424,8 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
 
                     self.mainWindow.debugAction = nil
                     self.mainWindow.viewController = context.rootController
+                    KimogramDiagnostics.mark("главный экран показан")
+                    KimogramDiagnostics.launchSucceeded()
                     
                     if firstTime {
                         let layer = context.rootController.view.layer
@@ -1505,6 +1516,8 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                 |> deliverOnMainQueue).start(next: { _ in
                     progressDisposable.dispose()
                     self.mainWindow.present(context.rootController, on: .root)
+                    KimogramDiagnostics.mark("экран входа показан")
+                    KimogramDiagnostics.launchSucceeded()
                     let rootController = context.rootController
                     let sharedContext = context.sharedContext
                     Queue.mainQueue().after(1.0, { [weak rootController] in

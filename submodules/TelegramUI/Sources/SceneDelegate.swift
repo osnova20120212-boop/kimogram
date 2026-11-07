@@ -16,6 +16,10 @@ import UIKit
         guard session.role == .windowApplication, let windowScene = scene as? UIWindowScene else {
             return
         }
+        if KimogramDiagnostics.pendingReport != nil {
+            KimogramDiagnostics.showReport(in: windowScene)
+            return
+        }
         guard let appDelegate = self.appDelegate else {
             return
         }

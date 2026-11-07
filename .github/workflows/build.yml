@@ -124,6 +124,8 @@ jobs:
 
           mkdir -p build/artifacts
           cp -L bazel-bin/Telegram/Telegram.ipa build/artifacts/Kimogram.ipa
+          # Debug symbols, to read the crash reports the app shows after a failed launch.
+          (cd bazel-bin/Telegram && zip -qry "/Users/Shared/telegram-ios/build/artifacts/Kimogram-dSYMs.zip" *.dSYM) || true
           ls -lh build/artifacts
 
       - name: Save Bazel cache
@@ -146,4 +148,6 @@ jobs:
           name: Kimogram ${{ env.APP_VERSION }} (${{ env.BUILD_NUMBER }})
           body: |
             Unsigned Kimogram build for iPhone. Install it with Sideloadly or AltStore.
-          files: /Users/Shared/telegram-ios/build/artifacts/Kimogram.ipa
+          files: |
+            /Users/Shared/telegram-ios/build/artifacts/Kimogram.ipa
+            /Users/Shared/telegram-ios/build/artifacts/Kimogram-dSYMs.zip
