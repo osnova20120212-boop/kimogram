@@ -54,6 +54,16 @@ func kimogramMessageMenuItems(context: AccountContext, message: EngineRawMessage
         }
     }
 
+    // In a group, write to the author privately in one tap.
+    if message.id.peerId.namespace != Namespaces.Peer.CloudUser, let author = message.author as? TelegramUser, author.id != context.account.peerId, author.botInfo == nil {
+        items.append(.action(ContextMenuActionItem(text: ru ? "Написать автору" : "Message Author", icon: { theme in
+            return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Message"), color: theme.actionSheet.primaryTextColor)
+        }, action: { _, f in
+            f(.dismissWithoutContent)
+            controllerInteraction.openPeer(EnginePeer(author), .chat(textInputState: nil, subject: nil, peekData: nil), nil, .default)
+        })))
+    }
+
     items.append(.action(ContextMenuActionItem(text: ru ? "Скопировать ID" : "Copy ID", icon: { theme in
         return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Copy"), color: theme.actionSheet.primaryTextColor)
     }, action: { _, f in
