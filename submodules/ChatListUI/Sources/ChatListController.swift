@@ -6970,8 +6970,9 @@ private final class ChatListLocationContext {
                     isReorderingTabs,
                     peerStatus,
                     parentController.updatedPresentationData.1,
-                    storyPostingAvailable
-                ).startStrict(next: { [weak self] networkState, proxy, passcode, stateAndFilterId, isReorderingTabs, peerStatus, presentationData, storyPostingAvailable in
+                    storyPostingAvailable,
+                    KimogramSettings.changes()
+                ).startStrict(next: { [weak self] networkState, proxy, passcode, stateAndFilterId, isReorderingTabs, peerStatus, presentationData, storyPostingAvailable, _ in
                     guard let self else {
                         return
                     }
@@ -7217,7 +7218,8 @@ private final class ChatListLocationContext {
         switch location {
         case let .chatList(groupId):
             if groupId == .root {
-                defaultTitle = "Kimogram"
+                // Kimogram: a ghost next to the name while others cannot see you read or come online.
+                defaultTitle = (KimogramSettings.get(.ghostReadReceipts) || KimogramSettings.get(.ghostOnline)) ? "Kimogram 👻" : "Kimogram"
             } else {
                 defaultTitle = presentationData.strings.ChatList_ArchivedChatsTitle
             }
