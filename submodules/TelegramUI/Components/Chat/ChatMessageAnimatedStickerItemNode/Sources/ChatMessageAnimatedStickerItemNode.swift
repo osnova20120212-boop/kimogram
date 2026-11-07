@@ -813,7 +813,8 @@ public class ChatMessageAnimatedStickerItemNode: ChatMessageItemView {
     }
         
     override public func asyncLayout() -> (_ item: ChatMessageItem, _ params: ListViewItemLayoutParams, _ mergedTop: ChatMessageMerge, _ mergedBottom: ChatMessageMerge, _ dateHeaderAtBottom: ChatMessageHeaderSpec) -> (ListViewItemNodeLayout, (ListViewItemUpdateAnimation, ListViewItemApply, Bool) -> Void) {
-        var displaySize = CGSize(width: 180.0, height: 180.0)
+        let kimogramStickerScale = CGFloat(KimogramSettings.stickerSize.scale)
+        var displaySize = CGSize(width: floor(180.0 * kimogramStickerScale), height: floor(180.0 * kimogramStickerScale))
         let telegramFile = self.telegramFile
         let emojiFile = self.emojiFile
         let telegramDice = self.telegramDice
@@ -850,7 +851,7 @@ public class ChatMessageAnimatedStickerItemNode: ChatMessageItemView {
             var imageBottomPadding: CGFloat = 0.0
             var imageHorizontalOffset: CGFloat = 0.0
             if !(telegramFile?.videoThumbnails.isEmpty ?? true) {
-                displaySize = CGSize(width: 240.0, height: 240.0)
+                displaySize = CGSize(width: floor(240.0 * kimogramStickerScale), height: floor(240.0 * kimogramStickerScale))
                 imageVerticalInset = -20.0
                 imageHorizontalOffset = 12.0
             }

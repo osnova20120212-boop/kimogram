@@ -350,13 +350,24 @@ private func profilePage(context: AccountContext) -> ViewController {
     })
 }
 
+private func stickerSizeTitles(_ ru: Bool) -> [String] {
+    return ru ? ["Обычные", "Маленькие", "Средние", "Крупные"] : ["Normal", "Small", "Medium", "Large"]
+}
+
 private func appearancePage(context: AccountContext) -> ViewController {
     let ru = KimogramAutoProxy.isRussian
     return kimogramPageController(context: context, title: ru ? "Оформление" : "Appearance", build: { _ in
         return [
             KimogramPageSection(header: ru ? "ИНТЕРФЕЙС" : "INTERFACE", rows: [
                 .toggle(.hideContactsTab, title: ru ? "Скрыть вкладку «Контакты»" : "Hide Contacts Tab", text: ru ? "Вкладку «Звонки» скрывают в Настройки ▸ Недавние звонки" : "Calls tab: Settings ▸ Recent Calls"),
-                .toggle(.hidePremiumBadges, title: ru ? "Скрыть значки Premium" : "Hide Premium Badges", text: ru ? "Звёзды и эмодзи-статусы у имён" : "Stars and emoji statuses next to names")
+                .toggle(.hidePremiumBadges, title: ru ? "Скрыть значки Premium" : "Hide Premium Badges", text: ru ? "Звёзды и эмодзи-статусы у имён" : "Stars and emoji statuses next to names"),
+                .link(title: ru ? "Размер стикеров" : "Sticker Size", icon: nil, label: stickerSizeTitles(ru)[KimogramSettings.stickerSize.rawValue], action: { environment in
+                    environment.push(kimogramChoiceController(context: environment.context, title: ru ? "Размер стикеров" : "Sticker Size", footer: ru ? "Размер стикеров и больших эмодзи в чатах. Применяется к новым и открытым заново чатам." : "Size of stickers and large emoji in chats. Applies when a chat is opened again.", options: stickerSizeTitles(ru), selected: {
+                        return KimogramSettings.stickerSize.rawValue
+                    }, select: { index in
+                        KimogramSettings.stickerSize = KimogramSettings.StickerSize(rawValue: index) ?? .normal
+                    }))
+                })
             ]),
             KimogramPageSection(rows: [
                 .link(title: ru ? "Тема и иконка приложения" : "Theme and App Icon", icon: PresentationResourcesSettings.appearance, label: "", action: { environment in

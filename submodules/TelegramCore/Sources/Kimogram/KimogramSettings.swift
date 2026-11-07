@@ -102,4 +102,37 @@ public final class KimogramSettings {
             updatesPipe.putNext(Void())
         }
     }
+
+    /// Sticker size in chats.
+    public enum StickerSize: Int, CaseIterable {
+        case normal = 0
+        case small = 1
+        case medium = 2
+        case large = 3
+
+        public var scale: Double {
+            switch self {
+            case .normal:
+                return 1.0
+            case .small:
+                return 0.7
+            case .medium:
+                return 0.85
+            case .large:
+                return 1.15
+            }
+        }
+    }
+
+    private static let stickerSizeKey = "kimogram.stickerSize"
+
+    public static var stickerSize: StickerSize {
+        get {
+            return StickerSize(rawValue: defaults.integer(forKey: stickerSizeKey)) ?? .normal
+        }
+        set {
+            defaults.set(newValue.rawValue, forKey: stickerSizeKey)
+            updatesPipe.putNext(Void())
+        }
+    }
 }
