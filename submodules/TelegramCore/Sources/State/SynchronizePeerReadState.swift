@@ -248,7 +248,7 @@ private func validatePeerReadState(network: Network, postbox: Postbox, stateMana
 
 private func pushPeerReadState(network: Network, postbox: Postbox, stateManager: AccountStateManager, peerId: PeerId, readState: PeerReadState) -> Signal<PeerReadState, PeerReadStateValidationError> {
     // Kimogram ghost mode: read locally, never tell the server (no "read" ticks for the sender).
-    if KimogramSettings.get(.ghostReadReceipts) {
+    if KimogramSettings.hidesReadReceipts(in: peerId) {
         return .single(readState)
     }
     if peerId.namespace == Namespaces.Peer.SecretChat {

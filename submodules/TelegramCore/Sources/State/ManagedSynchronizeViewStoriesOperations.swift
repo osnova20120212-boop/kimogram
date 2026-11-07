@@ -122,7 +122,7 @@ private func pushStoriesAreSeen(postbox: Postbox, network: Network, stateManager
     guard let inputPeer = apiInputPeer(peer) else {
         return .complete()
     }
-    if KimogramSettings.get(.ghostStories) {
+    if KimogramSettings.get(.ghostStories) && !KimogramSettings.isGhostException(peer.id) {
         return .complete()
     }
     return network.request(Api.functions.stories.readStories(peer: inputPeer, maxId: operation.storyId))

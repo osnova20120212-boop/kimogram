@@ -210,7 +210,7 @@ func _internal_toggleForumThreadUnreadMarkInteractively(transaction: Transaction
             
             if peer.isForum {
                 if let inputPeer = apiInputPeer(peer) {
-                    if !KimogramSettings.get(.ghostReadReceipts) { let _ = network.request(Api.functions.messages.readDiscussion(peer: inputPeer, msgId: Int32(clamping: threadId), readMaxId: messageIndex.id.id)).start() }
+                    if !KimogramSettings.hidesReadReceipts(in: peerId) { let _ = network.request(Api.functions.messages.readDiscussion(peer: inputPeer, msgId: Int32(clamping: threadId), readMaxId: messageIndex.id.id)).start() }
                 }
             } else if peer.isMonoForum {
                 if let inputPeer = apiInputPeer(peer), let subPeer = transaction.getPeer(PeerId(threadId)).flatMap(apiInputPeer) {
@@ -246,7 +246,7 @@ func _internal_markForumThreadAsReadInteractively(transaction: Transaction, netw
         
         if peer.isForum {
             if let inputPeer = apiInputPeer(peer) {
-                if !KimogramSettings.get(.ghostReadReceipts) { let _ = network.request(Api.functions.messages.readDiscussion(peer: inputPeer, msgId: Int32(clamping: threadId), readMaxId: messageIndex.id.id)).start() }
+                if !KimogramSettings.hidesReadReceipts(in: peerId) { let _ = network.request(Api.functions.messages.readDiscussion(peer: inputPeer, msgId: Int32(clamping: threadId), readMaxId: messageIndex.id.id)).start() }
             }
         } else if peer.isMonoForum {
             if let inputPeer = apiInputPeer(peer), let subPeer = transaction.getPeer(PeerId(threadId)).flatMap(apiInputPeer) {
@@ -288,7 +288,7 @@ func _internal_togglePeerUnreadMarkInteractively(transaction: Transaction, netwo
                 
                 if peer.isForum {
                     if let inputPeer = apiInputPeer(peer) {
-                        if !KimogramSettings.get(.ghostReadReceipts) { let _ = network.request(Api.functions.messages.readDiscussion(peer: inputPeer, msgId: Int32(clamping: item.threadId), readMaxId: messageIndex.id.id)).start() }
+                        if !KimogramSettings.hidesReadReceipts(in: peerId) { let _ = network.request(Api.functions.messages.readDiscussion(peer: inputPeer, msgId: Int32(clamping: item.threadId), readMaxId: messageIndex.id.id)).start() }
                     }
                 } else if peer.isMonoForum {
                     if let inputPeer = apiInputPeer(peer), let subPeer = transaction.getPeer(PeerId(item.threadId)).flatMap(apiInputPeer) {

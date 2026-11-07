@@ -7,6 +7,8 @@ import TelegramPresentationData
 import ItemListUI
 import PresentationDataUtils
 import AccountContext
+import TelegramUIPreferences
+import AlertUI
 
 /// "Kimogram Settings": every switch the mod adds, under Settings ▸ Money.
 ///
@@ -47,6 +49,13 @@ struct KimogramPageSection {
 final class KimogramPageEnvironment {
     let context: AccountContext
     var push: (ViewController) -> Void = { _ in }
+    var present: (ViewController) -> Void = { _ in }
+
+    /// A short message with one OK button.
+    func showAlert(title: String?, text: String) {
+        let presentationData = self.context.sharedContext.currentPresentationData.with { $0 }
+        self.present(textAlertController(context: self.context, title: title, text: text, actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})]))
+    }
 
     init(context: AccountContext) {
         self.context = context
@@ -225,6 +234,9 @@ func kimogramPageController(context: AccountContext, title: String, build: @esca
     environment.push = { [weak controller] c in
         (controller?.navigationController as? NavigationController)?.pushViewController(c)
     }
+    environment.present = { [weak controller] c in
+        controller?.present(c, in: .window(.root), with: nil)
+    }
     return controller
 }
 
@@ -283,7 +295,12 @@ private func ghostPage(context: AccountContext) -> ViewController {
             ]),
             KimogramPageSection(header: ru ? "ИСКЛЮЧЕНИЕ" : "EXCEPTION", rows: [
                 .toggle(.ghostReadOnReply, title: ru ? "Прочитано, когда отвечаю" : "Mark Read When I Reply", text: ru ? "Ответ сам отмечает чат прочитанным" : "Replying marks the chat as read")
-            ], footer: ru ? "Когда вы сами отправляете сообщение, сервер всё равно ненадолго показывает вас в сети." : "Sending a message still briefly shows you online.")
+            ], footer: ru ? "Когда вы сами отправляете сообщение, сервер всё равно ненадолго показывает вас в сети." : "Sending a message still briefly shows you online."),
+            KimogramPageSection(header: ru ? "ЧАТЫ БЕЗ ПРИЗРАКА" : "CHATS WITHOUT GHOST MODE", rows: [
+                .link(title: ru ? "Чаты без призрака" : "Chats Without Ghost Mode", icon: nil, label: "\(KimogramSettings.ghostExceptionPeerIds.count)", action: { environment in
+                    environment.showAlert(title: ru ? "Чаты без призрака" : "Chats Without Ghost Mode", text: ru ? "Зажмите чат в списке чатов и выберите «Без призрака в этом чате». Там собеседник будет видеть, что вы прочитали и печатаете." : "Press and hold a chat in the chat list and choose No Ghost Mode Here. That chat will see your read receipts and typing.")
+                })
+            ], footer: ru ? "В этих чатах призрак не действует, во всех остальных работает как обычно." : "Ghost mode does not apply in these chats.")
         ]
     })
 }
@@ -361,7 +378,28 @@ private func appearancePage(context: AccountContext) -> ViewController {
     return kimogramPageController(context: context, title: ru ? "Оформление" : "Appearance", build: { _ in
         return [
             KimogramPageSection(header: ru ? "ИНТЕРФЕЙС" : "INTERFACE", rows: [
-                .toggle(.hideContactsTab, title: ru ? "Скрыть вкладку «Контакты»" : "Hide Contacts Tab", text: ru ? "Вкладку «Звонки» скрывают в Настройки ▸ Недавние звонки" : "Calls tab: Settings ▸ Recent Calls"),
+                .toggle(.hideContactsTab, title: ru ? "Скрыть вкладку «Контакты»" : "Hide Contacts Tab", text: nil),
+                .link(title: ru ? "Вкладка «Звонки»" : "Calls Tab", icon: nil, label: "", action: { environment in
+                    let accountManager = environment.context.sharedContext.accountManager
+                    let _ = (accountManager.sharedData(keys: [ApplicationSpecificSharedDataKeys.callListSettings])
+                    |> take(1)
+                    |> deliverOnMainQueue).startStandalone(next: { sharedData in
+                        var shown = CallListSettings.defaultSettings.showTab
+                        if let settings = sharedData.entries[ApplicationSpecificSharedDataKeys.callListSettings]?.get(CallListSettings.self) {
+                            shown = settings.showTab
+                        }
+                        environment.push(kimogramChoiceController(context: environment.context, title: ru ? "Вкладка «Звонки»" : "Calls Tab", footer: ru ? "Вкладка со списком звонков внизу экрана." : "The calls list tab at the bottom of the screen.", options: ru ? ["Показывать", "Скрыть"] : ["Show", "Hide"], selected: {
+                            return shown ? 0 : 1
+                        }, select: { index in
+                            shown = index == 0
+                            let _ = updateCallListSettingsInteractively(accountManager: accountManager, { settings in
+                                var settings = settings
+                                settings.showTab = index == 0
+                                return settings
+                            }).startStandalone()
+                        }))
+                    })
+                }),
                 .toggle(.hidePremiumBadges, title: ru ? "Скрыть значки Premium" : "Hide Premium Badges", text: ru ? "Звёзды и эмодзи-статусы у имён" : "Stars and emoji statuses next to names"),
                 .toggle(.hideFolderBadges, title: ru ? "Без счётчиков у папок" : "No Folder Counters", text: ru ? "Цифры непрочитанных на вкладках папок" : "Unread numbers on folder tabs"),
                 .link(title: ru ? "Размер стикеров" : "Sticker Size", icon: nil, label: stickerSizeTitles(ru)[KimogramSettings.stickerSize.rawValue], action: { environment in
@@ -413,6 +451,16 @@ public func kimogramSettingsController(context: AccountContext) -> ViewControlle
                 }),
                 .link(title: ru ? "Оформление" : "Appearance", icon: PresentationResourcesSettings.appearance, label: "", action: { environment in
                     environment.push(appearancePage(context: environment.context))
+                })
+            ]),
+            KimogramPageSection(header: ru ? "НАСТРОЙКИ KIMOGRAM" : "KIMOGRAM SETTINGS", rows: [
+                .link(title: ru ? "Скопировать настройки" : "Copy Settings", icon: nil, label: "", action: { environment in
+                    UIPasteboard.general.string = KimogramSettings.exportedText()
+                    environment.showAlert(title: nil, text: ru ? "Настройки скопированы. Сохраните текст, например, в Избранное, чтобы потом вставить их обратно." : "Settings copied. Keep the text, for example in Saved Messages, to paste them back later.")
+                }),
+                .link(title: ru ? "Вставить настройки" : "Paste Settings", icon: nil, label: "", action: { environment in
+                    let ok = KimogramSettings.importText(UIPasteboard.general.string ?? "")
+                    environment.showAlert(title: nil, text: ok ? (ru ? "Настройки применены." : "Settings applied.") : (ru ? "Сначала скопируйте текст настроек Kimogram, он начинается с KIMOGRAM:" : "Copy Kimogram settings text first; it starts with KIMOGRAM:"))
                 })
             ], footer: ru ? "Kimogram \(version) (\(build)). Основан на открытом коде Telegram для iOS." : "Kimogram \(version) (\(build)). Built on the open-source Telegram for iOS.")
         ]

@@ -2086,7 +2086,7 @@ func _internal_markStoryAsSeen(account: Account, peerId: PeerId, id: Int32, asPi
             }
             #endif
             
-            if KimogramSettings.get(.ghostStories) {
+            if KimogramSettings.get(.ghostStories) && !KimogramSettings.isGhostException(peerId) {
                 return .complete()
             }
             

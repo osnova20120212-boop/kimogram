@@ -555,6 +555,16 @@ func chatContextMenuItems(context: AccountContext, peerId: EnginePeer.Id, promoI
                             })))
                         }
                         
+                        // Kimogram: a chat where ghost mode does not apply.
+                        if peerId != context.account.peerId && (KimogramSettings.get(.ghostReadReceipts) || KimogramSettings.get(.ghostTyping) || KimogramSettings.isGhostException(peerId)) {
+                            let isException = KimogramSettings.isGhostException(peerId)
+                            let ru = strings.baseLanguageCode == "ru"
+                            items.append(.action(ContextMenuActionItem(text: isException ? (ru ? "Включить призрака здесь" : "Ghost Mode Here") : (ru ? "Без призрака в этом чате" : "No Ghost Mode Here"), icon: { theme in generateTintedImage(image: UIImage(bundleImageName: isException ? "Chat/Context Menu/EyeLocked" : "Chat/Context Menu/Eye"), color: theme.contextMenu.primaryColor) }, action: { _, f in
+                                KimogramSettings.setGhostException(peerId, !isException)
+                                f(.default)
+                            })))
+                        }
+                        
                         let appendDeleteOrUngroupItem = {
                             if case .community = peer {
                                 items.append(.action(ContextMenuActionItem(text: strings.ChatList_Context_Ungroup, textColor: .destructive, icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Ungroup"), color: theme.contextMenu.destructiveColor) }, action: { _, f in

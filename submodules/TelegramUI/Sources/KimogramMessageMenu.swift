@@ -7,6 +7,7 @@ import AccountContext
 import ContextUI
 import UndoUI
 import ChatControllerInteraction
+import PresentationDataUtils
 
 /// Kimogram: the extra rows of a message's long-press menu.
 ///
@@ -64,6 +65,22 @@ func kimogramMessageMenuItems(context: AccountContext, message: EngineRawMessage
         })))
     }
 
+    // Earlier versions of an edited message, kept by "Keep Edit History".
+    if let history = kimogramEditHistoryText(message.text, ru: ru) {
+        items.append(.action(ContextMenuActionItem(text: ru ? "История правок" : "Edit History", icon: { theme in
+            return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Edit"), color: theme.actionSheet.primaryTextColor)
+        }, action: { _, f in
+            f(.dismissWithoutContent)
+            let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+            controllerInteraction.presentController(textAlertController(context: context, title: ru ? "История правок" : "Edit History", text: history, actions: [
+                TextAlertAction(type: .genericAction, title: ru ? "Скопировать" : "Copy", action: {
+                    UIPasteboard.general.string = history
+                }),
+                TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})
+            ]), nil)
+        })))
+    }
+
     items.append(.action(ContextMenuActionItem(text: ru ? "Скопировать ID" : "Copy ID", icon: { theme in
         return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Copy"), color: theme.actionSheet.primaryTextColor)
     }, action: { _, f in
@@ -95,4 +112,34 @@ func kimogramMessageMenuItems(context: AccountContext, message: EngineRawMessage
     })))
 
     return items
+}
+
+/// The part of a message's text that "Keep Edit History" appended: every earlier version, without
+/// the "deleted" note. Nil when the message was never edited while the switch was on.
+private func kimogramEditHistoryText(_ text: String, ru: Bool) -> String? {
+    var start: Range<String.Index>?
+    for marker in ["\n\n✏️ Было:", "\n\n✏️ Was:"] {
+        if let range = text.range(of: marker) {
+            start = range
+            break
+        }
+    }
+    guard let start else {
+        return nil
+    }
+    let current = String(text[text.startIndex ..< start.lowerBound])
+    var history = String(text[text.index(start.lowerBound, offsetBy: 2)...])
+    for marker in ["🗑 Удалено", "🗑 Deleted"] {
+        if history.hasSuffix(marker) {
+            history = String(history.dropLast(marker.count))
+        }
+    }
+    history = history.trimmingCharacters(in: .whitespacesAndNewlines)
+    if history.isEmpty {
+        return nil
+    }
+    if current.isEmpty {
+        return history
+    }
+    return history + "\n\n" + (ru ? "✅ Сейчас:" : "✅ Now:") + "\n" + current
 }
