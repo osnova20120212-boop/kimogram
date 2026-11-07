@@ -6353,6 +6353,18 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
             let (_, filterItems) = filterItemsAndTotalCount
             
             var items: [ContextMenuItem] = []
+            
+            // Kimogram: ghost mode in one tap from the Chats tab.
+            let kimogramRu = strongSelf.presentationData.strings.baseLanguageCode == "ru"
+            let kimogramGhostOn = KimogramSettings.ghostModeEnabled
+            items.append(.action(ContextMenuActionItem(text: kimogramGhostOn ? (kimogramRu ? "Выключить режим призрака" : "Turn Off Ghost Mode") : (kimogramRu ? "Включить режим призрака 👻" : "Turn On Ghost Mode 👻"), icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: kimogramGhostOn ? "Chat/Context Menu/Eye" : "Chat/Context Menu/EyeLocked"), color: theme.contextMenu.primaryColor)
+            }, action: { _, f in
+                KimogramSettings.setGhostMode(!kimogramGhostOn)
+                f(.default)
+            })))
+            items.append(.separator)
+            
             items.append(.action(ContextMenuActionItem(text: presetList.isEmpty ? strongSelf.presentationData.strings.ChatList_AddFolder : strongSelf.presentationData.strings.ChatList_EditFolders, icon: { theme in
                 return generateTintedImage(image: UIImage(bundleImageName: presetList.isEmpty ? "Chat/Context Menu/Add" : "Chat/Context Menu/EditFolder"), color: theme.contextMenu.primaryColor)
             }, action: { c, f in
