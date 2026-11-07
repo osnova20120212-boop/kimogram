@@ -23,6 +23,8 @@ public final class KimogramSettings {
         case timestampSeconds = "kimogram.timestampSeconds"
         case fastDownloads = "kimogram.fastDownloads"
         case ghostReadOnReply = "kimogram.ghost.readOnReply"
+        case ghostVoiceListened = "kimogram.ghost.voiceListened"
+        case saveProtected = "kimogram.saveProtected"
     }
 
     private static let defaults = UserDefaults.standard
@@ -52,7 +54,7 @@ public final class KimogramSettings {
     }
 
     public static var ghostModeEnabled: Bool {
-        return get(.ghostReadReceipts) && get(.ghostOnline) && get(.ghostTyping) && get(.ghostStories)
+        return get(.ghostReadReceipts) && get(.ghostOnline) && get(.ghostTyping) && get(.ghostStories) && get(.ghostVoiceListened)
     }
 
     public static func setGhostMode(_ value: Bool) {
@@ -60,6 +62,7 @@ public final class KimogramSettings {
         defaults.set(value, forKey: Key.ghostOnline.rawValue)
         defaults.set(value, forKey: Key.ghostTyping.rawValue)
         defaults.set(value, forKey: Key.ghostStories.rawValue)
+        defaults.set(value, forKey: Key.ghostVoiceListened.rawValue)
         updatesPipe.putNext(Void())
     }
 }

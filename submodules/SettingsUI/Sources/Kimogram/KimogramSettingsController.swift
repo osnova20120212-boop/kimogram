@@ -229,11 +229,13 @@ private func kimogramSettingsEntries(theme: PresentationTheme, autoProxyEnabled:
     entries.append(.ghostOption(1, theme, .ghostOnline, ru ? "Не показывать «в сети»" : "Hide Online Status", KimogramSettings.get(.ghostOnline)))
     entries.append(.ghostOption(2, theme, .ghostTyping, ru ? "Не показывать «печатает»" : "Hide Typing", KimogramSettings.get(.ghostTyping)))
     entries.append(.ghostOption(3, theme, .ghostStories, ru ? "Смотреть истории тайно" : "View Stories Secretly", KimogramSettings.get(.ghostStories)))
+    entries.append(.ghostOption(5, theme, .ghostVoiceListened, ru ? "Слушать голосовые тайно" : "Listen to Voice Secretly", KimogramSettings.get(.ghostVoiceListened)))
     entries.append(.ghostInfo(theme, ru ? "Собеседники не увидят, что вы прочитали сообщение, были в сети, печатали или смотрели их историю. Когда вы сами отправляете сообщение, сервер всё равно ненадолго показывает вас в сети." : "Others won't see that you read their messages, were online, were typing or viewed their stories. Sending a message still briefly shows you online."))
 
     entries.append(.historyHeader(theme, ru ? "СОХРАНЕНИЕ" : "KEEP HISTORY"))
     entries.append(.historyOption(0, theme, .saveDeletedMessages, ru ? "Сохранять удалённые сообщения" : "Keep Deleted Messages", KimogramSettings.get(.saveDeletedMessages)))
     entries.append(.historyOption(1, theme, .saveEditHistory, ru ? "Сохранять историю правок" : "Keep Edit History", KimogramSettings.get(.saveEditHistory)))
+    entries.append(.historyOption(2, theme, .saveProtected, ru ? "Сохранять защищённое и истории" : "Save Protected Content", KimogramSettings.get(.saveProtected)))
     entries.append(.historyInfo(theme, ru ? "Если собеседник удалит сообщение, у вас оно останется с пометкой «🗑 Удалено». Если исправит, ниже будет видно, что было написано раньше. Работает для сообщений, которые пришли, пока настройка включена." : "Messages others delete stay with a \"🗑 Deleted\" mark, and edited messages show what they said before. Works for messages received while this is on."))
 
     entries.append(.chatsHeader(theme, ru ? "ЧАТЫ" : "CHATS"))
