@@ -89,6 +89,9 @@ jobs:
           cfg["is_appstore_build"] = "false"
           cfg["appstore_id"] = "0"
           cfg["premium_iap_product_id"] = ""
+          # A free Apple ID cannot sign iCloud or Siri: with them on, CloudKit traps at launch.
+          cfg["enable_icloud"] = False
+          cfg["enable_siri"] = False
           json.dump(cfg, open("build-system/kimogram-configuration.json", "w"), indent=2)
           EOF
 
