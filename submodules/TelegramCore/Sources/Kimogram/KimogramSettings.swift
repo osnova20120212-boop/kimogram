@@ -4,7 +4,7 @@ import SwiftSignalKit
 /// Kimogram: the mod's own switches.
 ///
 /// Stored in the app's standard defaults so that the network layer can read them synchronously
-/// on any queue. Every switch defaults to off, which is exactly the behaviour of Telegram.
+/// on any queue. Almost every switch defaults to off (see `defaults`).
 public final class KimogramSettings {
     public enum Key: String, CaseIterable {
         case ghostReadReceipts = "kimogram.ghost.readReceipts"
@@ -25,9 +25,18 @@ public final class KimogramSettings {
         case ghostReadOnReply = "kimogram.ghost.readOnReply"
         case ghostVoiceListened = "kimogram.ghost.voiceListened"
         case saveProtected = "kimogram.saveProtected"
+        case extendedMessageMenu = "kimogram.extendedMessageMenu"
     }
 
-    private static let defaults = UserDefaults.standard
+    /// Switches that are on until the user turns them off. Everything else starts off,
+    /// which is exactly the behaviour of Telegram.
+    private static let defaults: UserDefaults = {
+        let defaults = UserDefaults.standard
+        defaults.register(defaults: [
+            Key.extendedMessageMenu.rawValue: true
+        ])
+        return defaults
+    }()
     private static let updatesPipe = ValuePipe<Void>()
 
     public static func get(_ key: Key) -> Bool {

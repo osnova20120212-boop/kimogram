@@ -1956,6 +1956,10 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             }
         }
         
+        if messages.count == 1 {
+            actions.append(contentsOf: kimogramMessageMenuItems(context: context, message: message, chatLocation: chatPresentationInterfaceState.chatLocation, isCopyProtected: isCopyProtected, controllerInteraction: controllerInteraction))
+        }
+        
         if data.messageActions.options.contains(.report) {
             actions.append(.action(ContextMenuActionItem(text: chatPresentationInterfaceState.strings.Conversation_ContextMenuReport, icon: { theme in
                 return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Report"), color: theme.actionSheet.primaryTextColor)

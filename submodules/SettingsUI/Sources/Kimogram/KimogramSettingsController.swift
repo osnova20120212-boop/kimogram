@@ -239,6 +239,7 @@ private func kimogramSettingsEntries(theme: PresentationTheme, autoProxyEnabled:
     entries.append(.historyInfo(theme, ru ? "Если собеседник удалит сообщение, у вас оно останется с пометкой «🗑 Удалено». Если исправит, ниже будет видно, что было написано раньше. Работает для сообщений, которые пришли, пока настройка включена." : "Messages others delete stay with a \"🗑 Deleted\" mark, and edited messages show what they said before. Works for messages received while this is on."))
 
     entries.append(.chatsHeader(theme, ru ? "ЧАТЫ" : "CHATS"))
+    entries.append(.chatsOption(7, theme, .extendedMessageMenu, ru ? "Расширенное меню сообщений" : "Extended Message Menu", KimogramSettings.get(.extendedMessageMenu)))
     entries.append(.chatsOption(0, theme, .hideSponsored, ru ? "Без рекламы в каналах" : "No Sponsored Messages", KimogramSettings.get(.hideSponsored)))
     entries.append(.chatsOption(1, theme, .showPeerId, ru ? "Показывать ID в профиле" : "Show ID in Profiles", KimogramSettings.get(.showPeerId)))
     entries.append(.chatsOption(2, theme, .timestampSeconds, ru ? "Время с секундами" : "Show Seconds in Time", KimogramSettings.get(.timestampSeconds)))
@@ -256,7 +257,8 @@ private func kimogramSettingsEntries(theme: PresentationTheme, autoProxyEnabled:
     let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""
     entries.append(.about(theme, ru ? "Kimogram \(version) (\(build)). Основан на открытом коде Telegram для iOS." : "Kimogram \(version) (\(build)). Built on the open-source Telegram for iOS."))
 
-    return entries
+    // The list diff assumes its entries are in stableId order.
+    return entries.sorted()
 }
 
 public func kimogramSettingsController(context: AccountContext) -> ViewController {
