@@ -298,7 +298,8 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
         switch self.location {
         case let .chatList(groupId):
             if groupId == .root {
-                title = self.presentationData.strings.DialogList_Title
+                // Kimogram: the main list is titled with the app's name.
+                title = "Kimogram"
             } else {
                 title = self.presentationData.strings.ChatList_ArchivedChatsTitle
             }
@@ -2189,7 +2190,14 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
             if self.previewing {
                 self.storiesReady.set(.single(true))
             } else {
-                self.storySubscriptionsDisposable = (self.context.engine.messages.storySubscriptions(isHidden: self.location == .chatList(groupId: .archive))
+                // Kimogram: "hide stories" empties the stories row (it updates live).
+                self.storySubscriptionsDisposable = (combineLatest(self.context.engine.messages.storySubscriptions(isHidden: self.location == .chatList(groupId: .archive)), KimogramSettings.signal(.hideStoriesBar))
+                |> map { subscriptions, hideStories -> EngineStorySubscriptions in
+                    if hideStories {
+                        return EngineStorySubscriptions(accountItem: nil, items: [], hasMoreToken: nil)
+                    }
+                    return subscriptions
+                }
                 |> deliverOnMainQueue).startStrict(next: { [weak self] rawStorySubscriptions in
                     guard let self else {
                         return
@@ -7205,7 +7213,7 @@ private final class ChatListLocationContext {
         switch location {
         case let .chatList(groupId):
             if groupId == .root {
-                defaultTitle = presentationData.strings.DialogList_Title
+                defaultTitle = "Kimogram"
             } else {
                 defaultTitle = presentationData.strings.ChatList_ArchivedChatsTitle
             }

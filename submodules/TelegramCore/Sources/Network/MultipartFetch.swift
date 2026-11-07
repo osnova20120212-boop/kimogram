@@ -585,7 +585,8 @@ private final class MultipartFetchManager {
                 self.parallelParts = 4 * 4
             } else {
                 self.defaultPartSize = 512 * 1024
-                self.parallelParts = 8
+                // Kimogram: faster downloads fetch twice as many parts at once.
+                self.parallelParts = KimogramSettings.get(.fastDownloads) ? 16 : 8
             }
         } else {
             self.parallelParts = 1

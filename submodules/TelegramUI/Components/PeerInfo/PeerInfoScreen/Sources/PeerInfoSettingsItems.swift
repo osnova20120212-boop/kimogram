@@ -362,6 +362,12 @@ func settingsItems(data: PeerInfoScreenData?, context: AccountContext, presentat
         interaction.openSettings(.tips)
     }))
     
+    // Kimogram: hide Premium, Business and Send a Gift if the user asked to.
+    if KimogramSettings.get(.hidePremiumRows) {
+        let hiddenIds: Set<AnyHashable> = [AnyHashable(100), AnyHashable(104), AnyHashable(105)]
+        items[.payment] = items[.payment]!.filter { !hiddenIds.contains($0.id) }
+    }
+    
     var result: [(AnyHashable, [PeerInfoScreenItem])] = []
     for section in SettingsSection.allCases {
         if let sectionItems = items[section], !sectionItems.isEmpty {

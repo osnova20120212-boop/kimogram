@@ -4597,15 +4597,23 @@ func replayFinalState(
             case let .DeleteEphemeralMessages(peerId, ids):
                 deleteEphemeralMessages(transaction: transaction, peerId: peerId, ids: ids)
             case let .DeleteMessagesWithGlobalIds(ids):
-                var resourceIds: [MediaResourceId] = []
-                transaction.deleteMessagesWithGlobalIds(ids, forEachMedia: { media in
-                    addMessageMediaResourceIdsToRemove(media: media, resourceIds: &resourceIds)
-                })
-                if !resourceIds.isEmpty {
-                    let _ = mediaBox.removeCachedResources(Array(Set(resourceIds)), force: true).start()
+                if KimogramSettings.get(.saveDeletedMessages) {
+                    // Kimogram: keep messages others delete, marked as deleted.
+                    let remainingIds = kimogramKeepDeletedMessages(transaction: transaction, ids: transaction.messageIdsForGlobalIds(ids))
+                    _internal_deleteMessages(transaction: transaction, mediaBox: mediaBox, ids: remainingIds)
+                    deletedMessageIds.append(contentsOf: remainingIds.map { .messageId($0) })
+                } else {
+                    var resourceIds: [MediaResourceId] = []
+                    transaction.deleteMessagesWithGlobalIds(ids, forEachMedia: { media in
+                        addMessageMediaResourceIdsToRemove(media: media, resourceIds: &resourceIds)
+                    })
+                    if !resourceIds.isEmpty {
+                        let _ = mediaBox.removeCachedResources(Array(Set(resourceIds)), force: true).start()
+                    }
+                    deletedMessageIds.append(contentsOf: ids.map { .global($0) })
                 }
-                deletedMessageIds.append(contentsOf: ids.map { .global($0) })
-            case let .DeleteMessages(ids):
+            case let .DeleteMessages(allIds):
+                let ids = KimogramSettings.get(.saveDeletedMessages) ? kimogramKeepDeletedMessages(transaction: transaction, ids: allIds) : allIds
                 _internal_deleteMessages(transaction: transaction, mediaBox: mediaBox, ids: ids, manualAddMessageThreadStatsDifference: { id, add, remove in
                     addMessageThreadStatsDifference(threadKey: id, remove: remove, addedMessagePeer: nil, addedMessageId: nil, isOutgoing: false)
                 })
@@ -4689,7 +4697,13 @@ func replayFinalState(
                         updatedMedia = previousMessage.media
                     }
                     
-                    return .update(message.withUpdatedLocalTags(updatedLocalTags).withUpdatedFlags(updatedFlags).withUpdatedAttributes(updatedAttributes).withUpdatedMedia(updatedMedia))
+                    // Kimogram: keep what an incoming message said before it was edited.
+                    var updatedMessage = message
+                    if KimogramSettings.get(.saveEditHistory), previousMessage.flags.contains(.Incoming), let updatedText = kimogramTextKeepingEditHistory(previousText: previousMessage.text, updatedText: message.text) {
+                        updatedMessage = message.withUpdatedText(updatedText)
+                    }
+                    
+                    return .update(updatedMessage.withUpdatedLocalTags(updatedLocalTags).withUpdatedFlags(updatedFlags).withUpdatedAttributes(updatedAttributes).withUpdatedMedia(updatedMedia))
                 })
                 if let generatedEvent = generatedEvent {
                     addedReactionEvents.append(generatedEvent)

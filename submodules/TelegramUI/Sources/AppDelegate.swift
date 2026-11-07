@@ -1398,6 +1398,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             }
             if let context = context {
                 KimogramAutoProxy.shared.attach(sharedContext: context.context.sharedContext, network: network)
+                kimogramApplyThemeIfNeeded(sharedContext: context.context.sharedContext)
             }
             
             Logger.shared.log("App \(self.episodeId)", "received context \(String(describing: context)) account \(String(describing: context?.context.account.id)) network \(String(describing: network))")

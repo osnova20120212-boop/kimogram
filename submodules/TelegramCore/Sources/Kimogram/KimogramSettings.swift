@@ -16,6 +16,12 @@ public final class KimogramSettings {
         case hideStoriesBar = "kimogram.hideStoriesBar"
         case confirmCalls = "kimogram.confirmCalls"
         case fastAnimations = "kimogram.fastAnimations"
+        case saveDeletedMessages = "kimogram.saveDeletedMessages"
+        case saveEditHistory = "kimogram.saveEditHistory"
+        case hidePhoneNumber = "kimogram.hidePhoneNumber"
+        case hidePremiumRows = "kimogram.hidePremiumRows"
+        case timestampSeconds = "kimogram.timestampSeconds"
+        case fastDownloads = "kimogram.fastDownloads"
     }
 
     private static let defaults = UserDefaults.standard

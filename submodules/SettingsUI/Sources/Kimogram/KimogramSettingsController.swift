@@ -31,6 +31,7 @@ private enum KimogramSettingsSection: Int32 {
     case header
     case connection
     case ghost
+    case history
     case chats
     case interface
     case about
@@ -41,12 +42,17 @@ private enum KimogramSettingsEntry: ItemListNodeEntry {
 
     case connectionHeader(PresentationTheme, String)
     case proxy(PresentationTheme, String, String)
+    case connectionOption(Int32, PresentationTheme, KimogramSettings.Key, String, Bool)
     case connectionInfo(PresentationTheme, String)
 
     case ghostHeader(PresentationTheme, String)
     case ghostMaster(PresentationTheme, String, Bool)
     case ghostOption(Int32, PresentationTheme, KimogramSettings.Key, String, Bool)
     case ghostInfo(PresentationTheme, String)
+
+    case historyHeader(PresentationTheme, String)
+    case historyOption(Int32, PresentationTheme, KimogramSettings.Key, String, Bool)
+    case historyInfo(PresentationTheme, String)
 
     case chatsHeader(PresentationTheme, String)
     case chatsOption(Int32, PresentationTheme, KimogramSettings.Key, String, Bool)
@@ -62,10 +68,12 @@ private enum KimogramSettingsEntry: ItemListNodeEntry {
         switch self {
         case .header:
             return KimogramSettingsSection.header.rawValue
-        case .connectionHeader, .proxy, .connectionInfo:
+        case .connectionHeader, .proxy, .connectionOption, .connectionInfo:
             return KimogramSettingsSection.connection.rawValue
         case .ghostHeader, .ghostMaster, .ghostOption, .ghostInfo:
             return KimogramSettingsSection.ghost.rawValue
+        case .historyHeader, .historyOption, .historyInfo:
+            return KimogramSettingsSection.history.rawValue
         case .chatsHeader, .chatsOption, .chatsInfo:
             return KimogramSettingsSection.chats.rawValue
         case .interfaceHeader, .appearance, .interfaceInfo:
@@ -83,8 +91,10 @@ private enum KimogramSettingsEntry: ItemListNodeEntry {
             return 100
         case .proxy:
             return 101
+        case let .connectionOption(index, _, _, _, _):
+            return 110 + index
         case .connectionInfo:
-            return 102
+            return 190
         case .ghostHeader:
             return 200
         case .ghostMaster:
@@ -92,7 +102,13 @@ private enum KimogramSettingsEntry: ItemListNodeEntry {
         case let .ghostOption(index, _, _, _, _):
             return 210 + index
         case .ghostInfo:
-            return 290
+            return 240
+        case .historyHeader:
+            return 250
+        case let .historyOption(index, _, _, _, _):
+            return 260 + index
+        case .historyInfo:
+            return 280
         case .chatsHeader:
             return 300
         case let .chatsOption(index, _, _, _, _):
@@ -117,12 +133,12 @@ private enum KimogramSettingsEntry: ItemListNodeEntry {
                 return true
             }
             return false
-        case let .connectionHeader(lhsTheme, lhsText), let .connectionInfo(lhsTheme, lhsText), let .ghostHeader(lhsTheme, lhsText), let .ghostInfo(lhsTheme, lhsText), let .chatsHeader(lhsTheme, lhsText), let .chatsInfo(lhsTheme, lhsText), let .interfaceHeader(lhsTheme, lhsText), let .appearance(lhsTheme, lhsText), let .interfaceInfo(lhsTheme, lhsText), let .about(lhsTheme, lhsText):
+        case let .connectionHeader(lhsTheme, lhsText), let .connectionInfo(lhsTheme, lhsText), let .ghostHeader(lhsTheme, lhsText), let .ghostInfo(lhsTheme, lhsText), let .chatsHeader(lhsTheme, lhsText), let .chatsInfo(lhsTheme, lhsText), let .historyHeader(lhsTheme, lhsText), let .historyInfo(lhsTheme, lhsText), let .interfaceHeader(lhsTheme, lhsText), let .appearance(lhsTheme, lhsText), let .interfaceInfo(lhsTheme, lhsText), let .about(lhsTheme, lhsText):
             guard lhs.stableId == rhs.stableId else {
                 return false
             }
             switch rhs {
-            case let .connectionHeader(rhsTheme, rhsText), let .connectionInfo(rhsTheme, rhsText), let .ghostHeader(rhsTheme, rhsText), let .ghostInfo(rhsTheme, rhsText), let .chatsHeader(rhsTheme, rhsText), let .chatsInfo(rhsTheme, rhsText), let .interfaceHeader(rhsTheme, rhsText), let .appearance(rhsTheme, rhsText), let .interfaceInfo(rhsTheme, rhsText), let .about(rhsTheme, rhsText):
+            case let .connectionHeader(rhsTheme, rhsText), let .connectionInfo(rhsTheme, rhsText), let .ghostHeader(rhsTheme, rhsText), let .ghostInfo(rhsTheme, rhsText), let .chatsHeader(rhsTheme, rhsText), let .chatsInfo(rhsTheme, rhsText), let .historyHeader(rhsTheme, rhsText), let .historyInfo(rhsTheme, rhsText), let .interfaceHeader(rhsTheme, rhsText), let .appearance(rhsTheme, rhsText), let .interfaceInfo(rhsTheme, rhsText), let .about(rhsTheme, rhsText):
                 return lhsTheme === rhsTheme && lhsText == rhsText
             default:
                 return false
@@ -139,6 +155,16 @@ private enum KimogramSettingsEntry: ItemListNodeEntry {
             return false
         case let .ghostOption(lhsIndex, lhsTheme, lhsKey, lhsText, lhsValue):
             if case let .ghostOption(rhsIndex, rhsTheme, rhsKey, rhsText, rhsValue) = rhs, lhsIndex == rhsIndex, lhsTheme === rhsTheme, lhsKey == rhsKey, lhsText == rhsText, lhsValue == rhsValue {
+                return true
+            }
+            return false
+        case let .connectionOption(lhsIndex, lhsTheme, lhsKey, lhsText, lhsValue):
+            if case let .connectionOption(rhsIndex, rhsTheme, rhsKey, rhsText, rhsValue) = rhs, lhsIndex == rhsIndex, lhsTheme === rhsTheme, lhsKey == rhsKey, lhsText == rhsText, lhsValue == rhsValue {
+                return true
+            }
+            return false
+        case let .historyOption(lhsIndex, lhsTheme, lhsKey, lhsText, lhsValue):
+            if case let .historyOption(rhsIndex, rhsTheme, rhsKey, rhsText, rhsValue) = rhs, lhsIndex == rhsIndex, lhsTheme === rhsTheme, lhsKey == rhsKey, lhsText == rhsText, lhsValue == rhsValue {
                 return true
             }
             return false
@@ -159,19 +185,19 @@ private enum KimogramSettingsEntry: ItemListNodeEntry {
         switch self {
         case let .header(theme, title, text):
             return KimogramHeaderItem(theme: theme, title: title, subtitle: text, sectionId: self.section)
-        case let .connectionHeader(_, text), let .ghostHeader(_, text), let .chatsHeader(_, text), let .interfaceHeader(_, text):
+        case let .connectionHeader(_, text), let .ghostHeader(_, text), let .historyHeader(_, text), let .chatsHeader(_, text), let .interfaceHeader(_, text):
             return ItemListSectionHeaderItem(presentationData: presentationData, text: text, sectionId: self.section)
         case let .proxy(_, text, value):
             return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, icon: PresentationResourcesSettings.proxy, title: text, label: value, sectionId: self.section, style: .blocks, action: {
                 arguments.openProxy()
             })
-        case let .connectionInfo(_, text), let .ghostInfo(_, text), let .chatsInfo(_, text), let .interfaceInfo(_, text):
+        case let .connectionInfo(_, text), let .ghostInfo(_, text), let .historyInfo(_, text), let .chatsInfo(_, text), let .interfaceInfo(_, text):
             return ItemListTextItem(presentationData: presentationData, text: .plain(text), sectionId: self.section)
         case let .ghostMaster(_, text, value):
             return ItemListSwitchItem(presentationData: presentationData, systemStyle: .glass, icon: PresentationResourcesSettings.security, title: text, value: value, sectionId: self.section, style: .blocks, updated: { value in
                 arguments.setGhostMode(value)
             })
-        case let .ghostOption(_, _, key, text, value), let .chatsOption(_, _, key, text, value):
+        case let .ghostOption(_, _, key, text, value), let .historyOption(_, _, key, text, value), let .chatsOption(_, _, key, text, value), let .connectionOption(_, _, key, text, value):
             return ItemListSwitchItem(presentationData: presentationData, systemStyle: .glass, title: text, value: value, sectionId: self.section, style: .blocks, updated: { value in
                 arguments.set(key, value)
             })
@@ -193,7 +219,8 @@ private func kimogramSettingsEntries(theme: PresentationTheme, autoProxyEnabled:
 
     entries.append(.connectionHeader(theme, ru ? "ПОДКЛЮЧЕНИЕ" : "CONNECTION"))
     entries.append(.proxy(theme, ru ? "Прокси" : "Proxy", autoProxyEnabled ? (ru ? "Авто" : "Auto") : (ru ? "Свой" : "Manual")))
-    entries.append(.connectionInfo(theme, ru ? "Авто-прокси сам находит рабочий бесплатный прокси, если подключиться не получается." : "Auto Proxy finds a working free proxy for you whenever the app cannot connect."))
+    entries.append(.connectionOption(0, theme, .fastDownloads, ru ? "Быстрая загрузка файлов" : "Faster Downloads", KimogramSettings.get(.fastDownloads)))
+    entries.append(.connectionInfo(theme, ru ? "Авто-прокси сам находит рабочий бесплатный прокси, если подключиться не получается. Быстрая загрузка качает большие файлы в два раза большим числом потоков." : "Auto Proxy finds a working free proxy for you whenever the app cannot connect. Faster Downloads fetches large files with twice as many parallel parts."))
 
     entries.append(.ghostHeader(theme, ru ? "РЕЖИМ ПРИЗРАКА" : "GHOST MODE"))
     entries.append(.ghostMaster(theme, ru ? "Режим призрака" : "Ghost Mode", KimogramSettings.ghostModeEnabled))
@@ -203,14 +230,23 @@ private func kimogramSettingsEntries(theme: PresentationTheme, autoProxyEnabled:
     entries.append(.ghostOption(3, theme, .ghostStories, ru ? "Смотреть истории тайно" : "View Stories Secretly", KimogramSettings.get(.ghostStories)))
     entries.append(.ghostInfo(theme, ru ? "Собеседники не увидят, что вы прочитали сообщение, были в сети, печатали или смотрели их историю. Когда вы сами отправляете сообщение, сервер всё равно ненадолго показывает вас в сети." : "Others won't see that you read their messages, were online, were typing or viewed their stories. Sending a message still briefly shows you online."))
 
+    entries.append(.historyHeader(theme, ru ? "СОХРАНЕНИЕ" : "KEEP HISTORY"))
+    entries.append(.historyOption(0, theme, .saveDeletedMessages, ru ? "Сохранять удалённые сообщения" : "Keep Deleted Messages", KimogramSettings.get(.saveDeletedMessages)))
+    entries.append(.historyOption(1, theme, .saveEditHistory, ru ? "Сохранять историю правок" : "Keep Edit History", KimogramSettings.get(.saveEditHistory)))
+    entries.append(.historyInfo(theme, ru ? "Если собеседник удалит сообщение, у вас оно останется с пометкой «🗑 Удалено». Если исправит, ниже будет видно, что было написано раньше. Работает для сообщений, которые пришли, пока настройка включена." : "Messages others delete stay with a \"🗑 Deleted\" mark, and edited messages show what they said before. Works for messages received while this is on."))
+
     entries.append(.chatsHeader(theme, ru ? "ЧАТЫ" : "CHATS"))
     entries.append(.chatsOption(0, theme, .hideSponsored, ru ? "Без рекламы в каналах" : "No Sponsored Messages", KimogramSettings.get(.hideSponsored)))
     entries.append(.chatsOption(1, theme, .showPeerId, ru ? "Показывать ID в профиле" : "Show ID in Profiles", KimogramSettings.get(.showPeerId)))
-    entries.append(.chatsInfo(theme, ru ? "ID можно скопировать нажатием в профиле человека, группы или канала." : "Tap the ID in a profile to copy it."))
+    entries.append(.chatsOption(2, theme, .timestampSeconds, ru ? "Время с секундами" : "Show Seconds in Time", KimogramSettings.get(.timestampSeconds)))
+    entries.append(.chatsOption(3, theme, .hideStoriesBar, ru ? "Скрыть истории над чатами" : "Hide Stories Row", KimogramSettings.get(.hideStoriesBar)))
+    entries.append(.chatsOption(4, theme, .hidePhoneNumber, ru ? "Скрыть мой номер в настройках" : "Hide My Number in Settings", KimogramSettings.get(.hidePhoneNumber)))
+    entries.append(.chatsOption(5, theme, .hidePremiumRows, ru ? "Скрыть Premium и подарки" : "Hide Premium and Gifts", KimogramSettings.get(.hidePremiumRows)))
+    entries.append(.chatsInfo(theme, ru ? "ID копируется нажатием в профиле. Скрытый номер удобен для скриншотов." : "Tap an ID in a profile to copy it. A hidden number keeps it off screenshots."))
 
     entries.append(.interfaceHeader(theme, ru ? "ОФОРМЛЕНИЕ" : "APPEARANCE"))
     entries.append(.appearance(theme, ru ? "Тема и иконка приложения" : "Theme and App Icon"))
-    entries.append(.interfaceInfo(theme, ru ? "11 вариантов иконки Kimogram — в разделе «Иконка приложения»." : "Pick one of 11 Kimogram icons under App Icon."))
+    entries.append(.interfaceInfo(theme, ru ? "Фиолетовая тема Kimogram стоит первой в списке цветов, там же 11 вариантов иконки." : "The violet Kimogram colours come first in the colour list, next to 11 Kimogram icons."))
 
     let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
     let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""

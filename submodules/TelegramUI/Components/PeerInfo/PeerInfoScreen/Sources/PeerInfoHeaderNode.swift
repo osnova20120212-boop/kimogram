@@ -1244,6 +1244,14 @@ final class PeerInfoHeaderNode: ASDisplayNode {
                 if let mainUsername = user.addressName, !mainUsername.isEmpty {
                     subtitle = "\(subtitle) • @\(mainUsername)"
                 }
+                // Kimogram: keep the phone number off screenshots.
+                if KimogramSettings.get(.hidePhoneNumber) {
+                    if let mainUsername = user.addressName, !mainUsername.isEmpty {
+                        subtitle = "@\(mainUsername)"
+                    } else {
+                        subtitle = "+•• ••• ••• •• ••"
+                    }
+                }
                 subtitleStringText = subtitle
                 subtitleAttributes = MultiScaleTextState.Attributes(font: Font.regular(17.0), color: .white)
                 smallSubtitleAttributes = MultiScaleTextState.Attributes(font: Font.regular(16.0), color: .white, shadowColor: titleShadowColor)
