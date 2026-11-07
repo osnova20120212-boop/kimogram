@@ -562,7 +562,19 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         try! PasscodeEnvironment.shared.configure(PasscodeConfiguration(appGroupIdentifier: appGroupName, processRole: .mainApp, biometricKeychainService: walletBiometricKeychainService), privateAccessGroup: {
             BuildConfig.keychainAccessGroup(baseAppBundleId: baseAppBundleId)
         })
-        let maybeAppGroupUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupName)
+        var maybeAppGroupUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupName)
+        if maybeAppGroupUrl == nil {
+            // Kimogram: an app installed with a free Apple ID (Sideloadly, AltStore) under a new
+            // bundle id often has no app group. Without this fallback the launch stopped at
+            // "Error 2", which is presented before any window exists, so the user saw only a
+            // black screen. The app then keeps its data in its own container; the extensions
+            // cannot share it, which only matters for notifications and the share sheet.
+            if let supportUrl = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+                let fallbackUrl = supportUrl.appendingPathComponent("kimogram-shared", isDirectory: true)
+                let _ = try? FileManager.default.createDirectory(at: fallbackUrl, withIntermediateDirectories: true, attributes: nil)
+                maybeAppGroupUrl = fallbackUrl
+            }
+        }
         
         let buildConfig = BuildConfig(baseAppBundleId: baseAppBundleId)
         self.buildConfig = buildConfig
