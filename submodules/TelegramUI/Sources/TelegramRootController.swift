@@ -209,7 +209,10 @@ public final class TelegramRootController: NavigationController, TelegramRootCon
         contactsController.switchToChatsController = {  [weak self] in
             self?.openChatsController(activateSearch: false)
         }
-        controllers.append(contactsController)
+        // Kimogram: the Contacts tab can be hidden; the controller still exists for "switch to chats".
+        if !KimogramSettings.get(.hideContactsTab) {
+            controllers.append(contactsController)
+        }
         
         if showCallsTab {
             controllers.append(callListController)
@@ -250,7 +253,9 @@ public final class TelegramRootController: NavigationController, TelegramRootCon
             return
         }
         var controllers: [ViewController] = []
-        controllers.append(self.contactsController!)
+        if !KimogramSettings.get(.hideContactsTab) {
+            controllers.append(self.contactsController!)
+        }
         if showCallsTab {
             controllers.append(self.callListController!)
         }

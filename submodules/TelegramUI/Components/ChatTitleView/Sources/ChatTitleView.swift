@@ -308,9 +308,9 @@ public final class ChatTitleView: UIView, NavigationBarTitleView {
                                         titleCredibilityIcon = .fake
                                     } else if peer.isScam {
                                         titleCredibilityIcon = .scam
-                                    } else if !hidePeerStatus, let emojiStatus = peer.emojiStatus {
+                                    } else if !KimogramSettings.get(.hidePremiumBadges), !hidePeerStatus, let emojiStatus = peer.emojiStatus {
                                         titleStatusIcon = .emojiStatus(emojiStatus)
-                                    } else if peer.isPremium && !premiumConfiguration.isPremiumDisabled {
+                                    } else if peer.isPremium && !KimogramSettings.get(.hidePremiumBadges) && !premiumConfiguration.isPremiumDisabled {
                                         titleCredibilityIcon = .premium
                                     }
                                     

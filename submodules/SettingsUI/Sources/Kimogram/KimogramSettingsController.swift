@@ -326,7 +326,10 @@ private func chatsPage(context: AccountContext) -> ViewController {
             KimogramPageSection(header: ru ? "ЛЕНТА" : "FEED", rows: [
                 .toggle(.hideSponsored, title: ru ? "Без рекламы в каналах" : "No Sponsored Messages", text: nil),
                 .toggle(.timestampSeconds, title: ru ? "Время с секундами" : "Show Seconds in Time", text: nil),
-                .toggle(.hideStoriesBar, title: ru ? "Скрыть истории над чатами" : "Hide Stories Row", text: nil)
+                .toggle(.hideStoriesBar, title: ru ? "Скрыть истории над чатами" : "Hide Stories Row", text: nil),
+                .toggle(.hideReactions, title: ru ? "Скрыть реакции" : "Hide Reactions", text: ru ? "Под сообщениями не будет реакций" : "No reactions under messages"),
+                .toggle(.hideSimilarChannels, title: ru ? "Скрыть похожие каналы" : "Hide Similar Channels", text: nil),
+                .toggle(.openLinksDirectly, title: ru ? "Открывать ссылки без вопроса" : "Open Links Without Asking", text: ru ? "Даже если текст ссылки не совпадает с адресом" : "Even when the link text differs from the address")
             ])
         ]
     })
@@ -341,7 +344,7 @@ private func profilePage(context: AccountContext) -> ViewController {
             ]),
             KimogramPageSection(header: ru ? "МОИ НАСТРОЙКИ" : "MY SETTINGS", rows: [
                 .toggle(.hidePhoneNumber, title: ru ? "Скрыть мой номер" : "Hide My Number", text: ru ? "Удобно для скриншотов" : "Keeps it off screenshots"),
-                .toggle(.hidePremiumRows, title: ru ? "Скрыть Premium и подарки" : "Hide Premium and Gifts", text: nil)
+                .toggle(.hidePremiumRows, title: ru ? "Скрыть Premium и подарки" : "Hide Premium and Gifts", text: ru ? "В настройках и кнопка подарка в чатах" : "In Settings, and the gift button in chats")
             ])
         ]
     })
@@ -351,6 +354,10 @@ private func appearancePage(context: AccountContext) -> ViewController {
     let ru = KimogramAutoProxy.isRussian
     return kimogramPageController(context: context, title: ru ? "Оформление" : "Appearance", build: { _ in
         return [
+            KimogramPageSection(header: ru ? "ИНТЕРФЕЙС" : "INTERFACE", rows: [
+                .toggle(.hideContactsTab, title: ru ? "Скрыть вкладку «Контакты»" : "Hide Contacts Tab", text: ru ? "Вкладку «Звонки» скрывают в Настройки ▸ Недавние звонки" : "Calls tab: Settings ▸ Recent Calls"),
+                .toggle(.hidePremiumBadges, title: ru ? "Скрыть значки Premium" : "Hide Premium Badges", text: ru ? "Звёзды и эмодзи-статусы у имён" : "Stars and emoji statuses next to names")
+            ]),
             KimogramPageSection(rows: [
                 .link(title: ru ? "Тема и иконка приложения" : "Theme and App Icon", icon: PresentationResourcesSettings.appearance, label: "", action: { environment in
                     environment.push(themeSettingsController(context: environment.context))

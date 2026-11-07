@@ -2273,6 +2273,10 @@ public final class SharedAccountContextImpl: SharedAccountContext {
     }
 
     public func openUserGeneratedUrl(context: AccountContext, peerId: PeerId?, url: String, webpage: TelegramMediaWebpage?, concealed: Bool, forceConcealed: Bool, skipUrlAuth: Bool, skipConcealedAlert: Bool, forceDark: Bool, present: @escaping (ViewController) -> Void, openResolved: @escaping (ResolvedUrl) -> Void, progress: Promise<Bool>?, alertDisplayUpdated: ((ViewController?) -> Void)?, concealedAlertOption: OpenUserGeneratedUrlConcealedAlertOption?) -> Disposable {
+        // Kimogram: "Open Links Without Asking" skips the "open this link?" question for links whose
+        // text differs from the address. Forced prompts and the login-part check in the external
+        // opener still run.
+        let skipConcealedAlert = skipConcealedAlert || (KimogramSettings.get(.openLinksDirectly) && !forceConcealed)
         return OpenUserGeneratedUrl.openUserGeneratedUrl(context: context, peerId: peerId, url: url, webpage: webpage, concealed: concealed, forceConcealed: forceConcealed, skipUrlAuth: skipUrlAuth, skipConcealedAlert: skipConcealedAlert, forceDark: forceDark, present: present, openResolved: openResolved, progress: progress, alertDisplayUpdated: alertDisplayUpdated, concealedAlertOption: concealedAlertOption)
     }
 

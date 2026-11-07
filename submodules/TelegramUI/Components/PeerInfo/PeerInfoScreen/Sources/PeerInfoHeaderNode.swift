@@ -614,9 +614,9 @@ final class PeerInfoHeaderNode: ASDisplayNode {
                 credibilityIcon = .fake
             } else if peer.isScam {
                 credibilityIcon = .scam
-            } else if let emojiStatus = peer.emojiStatus {
+            } else if !KimogramSettings.get(.hidePremiumBadges), let emojiStatus = peer.emojiStatus {
                 statusIcon = .emojiStatus(emojiStatus)
-            } else if peer.isPremium && !premiumConfiguration.isPremiumDisabled && (peer.id != self.context.account.peerId || self.isSettings || self.isMyProfile) {
+            } else if peer.isPremium && !KimogramSettings.get(.hidePremiumBadges) && !premiumConfiguration.isPremiumDisabled && (peer.id != self.context.account.peerId || self.isSettings || self.isMyProfile) {
                 credibilityIcon = .premium
             } else {
                 credibilityIcon = .none

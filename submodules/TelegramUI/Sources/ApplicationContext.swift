@@ -810,10 +810,12 @@ final class AuthorizedApplicationContext {
             }
             return value
         }
-        self.showCallsTabDisposable = (showCallsTabSignal |> deliverOnMainQueue).start(next: { [weak self] value in
+        var kimogramHideContactsTab = KimogramSettings.get(.hideContactsTab)
+        self.showCallsTabDisposable = (combineLatest(showCallsTabSignal, KimogramSettings.signal(.hideContactsTab)) |> deliverOnMainQueue).start(next: { [weak self] value, hideContactsTab in
             if let strongSelf = self {
-                if strongSelf.showCallsTab != value {
+                if strongSelf.showCallsTab != value || kimogramHideContactsTab != hideContactsTab {
                     strongSelf.showCallsTab = value
+                    kimogramHideContactsTab = hideContactsTab
                     strongSelf.rootController.updateRootControllers(showCallsTab: value)
                 }
             }

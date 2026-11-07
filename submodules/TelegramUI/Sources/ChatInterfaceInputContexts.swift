@@ -202,7 +202,7 @@ func inputTextPanelStateForChatPresentationInterfaceState(_ chatPresentationInte
                             showPremiumGift = true
                         }
                     }
-                    if isTextEmpty, showPremiumGift, let peer = chatPresentationInterfaceState.renderedPeer?.peer as? TelegramUser, !peer.isDeleted && peer.botInfo == nil && !peer.flags.contains(.isSupport) { //&& chatPresentationInterfaceState.suggestPremiumGift {
+                    if isTextEmpty, showPremiumGift, !KimogramSettings.get(.hidePremiumRows), let peer = chatPresentationInterfaceState.renderedPeer?.peer as? TelegramUser, !peer.isDeleted && peer.botInfo == nil && !peer.flags.contains(.isSupport) { //&& chatPresentationInterfaceState.suggestPremiumGift {
                         accessoryItems.append(.gift)
                     }
                 }

@@ -875,12 +875,12 @@ public class ContactsPeerItemNode: ItemListRevealOptionsItemNode {
                         credibilityStatusIcon = .text(color: item.presentationData.theme.chat.message.incoming.scamColor, string: item.presentationData.strings.Message_ScamAccount.uppercased())
                     } else if peer.isFake {
                         credibilityStatusIcon = .text(color: item.presentationData.theme.chat.message.incoming.scamColor, string: item.presentationData.strings.Message_FakeAccount.uppercased())
-                    } else if let emojiStatus = peer.emojiStatus, !item.isAd {
+                    } else if !KimogramSettings.get(.hidePremiumBadges), let emojiStatus = peer.emojiStatus, !item.isAd {
                         emojiStatusIcon = .animation(content: .customEmoji(fileId: emojiStatus.fileId), size: CGSize(width: 20.0, height: 20.0), placeholderColor: item.presentationData.theme.list.mediaPlaceholderColor, themeColor: item.presentationData.theme.list.itemAccentColor, loopMode: .count(2))
                         if let color = emojiStatus.color {
                             emojiStatusParticleColor = UIColor(rgb: UInt32(bitPattern: color))
                         }
-                    } else if peer.isPremium && !premiumConfiguration.isPremiumDisabled {
+                    } else if peer.isPremium && !KimogramSettings.get(.hidePremiumBadges) && !premiumConfiguration.isPremiumDisabled {
                         credibilityStatusIcon = .premium(color: item.presentationData.theme.list.itemAccentColor)
                     }
                     

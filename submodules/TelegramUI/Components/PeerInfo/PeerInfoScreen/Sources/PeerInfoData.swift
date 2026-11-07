@@ -1887,7 +1887,7 @@ func peerInfoScreenData(
                 requestsStatePromise.get(),
                 hasStories,
                 accountIsPremium,
-                context.engine.peers.recommendedChannels(peerId: peerId),
+                (KimogramSettings.get(.hideSimilarChannels) ? Signal<RecommendedChannels?, NoError>.single(nil) : context.engine.peers.recommendedChannels(peerId: peerId)),
                 hasSavedMessages,
                 hasSavedMessagesChats,
                 hasSavedMessageTags,

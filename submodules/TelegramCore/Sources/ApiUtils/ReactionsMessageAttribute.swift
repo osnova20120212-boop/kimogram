@@ -323,3 +323,12 @@ extension ReactionsMessageAttribute {
         }
     }
 }
+
+/// Kimogram: the reactions a message shows under it. With "Hide Reactions" on, a message shows
+/// none (tags in Saved Messages stay, they are the user's own labels).
+public func kimogramDisplayedMessageReactions(attributes: [MessageAttribute], isTags: Bool) -> ReactionsMessageAttribute? {
+    if !isTags && KimogramSettings.get(.hideReactions) {
+        return nil
+    }
+    return mergedMessageReactions(attributes: attributes, isTags: isTags)
+}

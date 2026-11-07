@@ -29,6 +29,11 @@ public final class KimogramSettings {
         case confirmStickers = "kimogram.confirmStickers"
         case confirmVoice = "kimogram.confirmVoice"
         case disableSwipeReply = "kimogram.disableSwipeReply"
+        case hideContactsTab = "kimogram.hideContactsTab"
+        case hidePremiumBadges = "kimogram.hidePremiumBadges"
+        case hideSimilarChannels = "kimogram.hideSimilarChannels"
+        case hideReactions = "kimogram.hideReactions"
+        case openLinksDirectly = "kimogram.openLinksDirectly"
     }
 
     /// Switches that are on until the user turns them off. Everything else starts off,
