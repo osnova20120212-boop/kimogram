@@ -152,6 +152,9 @@ final class MultipartUploadManager {
         
         if increaseParallelParts {
             self.parallelParts = 30
+        } else if KimogramSettings.get(.fastDownloads) {
+            // Kimogram: "Faster Transfers" also sends uploads in more parallel parts.
+            self.parallelParts = 8
         } else {
             self.parallelParts = 3
         }

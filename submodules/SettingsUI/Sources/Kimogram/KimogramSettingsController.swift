@@ -392,7 +392,7 @@ public func kimogramSettingsController(context: AccountContext) -> ViewControlle
                 .link(title: ru ? "Прокси" : "Proxy", icon: PresentationResourcesSettings.proxy, label: autoProxyEnabled ? (ru ? "Авто" : "Auto") : (ru ? "Свой" : "Manual"), action: { environment in
                     environment.push(proxySettingsController(context: environment.context))
                 }),
-                .toggle(.fastDownloads, title: ru ? "Быстрая загрузка файлов" : "Faster Downloads", text: ru ? "Вдвое больше потоков для больших файлов" : "Twice as many parallel parts for large files")
+                .toggle(.fastDownloads, title: ru ? "Быстрая загрузка и отправка" : "Faster Transfers", text: ru ? "Больше потоков для скачивания и отправки файлов" : "More parallel parts for downloads and uploads")
             ], footer: ru ? "Авто-прокси сам находит рабочий бесплатный прокси, если подключиться не получается." : "Auto Proxy finds a working free proxy whenever the app cannot connect."),
             KimogramPageSection(header: ru ? "ПРИВАТНОСТЬ" : "PRIVACY", rows: [
                 .link(title: ru ? "Режим призрака" : "Ghost Mode", icon: PresentationResourcesSettings.security, label: countLabel(ghostKeys, ru), action: { environment in
