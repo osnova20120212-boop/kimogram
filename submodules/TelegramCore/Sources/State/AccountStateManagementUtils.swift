@@ -4699,11 +4699,13 @@ func replayFinalState(
                     
                     // Kimogram: keep what an incoming message said before it was edited.
                     var updatedMessage = message
+                    var kimogramAttributes = updatedAttributes
                     if KimogramSettings.get(.saveEditHistory), previousMessage.flags.contains(.Incoming), let updatedText = kimogramTextKeepingEditHistory(previousText: previousMessage.text, updatedText: message.text) {
                         updatedMessage = message.withUpdatedText(updatedText)
+                        kimogramAttributes = kimogramDecoratedAttributes(text: updatedText, attributes: updatedAttributes)
                     }
                     
-                    return .update(updatedMessage.withUpdatedLocalTags(updatedLocalTags).withUpdatedFlags(updatedFlags).withUpdatedAttributes(updatedAttributes).withUpdatedMedia(updatedMedia))
+                    return .update(updatedMessage.withUpdatedLocalTags(updatedLocalTags).withUpdatedFlags(updatedFlags).withUpdatedAttributes(kimogramAttributes).withUpdatedMedia(updatedMedia))
                 })
                 if let generatedEvent = generatedEvent {
                     addedReactionEvents.append(generatedEvent)

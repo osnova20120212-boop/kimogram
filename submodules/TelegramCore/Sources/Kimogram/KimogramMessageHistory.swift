@@ -16,6 +16,53 @@ private var kimogramEditedMarker: String {
     return kimogramIsRussian ? "✏️ Было:" : "✏️ Was:"
 }
 
+/// Kimogram: styles the mod's own notes in a message's text. The earlier version of an edited
+/// message becomes a collapsed quote (tap to expand) and the "deleted" note is set in italics,
+/// so both read as notes rather than as part of what the person wrote.
+func kimogramDecoratedAttributes(text: String, attributes: [MessageAttribute]) -> [MessageAttribute] {
+    let nsText = text as NSString
+    let length = nsText.length
+
+    var deletedStart = length
+    let deletedRange = nsText.range(of: kimogramDeletedMarker, options: .backwards)
+    if deletedRange.location != NSNotFound && deletedRange.location + deletedRange.length == length {
+        deletedStart = deletedRange.location
+    }
+
+    var added: [MessageTextEntity] = []
+    var historyStart = length
+    let editRange = nsText.range(of: "\n\n" + kimogramEditedMarker)
+    if editRange.location != NSNotFound {
+        historyStart = editRange.location + 2
+        var historyEnd = deletedStart < length ? deletedStart : length
+        // Leave out the blank line before the deleted note.
+        while historyEnd > historyStart, nsText.character(at: historyEnd - 1) == 0x0A {
+            historyEnd -= 1
+        }
+        if historyEnd > historyStart {
+            added.append(MessageTextEntity(range: historyStart ..< historyEnd, type: .BlockQuote(isCollapsed: true)))
+        }
+    }
+    if deletedStart < length {
+        added.append(MessageTextEntity(range: deletedStart ..< length, type: .Italic))
+    }
+    if added.isEmpty {
+        return attributes
+    }
+
+    var result = attributes
+    var existing: [MessageTextEntity] = []
+    if let index = result.firstIndex(where: { $0 is TextEntitiesMessageAttribute }), let attribute = result[index] as? TextEntitiesMessageAttribute {
+        existing = attribute.entities
+        result.remove(at: index)
+    }
+    // The server's entities describe only the current text; anything from the notes onwards is ours.
+    let notesStart = min(historyStart, deletedStart)
+    existing = existing.filter { $0.range.upperBound <= notesStart }
+    result.append(TextEntitiesMessageAttribute(entities: existing + added))
+    return result
+}
+
 /// Kimogram "save deleted messages": instead of deleting cloud messages that the server says
 /// were deleted, mark them and keep them. Returns the ids that must still be deleted (local,
 /// scheduled and secret-chat messages, and ones that are not stored).
@@ -36,7 +83,8 @@ func kimogramKeepDeletedMessages(transaction: Transaction, ids: [MessageId]) -> 
                 storeForwardInfo = StoreMessageForwardInfo(authorId: forwardInfo.author?.id, sourceId: forwardInfo.source?.id, sourceMessageId: forwardInfo.sourceMessageId, date: forwardInfo.date, authorSignature: forwardInfo.authorSignature, psaType: forwardInfo.psaType, flags: forwardInfo.flags)
             }
             let text = currentMessage.text.isEmpty ? marker : currentMessage.text + "\n\n" + marker
-            return .update(StoreMessage(id: currentMessage.id, customStableId: nil, globallyUniqueId: currentMessage.globallyUniqueId, groupingKey: currentMessage.groupingKey, threadId: currentMessage.threadId, timestamp: currentMessage.timestamp, flags: StoreMessageFlags(currentMessage.flags), tags: currentMessage.tags, globalTags: currentMessage.globalTags, localTags: currentMessage.localTags, forwardInfo: storeForwardInfo, authorId: currentMessage.author?.id, text: text, attributes: currentMessage.attributes, media: currentMessage.media))
+            let attributes = kimogramDecoratedAttributes(text: text, attributes: currentMessage.attributes)
+            return .update(StoreMessage(id: currentMessage.id, customStableId: nil, globallyUniqueId: currentMessage.globallyUniqueId, groupingKey: currentMessage.groupingKey, threadId: currentMessage.threadId, timestamp: currentMessage.timestamp, flags: StoreMessageFlags(currentMessage.flags), tags: currentMessage.tags, globalTags: currentMessage.globalTags, localTags: currentMessage.localTags, forwardInfo: storeForwardInfo, authorId: currentMessage.author?.id, text: text, attributes: attributes, media: currentMessage.media))
         })
     }
     return remaining
