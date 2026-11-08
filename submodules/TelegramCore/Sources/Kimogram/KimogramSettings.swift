@@ -48,6 +48,7 @@ public final class KimogramSettings {
         case hideAppIconBadge = "kimogram.hideAppIconBadge"
         case hideEditButton = "kimogram.hideEditButton"
         case noLinkPreviews = "kimogram.noLinkPreviews"
+        case titleAccountName = "kimogram.titleAccountName"
         case noChatListSeparators = "kimogram.noChatListSeparators"
         case hideStoryCamera = "kimogram.hideStoryCamera"
         case silentByDefault = "kimogram.silentByDefault"
@@ -76,6 +77,32 @@ public final class KimogramSettings {
             return ghostScheduleActiveNow
         default:
             return false
+        }
+    }
+
+    /// Counters shown on the Kimogram Settings page.
+    public enum Stat: String {
+        case deletedKept = "kimogram.stats.deletedKept"
+        case editsKept = "kimogram.stats.editsKept"
+    }
+
+    public static func incrementStat(_ stat: Stat) {
+        defaults.set(defaults.integer(forKey: stat.rawValue) + 1, forKey: stat.rawValue)
+    }
+
+    public static func statValue(_ stat: Stat) -> Int {
+        return defaults.integer(forKey: stat.rawValue)
+    }
+
+    /// The chat list's own title, when set (nil means "Kimogram").
+    public static var customChatListTitle: String? {
+        get {
+            let value = defaults.string(forKey: "kimogram.customTitle")?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return (value?.isEmpty ?? true) ? nil : value
+        }
+        set {
+            defaults.set(newValue, forKey: "kimogram.customTitle")
+            updatesPipe.putNext(Void())
         }
     }
 

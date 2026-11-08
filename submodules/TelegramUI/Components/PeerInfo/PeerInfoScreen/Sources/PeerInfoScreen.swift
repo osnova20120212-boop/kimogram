@@ -7131,16 +7131,13 @@ public final class PeerInfoScreenImpl: ViewController, PeerInfoScreen, KeyShortc
     }
     
     override public func tabBarItemHasDoubleTapAction() -> Bool {
-        return false
+        // Kimogram: a double tap on the Settings tab opens Kimogram Settings.
+        return self.isSettings
     }
     
     override public func tabBarItemPerformDoubleTapAction() {
-        guard let (maybePrimary, other) = self.accountsAndPeersValue, let _ = maybePrimary else {
-            return
-        }
-        for account in other {
-            self.controllerNode.switchToAccount(id: account.0.account.id)
-            break
+        if self.isSettings {
+            (self.navigationController as? NavigationController)?.pushViewController(kimogramSettingsController(context: self.context))
         }
     }
     

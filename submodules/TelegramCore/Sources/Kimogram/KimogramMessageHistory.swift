@@ -86,6 +86,7 @@ func kimogramKeepDeletedMessages(transaction: Transaction, ids: [MessageId]) -> 
             let attributes = kimogramDecoratedAttributes(text: text, attributes: currentMessage.attributes)
             return .update(StoreMessage(id: currentMessage.id, customStableId: nil, globallyUniqueId: currentMessage.globallyUniqueId, groupingKey: currentMessage.groupingKey, threadId: currentMessage.threadId, timestamp: currentMessage.timestamp, flags: StoreMessageFlags(currentMessage.flags), tags: currentMessage.tags, globalTags: currentMessage.globalTags, localTags: currentMessage.localTags, forwardInfo: storeForwardInfo, authorId: currentMessage.author?.id, text: text, attributes: attributes, media: currentMessage.media))
         })
+        KimogramSettings.incrementStat(.deletedKept)
     }
     return remaining
 }
@@ -107,6 +108,7 @@ func kimogramTextKeepingEditHistory(previousText: String, updatedText: String) -
     if previousOriginal.isEmpty {
         return nil
     }
+    KimogramSettings.incrementStat(.editsKept)
     return updatedText + marker + previousText
 }
 
@@ -142,6 +144,39 @@ func kimogramMarkReadOnReply(account: Account, peerId: PeerId) {
             |> ignoreValues
         } else if let inputPeer = apiInputPeer(peer) {
             return network.request(Api.functions.messages.readHistory(peer: inputPeer, maxId: maxId))
+            |> `catch` { _ -> Signal<Api.messages.AffectedMessages, NoError> in
+                return .complete()
+            }
+            |> ignoreValues
+        } else {
+            return .complete()
+        }
+    }).start()
+}
+
+/// Kimogram ghost mode: "Mark Read Up to Here". Tells the server (and so the sender) that the
+/// messages up to `messageId` were read, while ghost mode keeps hiding everything else.
+public func kimogramSendReadReceipt(account: Account, messageId: MessageId) {
+    let peerId = messageId.peerId
+    if peerId.namespace == Namespaces.Peer.SecretChat || messageId.namespace != Namespaces.Message.Cloud {
+        return
+    }
+    let network = account.network
+    let _ = (account.postbox.transaction { transaction -> Peer? in
+        return transaction.getPeer(peerId)
+    }
+    |> mapToSignal { peer -> Signal<Never, NoError> in
+        guard let peer else {
+            return .complete()
+        }
+        if let inputChannel = apiInputChannel(peer) {
+            return network.request(Api.functions.channels.readHistory(channel: inputChannel, maxId: messageId.id))
+            |> `catch` { _ -> Signal<Api.Bool, NoError> in
+                return .complete()
+            }
+            |> ignoreValues
+        } else if let inputPeer = apiInputPeer(peer) {
+            return network.request(Api.functions.messages.readHistory(peer: inputPeer, maxId: messageId.id))
             |> `catch` { _ -> Signal<Api.messages.AffectedMessages, NoError> in
                 return .complete()
             }

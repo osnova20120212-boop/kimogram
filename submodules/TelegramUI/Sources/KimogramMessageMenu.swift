@@ -57,6 +57,19 @@ func kimogramMessageMenuItems(context: AccountContext, message: EngineRawMessage
         }
     }
 
+    // Ghost mode: let the sender see "read" up to this message, and nothing more.
+    if KimogramSettings.hidesReadReceipts(in: message.id.peerId), message.flags.contains(.Incoming) {
+        items.append(.action(ContextMenuActionItem(text: ru ? "Прочитать до сюда" : "Mark Read Up to Here", icon: { theme in
+            return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Read"), color: theme.actionSheet.primaryTextColor)
+        }, action: { _, f in
+            f(.default)
+            kimogramSendReadReceipt(account: context.account, messageId: message.id)
+            Queue.mainQueue().after(0.2) {
+                controllerInteraction.displayUndo(.info(title: nil, text: ru ? "Собеседник увидит, что вы прочитали до этого сообщения" : "They will see you read up to this message", timeout: nil, customUndoText: nil))
+            }
+        })))
+    }
+
     // In a group, write to the author privately in one tap.
     if message.id.peerId.namespace != Namespaces.Peer.CloudUser, let author = message.author as? TelegramUser, author.id != context.account.peerId, author.botInfo == nil {
         items.append(.action(ContextMenuActionItem(text: ru ? "Написать автору" : "Message Author", icon: { theme in
@@ -64,6 +77,16 @@ func kimogramMessageMenuItems(context: AccountContext, message: EngineRawMessage
         }, action: { _, f in
             f(.dismissWithoutContent)
             controllerInteraction.openPeer(EnginePeer(author), .chat(textInputState: nil, subject: nil, peekData: nil), nil, .default)
+        })))
+    }
+    // The same, with the message quoted in the input field.
+    if message.id.peerId.namespace != Namespaces.Peer.CloudUser, let author = message.author as? TelegramUser, author.id != context.account.peerId, author.botInfo == nil, !message.text.isEmpty, !isCopyProtected {
+        let quoteText = "«" + kimogramCurrentText(message.text) + "»\n"
+        items.append(.action(ContextMenuActionItem(text: ru ? "Ответить в личку с цитатой" : "Reply Privately with Quote", icon: { theme in
+            return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Reply"), color: theme.actionSheet.primaryTextColor)
+        }, action: { _, f in
+            f(.dismissWithoutContent)
+            controllerInteraction.openPeer(EnginePeer(author), .chat(textInputState: ChatTextInputState(inputText: NSAttributedString(string: quoteText)), subject: nil, peekData: nil), nil, .default)
         })))
     }
 

@@ -6861,6 +6861,9 @@ private func chatListHeaderOverflowInfo(strings: PresentationStrings) -> [AnyHas
     ]
 }
 
+/// Kimogram: the account's first name, for the "name instead of Kimogram" title.
+private var kimogramAccountFirstName: String?
+
 private final class ChatListLocationContext {
     let context: AccountContext
     let location: ChatListControllerLocation
@@ -6942,6 +6945,7 @@ private final class ChatListLocationContext {
                 guard case let .user(user) = peer else {
                     return nil
                 }
+                kimogramAccountFirstName = user.firstName
                 if let emojiStatus = user.emojiStatus {
                     return .emoji(emojiStatus)
                 } else if user.isPremium {
@@ -7252,7 +7256,12 @@ private final class ChatListLocationContext {
         case let .chatList(groupId):
             if groupId == .root {
                 // Kimogram: a ghost next to the name while others cannot see you read or come online.
-                defaultTitle = (KimogramSettings.get(.ghostReadReceipts) || KimogramSettings.get(.ghostOnline)) ? "Kimogram 👻" : "Kimogram"
+                // and, if chosen, the account's own name instead of the app's.
+                var kimogramBaseTitle = KimogramSettings.get(.titleAccountName) ? (kimogramAccountFirstName.flatMap { $0.isEmpty ? nil : $0 } ?? "Kimogram") : "Kimogram"
+                if let customTitle = KimogramSettings.customChatListTitle {
+                    kimogramBaseTitle = customTitle
+                }
+                defaultTitle = (KimogramSettings.get(.ghostReadReceipts) || KimogramSettings.get(.ghostOnline)) ? kimogramBaseTitle + " 👻" : kimogramBaseTitle
             } else {
                 defaultTitle = presentationData.strings.ChatList_ArchivedChatsTitle
             }

@@ -9,6 +9,7 @@ import PresentationDataUtils
 import AccountContext
 import TelegramUIPreferences
 import AlertUI
+import PromptUI
 
 /// "Kimogram Settings": every switch the mod adds, under Settings ▸ Money.
 ///
@@ -509,6 +510,14 @@ private func appearancePage(context: AccountContext) -> ViewController {
                 .toggle(.hideFolderBadges, title: ru ? "Без счётчиков у папок" : "No Folder Counters", text: ru ? "Цифры непрочитанных на вкладках папок" : "Unread numbers on folder tabs"),
                 .toggle(.hideChatsTabBadge, title: ru ? "Без счётчика на вкладке «Чаты»" : "No Counter on Chats Tab", text: nil),
                 .toggle(.hideAppIconBadge, title: ru ? "Без цифры на иконке" : "No Number on App Icon", text: ru ? "Цифра пропадает, когда вы открываете Kimogram" : "Clears whenever you open Kimogram"),
+                .link(title: ru ? "Название над чатами" : "Chat List Title", icon: nil, label: KimogramSettings.customChatListTitle ?? "Kimogram", action: { environment in
+                    environment.present(promptController(context: environment.context, text: ru ? "Название над списком чатов" : "Title above the chat list", value: KimogramSettings.customChatListTitle, placeholder: "Kimogram", characterLimit: 24, displayCharacterLimit: true, apply: { value in
+                        if let value {
+                            KimogramSettings.customChatListTitle = value
+                        }
+                    }))
+                }),
+                .toggle(.titleAccountName, title: ru ? "Моё имя вместо «Kimogram»" : "My Name as the Title", text: ru ? "В шапке списка чатов" : "Above the chat list"),
                 .toggle(.hideEditButton, title: ru ? "Скрыть кнопку «Изменить»" : "Hide Edit Button", text: ru ? "Над списком чатов" : "Above the chat list"),
                 .link(title: ru ? "Размер стикеров" : "Sticker Size", icon: nil, label: stickerSizeTitles(ru)[KimogramSettings.stickerSize.rawValue], action: { environment in
                     environment.push(kimogramChoiceController(context: environment.context, title: ru ? "Размер стикеров" : "Sticker Size", footer: ru ? "Размер стикеров и больших эмодзи в чатах. Применяется к новым и открытым заново чатам." : "Size of stickers and large emoji in chats. Applies when a chat is opened again.", options: stickerSizeTitles(ru), selected: {
@@ -549,6 +558,9 @@ public func kimogramSettingsController(context: AccountContext) -> ViewControlle
                 }),
                 .link(title: ru ? "Сохранение" : "Keep History", icon: PresentationResourcesSettings.savedMessages, label: countLabel(historyKeys, ru), action: { environment in
                     environment.push(historyPage(context: environment.context))
+                }),
+                .link(title: ru ? "Статистика" : "Statistics", icon: nil, label: "\(KimogramSettings.statValue(.deletedKept) + KimogramSettings.statValue(.editsKept))", action: { environment in
+                    environment.showAlert(title: ru ? "Статистика Kimogram" : "Kimogram Statistics", text: ru ? "Сохранено удалённых сообщений: \(KimogramSettings.statValue(.deletedKept))\nСохранено правок: \(KimogramSettings.statValue(.editsKept))\nЗаблокировано чатов: \(KimogramSettings.lockedChatCount)\nЧатов без призрака: \(KimogramSettings.ghostExceptionPeerIds.count)" : "Deleted messages kept: \(KimogramSettings.statValue(.deletedKept))\nEdits kept: \(KimogramSettings.statValue(.editsKept))\nLocked chats: \(KimogramSettings.lockedChatCount)\nChats without ghost mode: \(KimogramSettings.ghostExceptionPeerIds.count)")
                 })
             ], footer: ru ? "Любой чат можно закрыть Face ID: зажмите его в списке чатов и выберите «Заблокировать чат». Сейчас заблокировано: \(KimogramSettings.lockedChatCount)." : "Any chat can be locked with Face ID: press and hold it in the chat list and choose Lock Chat. Locked now: \(KimogramSettings.lockedChatCount)."),
             KimogramPageSection(header: ru ? "УДОБСТВО" : "COMFORT", rows: [
