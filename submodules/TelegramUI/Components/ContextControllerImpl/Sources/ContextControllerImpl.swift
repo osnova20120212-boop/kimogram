@@ -542,7 +542,7 @@ final class ContextControllerNode: ViewControllerTracingNode, ASScrollViewDelega
                 let propertyAnimator = propertyAnimator as? UIViewPropertyAnimator
                 propertyAnimator?.stopAnimation(true)
             }
-            self.effectView.effect = makeCustomZoomBlurEffect(isLight: presentationData.theme.rootController.keyboardColor == .light)
+            self.effectView.effect = KimogramAppearance.noMenuBlur ? nil : makeCustomZoomBlurEffect(isLight: presentationData.theme.rootController.keyboardColor == .light)
             self.effectView.layer.animateAlpha(from: 0.0, to: 1.0, duration: 0.2 * animationDurationFactor)
             self.propertyAnimator = UIViewPropertyAnimator(duration: 0.2 * animationDurationFactor * UIView.animationDurationFactor(), curve: .easeInOut, animations: {
             })
@@ -560,7 +560,7 @@ final class ContextControllerNode: ViewControllerTracingNode, ASScrollViewDelega
             }
         } else {
             UIView.animate(withDuration: 0.2 * animationDurationFactor, animations: {
-                self.effectView.effect = makeCustomZoomBlurEffect(isLight: self.presentationData.theme.rootController.keyboardColor == .light)
+                self.effectView.effect = KimogramAppearance.noMenuBlur ? nil : makeCustomZoomBlurEffect(isLight: self.presentationData.theme.rootController.keyboardColor == .light)
             }, completion: { [weak self] _ in
                 self?.didCompleteAnimationIn = true
                 self?.actionsContainerNode.animateIn()
@@ -1268,7 +1268,7 @@ final class ContextControllerNode: ViewControllerTracingNode, ASScrollViewDelega
                         propertyAnimator?.stopAnimation(true)
                     }
                 }
-                self.effectView.effect = makeCustomZoomBlurEffect(isLight: presentationData.theme.rootController.keyboardColor == .light)
+                self.effectView.effect = KimogramAppearance.noMenuBlur ? nil : makeCustomZoomBlurEffect(isLight: presentationData.theme.rootController.keyboardColor == .light)
                 self.dimNode.alpha = 1.0
             }
             self.dimNode.isHidden = false

@@ -661,8 +661,8 @@ final class ContextSourceContainer: ASDisplayNode {
             case let .extracted(extracted):
                 self.backgroundNode.updateColor(
                     color: extracted.blurBackground ? presentationData.theme.contextMenu.dimColor : .clear,
-                    enableBlur: extracted.blurBackground,
-                    forceKeepBlur: extracted.blurBackground,
+                    enableBlur: extracted.blurBackground && !KimogramAppearance.noMenuBlur,
+                    forceKeepBlur: extracted.blurBackground && !KimogramAppearance.noMenuBlur,
                     transition: .immediate
                 )
             case .controller:
@@ -676,8 +676,8 @@ final class ContextSourceContainer: ASDisplayNode {
                 } else {
                     self.backgroundNode.updateColor(
                         color: presentationData.theme.contextMenu.dimColor,
-                        enableBlur: true,
-                        forceKeepBlur: true,
+                        enableBlur: !KimogramAppearance.noMenuBlur,
+                        forceKeepBlur: !KimogramAppearance.noMenuBlur,
                         transition: .immediate
                     )
                 }

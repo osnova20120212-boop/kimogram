@@ -63,7 +63,45 @@ public final class KimogramSettings {
     private static let updatesPipe = ValuePipe<Void>()
 
     public static func get(_ key: Key) -> Bool {
-        return defaults.bool(forKey: key.rawValue)
+        if defaults.bool(forKey: key.rawValue) {
+            return true
+        }
+        // Ghost mode on a schedule: the basic ghost switches are on inside the chosen hours.
+        switch key {
+        case .ghostReadReceipts, .ghostOnline, .ghostTyping, .ghostStories, .ghostVoiceListened:
+            return ghostScheduleActiveNow
+        default:
+            return false
+        }
+    }
+
+    /// Ghost-mode schedules: start and end hour. Index 0 means no schedule.
+    public static let ghostSchedules: [(from: Int, to: Int)] = [(0, 0), (23, 8), (22, 7), (0, 9), (9, 18)]
+    private static let ghostScheduleKey = "kimogram.ghost.schedule"
+
+    public static var ghostSchedule: Int {
+        get {
+            let value = defaults.integer(forKey: ghostScheduleKey)
+            return value >= 0 && value < ghostSchedules.count ? value : 0
+        }
+        set {
+            defaults.set(newValue, forKey: ghostScheduleKey)
+            updatesPipe.putNext(Void())
+        }
+    }
+
+    public static var ghostScheduleActiveNow: Bool {
+        let index = ghostSchedule
+        if index == 0 {
+            return false
+        }
+        let (from, to) = ghostSchedules[index]
+        let hour = Calendar.current.component(.hour, from: Date())
+        if from < to {
+            return hour >= from && hour < to
+        } else {
+            return hour >= from || hour < to
+        }
     }
 
     public static func set(_ key: Key, _ value: Bool) {

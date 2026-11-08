@@ -6366,6 +6366,12 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
             }, action: { _, f in
                 KimogramSettings.setGhostMode(!kimogramGhostOn)
                 f(.default)
+                if !kimogramGhostOn {
+                    let window = strongSelf.view.window
+                    Queue.mainQueue().after(0.25) {
+                        KimogramFlourish.play(emoji: "👻", in: window)
+                    }
+                }
             })))
             // Kimogram: every chat read in one tap.
             items.append(.action(ContextMenuActionItem(text: kimogramRu ? "Прочитать все чаты" : "Read All Chats", icon: { theme in

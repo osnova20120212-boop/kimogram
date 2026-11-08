@@ -323,6 +323,15 @@ private func ghostPage(context: AccountContext) -> ViewController {
                 .toggle(.ghostStories, title: ru ? "Смотреть истории тайно" : "View Stories Secretly", text: nil),
                 .toggle(.ghostVoiceListened, title: ru ? "Слушать голосовые тайно" : "Listen to Voice Secretly", text: ru ? "Голосовое и кружок останутся «непрослушанными»" : "Voice and video messages stay unplayed for them")
             ]),
+            KimogramPageSection(header: ru ? "ПО РАСПИСАНИЮ" : "SCHEDULE", rows: [
+                .link(title: ru ? "Призрак по расписанию" : "Scheduled Ghost Mode", icon: nil, label: ghostScheduleTitles(ru)[KimogramSettings.ghostSchedule], action: { environment in
+                    environment.push(kimogramChoiceController(context: environment.context, title: ru ? "Призрак по расписанию" : "Scheduled Ghost Mode", footer: ru ? "В эти часы призрак включается сам: не видно «прочитано», «в сети», «печатает», просмотров историй и прослушивания голосовых." : "During these hours ghost mode turns itself on.", options: ghostScheduleTitles(ru), selected: {
+                        return KimogramSettings.ghostSchedule
+                    }, select: { index in
+                        KimogramSettings.ghostSchedule = index
+                    }))
+                })
+            ], footer: KimogramSettings.ghostScheduleActiveNow ? (ru ? "Сейчас призрак включён по расписанию." : "Ghost mode is on now by the schedule.") : nil),
             KimogramPageSection(header: ru ? "ЕЩЁ НЕЗАМЕТНЕЕ" : "EVEN QUIETER", rows: [
                 .toggle(.hideRecordingActivity, title: ru ? "Без «записывает голосовое»" : "Hide Recording Status", text: ru ? "И без «выбирает стикер», «отправляет фото»" : "Also choosing a sticker, sending a photo"),
                 .toggle(.noScreenshotNotice, title: ru ? "Без «сделан скриншот»" : "No Screenshot Notice", text: ru ? "В секретных чатах собеседник не узнает о скриншоте" : "Secret chats won't report your screenshots"),
@@ -416,6 +425,15 @@ private func profilePage(context: AccountContext) -> ViewController {
     })
 }
 
+private func ghostScheduleTitles(_ ru: Bool) -> [String] {
+    return KimogramSettings.ghostSchedules.enumerated().map { index, item in
+        if index == 0 {
+            return ru ? "Выключено" : "Off"
+        }
+        return String(format: "%02d:00 – %02d:00", item.from, item.to)
+    }
+}
+
 private func avatarShapeTitles(_ ru: Bool) -> [String] {
     return ru ? ["Круг", "Скруглённый квадрат", "Квадрат"] : ["Circle", "Rounded Square", "Square"]
 }
@@ -441,6 +459,9 @@ private func appearancePage(context: AccountContext) -> ViewController {
                 }),
                 .flag(title: ru ? "Спокойное стекло" : "Calm Glass", text: ru ? "Кнопки не растягиваются и не переливаются под пальцем" : "Buttons don't stretch and shimmer under a finger", value: KimogramAppearance.glassStatic, set: { value in
                     KimogramAppearance.glassStatic = value
+                }),
+                .flag(title: ru ? "Без размытия под меню" : "No Blur Behind Menus", text: ru ? "Фон за меню по долгому нажатию остаётся чётким" : "The screen stays sharp behind long-press menus", value: KimogramAppearance.noMenuBlur, set: { value in
+                    KimogramAppearance.noMenuBlur = value
                 }),
                 .flag(title: ru ? "Классический вид" : "Classic Look", text: ru ? "Сплошные панели вместо стекла, как в старом Telegram" : "Solid panels instead of glass, like the old Telegram", value: KimogramAppearance.classicPanels, set: { value in
                     KimogramAppearance.classicPanels = value

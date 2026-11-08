@@ -552,6 +552,12 @@ func chatContextMenuItems(context: AccountContext, peerId: EnginePeer.Id, promoI
                             items.append(.action(ContextMenuActionItem(text: isLocked ? (ru ? "Снять блокировку" : "Unlock Chat") : (ru ? "Заблокировать чат" : "Lock Chat"), icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Lock"), color: theme.contextMenu.primaryColor) }, action: { _, f in
                                 KimogramSettings.setChatLocked(peerId, !isLocked)
                                 f(.default)
+                                if !isLocked {
+                                    let window = chatListController?.view.window
+                                    Queue.mainQueue().after(0.25) {
+                                        KimogramFlourish.play(emoji: "🔒", in: window)
+                                    }
+                                }
                             })))
                         }
                         

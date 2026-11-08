@@ -3336,6 +3336,22 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                     titleAttributedString = NSAttributedString(string: item.presentationData.strings.ChatList_ArchivedChatsTitle, font: titleFont, textColor: theme.titleColor)
             }
             
+            // Kimogram: 🔒 next to locked chats and 👻 next to chats without ghost mode.
+            if case let .chat(itemPeer, threadInfo, _, _, _, _, _, _, _) = contentData, threadInfo == nil, let peerId = itemPeer.chatMainPeer?.id, let currentTitle = titleAttributedString {
+                var marks = ""
+                if KimogramSettings.isChatLocked(peerId) {
+                    marks += " 🔒"
+                }
+                if KimogramSettings.isGhostException(peerId) {
+                    marks += " 👁"
+                }
+                if !marks.isEmpty {
+                    let updatedTitle = NSMutableAttributedString(attributedString: currentTitle)
+                    updatedTitle.append(NSAttributedString(string: marks, font: titleFont, textColor: theme.titleColor))
+                    titleAttributedString = updatedTitle
+                }
+            }
+            
             attributedText = renderInstantPagePreviewIcons(attributedText, font: textFont, textColor: theme.messageTextColor)
             textAttributedString = attributedText
             
