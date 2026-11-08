@@ -2178,7 +2178,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                 replyForward = attribute
             } else if let attribute = attribute as? ReplyStoryAttribute {
                 replyStory = attribute.storyId
-            } else if let attribute = attribute as? ReplyMarkupMessageAttribute, attribute.flags.contains(.inline), !attribute.rows.isEmpty && !isPreview {
+            } else if let attribute = attribute as? ReplyMarkupMessageAttribute, attribute.flags.contains(.inline), !attribute.rows.isEmpty && !isPreview && !KimogramSettings.get(.hideBotButtons) {
                 var isExtendedMedia = false
                 for media in firstMessage.media {
                     if let invoice = media as? TelegramMediaInvoice, let _ = invoice.extendedMedia {

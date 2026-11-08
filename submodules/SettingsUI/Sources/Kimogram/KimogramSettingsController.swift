@@ -379,7 +379,8 @@ private func chatsPage(context: AccountContext) -> ViewController {
                         KimogramSettings.doubleTapAction = KimogramSettings.DoubleTapAction(rawValue: index) ?? .reaction
                     }))
                 }),
-                .toggle(.disableSwipeReply, title: ru ? "Выключить свайп для ответа" : "Disable Swipe to Reply", text: nil)
+                .toggle(.disableSwipeReply, title: ru ? "Выключить свайп для ответа" : "Disable Swipe to Reply", text: nil),
+                .toggle(.hideBotButtons, title: ru ? "Скрыть кнопки ботов" : "Hide Bot Buttons", text: ru ? "Кнопки под сообщениями ботов не показываются" : "Buttons under bot messages are hidden")
             ]),
             KimogramPageSection(header: ru ? "ОТПРАВКА" : "SENDING", rows: [
                 .toggle(.silentByDefault, title: ru ? "Отправлять без звука" : "Send Silently", text: ru ? "Собеседник получит сообщение без звука уведомления" : "Recipients get no notification sound"),

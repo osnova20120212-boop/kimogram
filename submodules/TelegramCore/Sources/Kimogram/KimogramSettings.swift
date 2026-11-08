@@ -48,6 +48,7 @@ public final class KimogramSettings {
         case hideAppIconBadge = "kimogram.hideAppIconBadge"
         case hideEditButton = "kimogram.hideEditButton"
         case noLinkPreviews = "kimogram.noLinkPreviews"
+        case hideBotButtons = "kimogram.hideBotButtons"
         case titleAccountName = "kimogram.titleAccountName"
         case noChatListSeparators = "kimogram.noChatListSeparators"
         case hideStoryCamera = "kimogram.hideStoryCamera"
