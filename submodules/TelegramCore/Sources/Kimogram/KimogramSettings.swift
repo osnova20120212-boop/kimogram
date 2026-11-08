@@ -282,6 +282,28 @@ public final class KimogramSettings {
         updatesPipe.putNext(Void())
     }
 
+    private static let hiddenChatsKey = "kimogram.hiddenChats"
+
+    /// Chats left out of the chat list. They are found through search and are always locked.
+    public static func isChatHidden(_ peerId: PeerId) -> Bool {
+        return hiddenChatIds.contains("\(peerId.toInt64())")
+    }
+
+    public static var hiddenChatIds: [String] {
+        return defaults.array(forKey: hiddenChatsKey) as? [String] ?? []
+    }
+
+    public static func setChatHidden(_ peerId: PeerId, _ hidden: Bool) {
+        var ids = hiddenChatIds
+        let id = "\(peerId.toInt64())"
+        ids.removeAll(where: { $0 == id })
+        if hidden {
+            ids.append(id)
+        }
+        defaults.set(ids, forKey: hiddenChatsKey)
+        updatesPipe.putNext(Void())
+    }
+
     public static var lockedChatCount: Int {
         return (defaults.array(forKey: lockedChatsKey) as? [String] ?? []).count
     }
@@ -342,7 +364,7 @@ public final class KimogramSettings {
     /// them is a separate, deliberate step.
     public static func resetAll() {
         for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("kimogram.") {
-            if key == lockedChatsKey || key.hasPrefix("kimogram.music.") {
+            if key == lockedChatsKey || key == hiddenChatsKey || key.hasPrefix("kimogram.music.") {
                 continue
             }
             defaults.removeObject(forKey: key)

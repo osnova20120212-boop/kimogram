@@ -563,6 +563,34 @@ func chatContextMenuItems(context: AccountContext, peerId: EnginePeer.Id, promoI
                             })))
                         }
                         
+                        // Kimogram: hide a chat from the list. It stays reachable through search, behind Face ID.
+                        if peerId != context.account.peerId {
+                            let isHidden = KimogramSettings.isChatHidden(peerId)
+                            let ru = strings.baseLanguageCode == "ru"
+                            items.append(.action(ContextMenuActionItem(text: isHidden ? (ru ? "Вернуть в список" : "Show in Chat List") : (ru ? "Скрыть чат" : "Hide Chat"), icon: { theme in generateTintedImage(image: UIImage(bundleImageName: isHidden ? "Chat/Context Menu/Eye" : "Chat/Context Menu/EyeLocked"), color: theme.contextMenu.primaryColor) }, action: { _, f in
+                                f(.default)
+                                if isHidden {
+                                    KimogramSettings.setChatHidden(peerId, false)
+                                } else {
+                                    if !KimogramSettings.isChatLocked(peerId) {
+                                        KimogramSettings.setChatLocked(peerId, true)
+                                        let _ = context.engine.peers.updatePeerDisplayPreviewsSetting(peerId: peerId, threadId: nil, displayPreviews: .hide).startStandalone()
+                                    }
+                                    let window = chatListController?.view.window
+                                    Queue.mainQueue().after(0.25) {
+                                        KimogramFlourish.play(emoji: "🫥", in: window)
+                                        KimogramSettings.setChatHidden(peerId, true)
+                                    }
+                                    if let chatListController {
+                                        let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+                                        Queue.mainQueue().after(1.4) {
+                                            chatListController.present(textAlertController(context: context, title: ru ? "Чат скрыт" : "Chat Hidden", text: ru ? "Найти его можно через поиск, откроется он по Face ID. Чтобы вернуть чат в список, зажмите его в поиске." : "Find it through search; it opens with Face ID. To bring it back, press and hold it in search.", actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})]), in: .window(.root))
+                                        }
+                                    }
+                                }
+                            })))
+                        }
+                        
                         // Kimogram: copy the chat's link or its ID (as bots see it).
                         if peerId != context.account.peerId && peerId.namespace != Namespaces.Peer.SecretChat {
                             let ru = strings.baseLanguageCode == "ru"

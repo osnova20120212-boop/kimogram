@@ -2203,9 +2203,11 @@ public final class ChatListNode: ListViewImpl {
             self.statePromise.get(),
             contacts,
             chatListFilters,
-            accountIsPremium
+            accountIsPremium,
+            // Kimogram: rebuild the list when a chat is hidden or shown again.
+            KimogramSettings.changes() |> map { _ -> [String] in KimogramSettings.hiddenChatIds } |> distinctUntilChanged
         )
-        |> mapToQueue { (hideArchivedFolderByDefault, displayArchiveIntro, storageInfo, savedMessagesPeer, updateAndFilter, state, contacts, chatListFilters, accountIsPremium) -> Signal<ChatListNodeListViewTransition, NoError> in
+        |> mapToQueue { (hideArchivedFolderByDefault, displayArchiveIntro, storageInfo, savedMessagesPeer, updateAndFilter, state, contacts, chatListFilters, accountIsPremium, _) -> Signal<ChatListNodeListViewTransition, NoError> in
             let (update, filter) = updateAndFilter
             
             let previousHideArchivedFolderByDefaultValue = previousHideArchivedFolderByDefault.swap(hideArchivedFolderByDefault)

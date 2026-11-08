@@ -686,6 +686,10 @@ func chatListNodeEntriesForView(view: EngineChatList, state: ChatListNodeState, 
         if let peerId = peerId, state.pendingRemovalItemIds.contains(ChatListNodeState.ItemId(peerId: peerId, threadId: threadId)) {
             continue loop
         }
+        if let peerId = peerId, threadId == nil, KimogramSettings.isChatHidden(peerId) {
+            // Kimogram: a hidden chat is reached only through search.
+            continue loop
+        }
         var updatedMessages = entry.messages
         var updatedCombinedReadState = entry.readCounters
         if let peerId = peerId, state.pendingClearHistoryPeerIds.contains(ChatListNodeState.ItemId(peerId: peerId, threadId: threadId)) {
