@@ -454,13 +454,16 @@ public class GlassBackgroundView: UIView {
         public let tintColor: TintColor
         public let isInteractive: Bool
         public let isVisible: Bool
+        /// Kimogram: the appearance generation, so a change in Kimogram's glass settings re-applies the effect.
+        public let appearanceGeneration: Int
         
-        init(shape: Shape, isDark: Bool, tintColor: TintColor, isInteractive: Bool, isVisible: Bool) {
+        init(shape: Shape, isDark: Bool, tintColor: TintColor, isInteractive: Bool, isVisible: Bool, appearanceGeneration: Int = KimogramAppearance.generation) {
             self.shape = shape
             self.isDark = isDark
             self.tintColor = tintColor
             self.isInteractive = isInteractive
             self.isVisible = isVisible
+            self.appearanceGeneration = appearanceGeneration
         }
     }
     
@@ -481,6 +484,10 @@ public class GlassBackgroundView: UIView {
     private let contentContainer: ContentContainer
     
     private var innerBackgroundView: UIView?
+    
+    /// Kimogram: the solid panel drawn instead of glass in classic mode.
+    private var kimogramClassicView: UIView?
+    private var kimogramLastSize: CGSize?
     
     /// UIKit's liquid morph must target the effect view itself so the backdrop
     /// participates in the shape transition along with its content.
@@ -569,6 +576,72 @@ public class GlassBackgroundView: UIView {
         if let legacyHighlightContainerView = self.legacyHighlightContainerView {
             self.addSubview(legacyHighlightContainerView)
         }
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(self.kimogramAppearanceChanged), name: KimogramAppearance.didChangeNotification, object: nil)
+    }
+    
+    @objc private func kimogramAppearanceChanged() {
+        guard let params = self.params, let size = self.kimogramLastSize else {
+            return
+        }
+        self.update(size: size, shape: params.shape, isDark: params.isDark, tintColor: params.tintColor, isInteractive: params.isInteractive, isVisible: params.isVisible, transition: .immediate)
+    }
+    
+    private func kimogramUpdateClassicView(size: CGSize, shape: Shape, isDark: Bool, tintColor: TintColor, isVisible: Bool, transition: ComponentTransition) {
+        guard let nativeView = self.nativeView else {
+            return
+        }
+        if KimogramAppearance.classicPanels {
+            let classicView: UIView
+            if let current = self.kimogramClassicView {
+                classicView = current
+            } else {
+                classicView = UIView()
+                classicView.isUserInteractionEnabled = false
+                self.kimogramClassicView = classicView
+                nativeView.contentView.insertSubview(classicView, at: 0)
+            }
+            let custom: UIColor?
+            switch tintColor.kind {
+            case .panel:
+                custom = nil
+            case .clear:
+                custom = UIColor(white: 0.0, alpha: isDark ? 0.5 : 0.08)
+            case let .custom(_, color):
+                custom = color
+            }
+            var color = KimogramAppearance.classicPanelColor(isDark: isDark, custom: custom)
+            if case .clear = tintColor.kind {
+                color = isDark ? UIColor(white: 0.0, alpha: 0.5) : UIColor(white: 1.0, alpha: 0.9)
+            }
+            if KimogramAppearance.glassTint, case .panel = tintColor.kind {
+                color = color.mixedWith(KimogramAppearance.violet, alpha: isDark ? 0.18 : 0.08)
+            }
+            classicView.backgroundColor = color
+            classicView.alpha = isVisible ? 1.0 : 0.0
+            transition.setFrame(view: classicView, frame: CGRect(origin: CGPoint(), size: size))
+            switch shape {
+            case let .roundedRect(cornerRadius):
+                classicView.layer.cornerRadius = min(cornerRadius, min(size.width, size.height) * 0.5)
+            case let .customRoundedRect(cornerRadii):
+                if #available(iOS 26.0, *) {
+                    classicView.cornerConfiguration = .corners(
+                        topLeftRadius: .fixed(cornerRadii.topLeft),
+                        topRightRadius: .fixed(cornerRadii.topRight),
+                        bottomLeftRadius: .fixed(cornerRadii.bottomLeft),
+                        bottomRightRadius: .fixed(cornerRadii.bottomRight)
+                    )
+                } else {
+                    classicView.layer.cornerRadius = min(cornerRadii.topLeft, min(size.width, size.height) * 0.5)
+                }
+            }
+            if classicView.superview !== nativeView.contentView {
+                nativeView.contentView.insertSubview(classicView, at: 0)
+            }
+        } else if let classicView = self.kimogramClassicView {
+            self.kimogramClassicView = nil
+            classicView.removeFromSuperview()
+        }
     }
     
     required public init?(coder: NSCoder) {
@@ -610,7 +683,9 @@ public class GlassBackgroundView: UIView {
         self.update(size: size, shape: shape, isDark: isDark, tintColor: tintColor, isInteractive: isInteractive, isVisible: isVisible, transition: transition)
     }
 
-    func update(size: CGSize, shape: Shape, isDark: Bool, tintColor: TintColor, isInteractive: Bool = false, isVisible: Bool = true, transition: ComponentTransition) {
+    func update(size: CGSize, shape: Shape, isDark: Bool, tintColor: TintColor, isInteractive isInteractiveValue: Bool = false, isVisible: Bool = true, transition: ComponentTransition) {
+        self.kimogramLastSize = size
+        let isInteractive = isInteractiveValue && !KimogramAppearance.glassStatic
         
         if let glassHighlightRecognizer = self.glassHighlightRecognizer {
             glassHighlightRecognizer.isEnabled = isInteractive
@@ -696,7 +771,9 @@ public class GlassBackgroundView: UIView {
             innerBackgroundView.removeFromSuperview()
         }
         
-        let params = Params(shape: shape, isDark: isDark, tintColor: tintColor, isInteractive: isInteractive, isVisible: isVisible)
+        self.kimogramUpdateClassicView(size: size, shape: shape, isDark: isDark, tintColor: tintColor, isVisible: isVisible, transition: transition)
+        
+        let params = Params(shape: shape, isDark: isDark, tintColor: tintColor, isInteractive: isInteractiveValue, isVisible: isVisible)
         if self.params != params {
             self.params = params
             
@@ -711,7 +788,7 @@ public class GlassBackgroundView: UIView {
             }
             
             if let foregroundView = self.foregroundView {
-                let fillColor: UIColor
+                var fillColor: UIColor
                 let borderWidthFactor: CGFloat
                 switch tintColor.kind {
                 case .panel:
@@ -731,6 +808,21 @@ public class GlassBackgroundView: UIView {
                         borderWidthFactor = 2.0
                     case .default:
                         borderWidthFactor = 1.0
+                    }
+                }
+                if KimogramAppearance.classicPanels {
+                    switch tintColor.kind {
+                    case .clear:
+                        fillColor = isDark ? UIColor(white: 0.0, alpha: 0.5) : UIColor(white: 1.0, alpha: 0.9)
+                    case .panel:
+                        fillColor = KimogramAppearance.classicPanelColor(isDark: isDark, custom: nil)
+                    case let .custom(_, color):
+                        fillColor = KimogramAppearance.classicPanelColor(isDark: isDark, custom: color)
+                    }
+                } else {
+                    let adjusted = KimogramAppearance.adjustedGlassTint(fillColor, isDark: isDark)
+                    if let adjustedColor = adjusted.color {
+                        fillColor = adjustedColor
                     }
                 }
                 switch shape {
@@ -778,6 +870,28 @@ public class GlassBackgroundView: UIView {
                             }
                             glassEffectValue.isInteractive = isInteractive
                             glassEffect = glassEffectValue
+                            
+                            // Kimogram: transparency, violet tint and classic panels.
+                            if KimogramAppearance.classicPanels {
+                                glassEffect = nil
+                            } else if KimogramAppearance.glassTransparency != 0.5 || KimogramAppearance.glassTint {
+                                let adjusted = KimogramAppearance.adjustedGlassTint(glassEffectValue.tintColor, isDark: isDark)
+                                var baseIsClear = false
+                                switch tintColor.kind {
+                                case .panel:
+                                    baseIsClear = false
+                                case .clear:
+                                    baseIsClear = true
+                                case let .custom(style, _):
+                                    if case .clear = style {
+                                        baseIsClear = true
+                                    }
+                                }
+                                let adjustedEffect = UIGlassEffect(style: (adjusted.preferClear || baseIsClear) ? .clear : .regular)
+                                adjustedEffect.tintColor = adjusted.color
+                                adjustedEffect.isInteractive = isInteractive
+                                glassEffect = adjustedEffect
+                            }
                         }
                         
                         if glassEffect == nil {

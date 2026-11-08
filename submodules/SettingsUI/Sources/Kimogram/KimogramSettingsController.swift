@@ -32,6 +32,10 @@ enum KimogramRow {
     case link(title: String, icon: UIImage?, label: String, action: (KimogramPageEnvironment) -> Void)
     /// One option of a single-choice page.
     case check(title: String, checked: Bool, action: () -> Void)
+    /// A switch that is not one of `KimogramSettings`' keys (appearance switches live in Display).
+    case flag(title: String, text: String?, value: Bool, set: (Bool) -> Void)
+    /// A stepped slider with a caption under each end.
+    case slider(value: Int, positions: Int, leftTitle: String, rightTitle: String, set: (Int) -> Void)
 }
 
 struct KimogramPageSection {
@@ -89,6 +93,7 @@ private enum KimogramPageEntryKind: Equatable {
     case toggle(String, String?, Bool)
     case link(String, String)
     case check(String, Bool)
+    case slider(Int, Int, String, String)
 }
 
 private enum KimogramPageEntry: ItemListNodeEntry {
@@ -160,6 +165,8 @@ private enum KimogramPageEntry: ItemListNodeEntry {
                         KimogramSettings.set(key, value)
                     case .ghostMaster:
                         KimogramSettings.setGhostMode(value)
+                    case let .flag(_, _, _, set):
+                        set(value)
                     default:
                         break
                     }
@@ -172,6 +179,12 @@ private enum KimogramPageEntry: ItemListNodeEntry {
                 return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, icon: icon, title: title, label: label, sectionId: self.section, style: .blocks, action: {
                     if let row, case let .link(_, _, _, action) = row {
                         action(arguments.environment)
+                    }
+                })
+            case let .slider(value, positions, leftTitle, rightTitle):
+                return KimogramSliderItem(theme: presentationData.theme, value: value, positions: positions, leftTitle: leftTitle, rightTitle: rightTitle, sectionId: self.section, updated: { value in
+                    if let row, case let .slider(_, _, _, _, set) = row {
+                        set(value)
                     }
                 })
             case let .check(title, checked):
@@ -205,6 +218,10 @@ private func kimogramPageEntries(sections: [KimogramPageSection]) -> [KimogramPa
                 kind = .link(title, label)
             case let .check(title, checked, _):
                 kind = .check(title, checked)
+            case let .flag(title, text, value, _):
+                kind = .toggle(title, text, value)
+            case let .slider(value, positions, leftTitle, rightTitle, _):
+                kind = .slider(value, positions, leftTitle, rightTitle)
             }
             entries.append(.row(section: sectionId, index: Int32(rowIndex), kind: kind))
         }
@@ -221,8 +238,8 @@ func kimogramPageController(context: AccountContext, title: String, build: @esca
     let environment = KimogramPageEnvironment(context: context)
     let arguments = KimogramPageArguments(environment: environment)
 
-    let signal = combineLatest(queue: Queue.mainQueue(), context.sharedContext.presentationData, KimogramSettings.changes(), KimogramAutoProxy.shared.enabled)
-    |> map { presentationData, _, autoProxyEnabled -> (ItemListControllerState, (ItemListNodeState, Any)) in
+    let signal = combineLatest(queue: Queue.mainQueue(), context.sharedContext.presentationData, KimogramSettings.changes(), KimogramAutoProxy.shared.enabled, kimogramAppearanceChanges())
+    |> map { presentationData, _, autoProxyEnabled, _ -> (ItemListControllerState, (ItemListNodeState, Any)) in
         let sections = build(autoProxyEnabled)
         arguments.sections = sections
         let controllerState = ItemListControllerState(presentationData: ItemListPresentationData(presentationData), title: .text(title), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
@@ -238,6 +255,19 @@ func kimogramPageController(context: AccountContext, title: String, build: @esca
         controller?.present(c, in: .window(.root), with: nil)
     }
     return controller
+}
+
+/// Fires once at start and on every change of the Display-level appearance switches.
+func kimogramAppearanceChanges() -> Signal<Int, NoError> {
+    return Signal { subscriber in
+        subscriber.putNext(KimogramAppearance.generation)
+        let observer = NotificationCenter.default.addObserver(forName: KimogramAppearance.didChangeNotification, object: nil, queue: OperationQueue.main, using: { _ in
+            subscriber.putNext(KimogramAppearance.generation)
+        })
+        return ActionDisposable {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
 }
 
 /// A page of mutually exclusive options; picking one applies it and goes back.
@@ -376,7 +406,25 @@ private func stickerSizeTitles(_ ru: Bool) -> [String] {
 private func appearancePage(context: AccountContext) -> ViewController {
     let ru = KimogramAutoProxy.isRussian
     return kimogramPageController(context: context, title: ru ? "Оформление" : "Appearance", build: { _ in
+        let glassStep = Int((KimogramAppearance.glassTransparency * 10.0).rounded())
         return [
+            KimogramPageSection(header: ru ? "ЖИДКОЕ СТЕКЛО" : "LIQUID GLASS", rows: [
+                .slider(value: glassStep, positions: 11, leftTitle: ru ? "Матовое" : "Matte", rightTitle: ru ? "Прозрачное" : "Clear", set: { value in
+                    let updated = CGFloat(value) / 10.0
+                    if abs(updated - KimogramAppearance.glassTransparency) > 0.001 {
+                        KimogramAppearance.glassTransparency = updated
+                    }
+                }),
+                .flag(title: ru ? "Фиолетовый оттенок" : "Violet Tint", text: ru ? "Стекло в цвет Kimogram" : "Glass in Kimogram's colour", value: KimogramAppearance.glassTint, set: { value in
+                    KimogramAppearance.glassTint = value
+                }),
+                .flag(title: ru ? "Спокойное стекло" : "Calm Glass", text: ru ? "Кнопки не растягиваются и не переливаются под пальцем" : "Buttons don't stretch and shimmer under a finger", value: KimogramAppearance.glassStatic, set: { value in
+                    KimogramAppearance.glassStatic = value
+                }),
+                .flag(title: ru ? "Классический вид" : "Classic Look", text: ru ? "Сплошные панели вместо стекла, как в старом Telegram" : "Solid panels instead of glass, like the old Telegram", value: KimogramAppearance.classicPanels, set: { value in
+                    KimogramAppearance.classicPanels = value
+                })
+            ], footer: ru ? "Ползунок меняет стекло везде: панели, кнопки, меню и поле ввода. Середина — как в обычном Telegram." : "The slider changes the glass everywhere: bars, buttons, menus and the input field. The middle is Telegram's own look."),
             KimogramPageSection(header: ru ? "ИНТЕРФЕЙС" : "INTERFACE", rows: [
                 .toggle(.hideContactsTab, title: ru ? "Скрыть вкладку «Контакты»" : "Hide Contacts Tab", text: nil),
                 .link(title: ru ? "Вкладка «Звонки»" : "Calls Tab", icon: nil, label: "", action: { environment in
