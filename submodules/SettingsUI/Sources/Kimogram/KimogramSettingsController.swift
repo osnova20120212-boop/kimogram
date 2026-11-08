@@ -389,6 +389,7 @@ private func chatsPage(context: AccountContext) -> ViewController {
                     }))
                 }),
                 .toggle(.disableSwipeReply, title: ru ? "Выключить свайп для ответа" : "Disable Swipe to Reply", text: nil),
+                .toggle(.quickDelete, title: ru ? "Удалять без вопроса" : "Delete Without Asking", text: ru ? "Свои сообщения удаляются у всех, чужие только у вас. Отменить можно в течение 5 секунд" : "Your own messages go for everyone, others' just for you. Undo within 5 seconds"),
                 .toggle(.hideBotButtons, title: ru ? "Скрыть кнопки ботов" : "Hide Bot Buttons", text: ru ? "Кнопки под сообщениями ботов не показываются" : "Buttons under bot messages are hidden"),
                 .toggle(.hideStickerButton, title: ru ? "Скрыть кнопку стикеров" : "Hide Sticker Button", text: ru ? "Убирает значок стикеров из поля ввода" : "Removes the sticker icon from the message field"),
                 .toggle(.hideGiftButton, title: ru ? "Скрыть кнопку подарков" : "Hide Gift Button", text: ru ? "В поле ввода и в меню профиля" : "In the message field and the profile menu"),

@@ -564,6 +564,39 @@ extension ChatControllerImpl {
                 return
             }
             
+            // Kimogram: delete in one tap. Your own messages go for everyone, others' only for you;
+            // the usual undo toast still gives a few seconds to change your mind.
+            if KimogramSettings.get(.quickDelete), !options.contains(.cancelSending) {
+                let allOwn = messages.values.allSatisfy { message in
+                    guard let message else {
+                        return false
+                    }
+                    return !message._asMessage().effectivelyIncoming(self.context.account.peerId)
+                }
+                var quickType: InteractiveMessagesDeletionType?
+                if allOwn && (options.contains(.deleteGlobally) || options.contains(.unsendPersonal)) {
+                    quickType = .forEveryone
+                } else if options.contains(.deleteLocally) {
+                    quickType = .forLocalPeer
+                }
+                if let quickType {
+                    let commit = { [weak self] in
+                        guard let self else {
+                            return
+                        }
+                        self.updateChatPresentationInterfaceState(animated: true, interactive: true, { $0.updatedInterfaceState { $0.withoutSelectionState() } })
+                        self.beginDeleteMessagesWithUndo(messageIds: messageIds, type: quickType)
+                    }
+                    if let contextController {
+                        contextController.dismiss(completion: commit)
+                    } else {
+                        commit()
+                        completion(.default)
+                    }
+                    return
+                }
+            }
+            
             let actionSheet = ActionSheetController(presentationData: self.presentationData)
             var items: [ActionSheetItem] = []
             var personalPeerName: String?
