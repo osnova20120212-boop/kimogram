@@ -135,12 +135,12 @@ public struct ChatMessageItemLayoutConstants {
     }
     
     public static var compact: ChatMessageItemLayoutConstants {
-        let bubble = ChatMessageItemBubbleLayoutConstants(edgeInset: 3.0, defaultSpacing: 2.0 + UIScreenPixel, mergedSpacing: 0.0, maximumWidthFill: ChatMessageItemWidthFill(compactInset: 36.0, compactWidthBoundary: 500.0, freeMaximumFillFactor: 0.85), minimumSize: CGSize(width: 40.0, height: 35.0), contentInsets: UIEdgeInsets(top: 0.0, left: 6.0, bottom: 0.0, right: 0.0), borderInset: UIScreenPixel, strokeInsets: UIEdgeInsets(top: 1.0, left: 1.0, bottom: 1.0, right: 1.0))
+        let bubble = ChatMessageItemBubbleLayoutConstants(edgeInset: 3.0, defaultSpacing: 2.0 + UIScreenPixel, mergedSpacing: 0.0, maximumWidthFill: ChatMessageItemWidthFill(compactInset: KimogramSettings.bubbleWidth == 1 ? 90.0 : (KimogramSettings.bubbleWidth == 2 ? 14.0 : 36.0), compactWidthBoundary: 500.0, freeMaximumFillFactor: 0.85), minimumSize: CGSize(width: 40.0, height: 35.0), contentInsets: UIEdgeInsets(top: 0.0, left: 6.0, bottom: 0.0, right: 0.0), borderInset: UIScreenPixel, strokeInsets: UIEdgeInsets(top: 1.0, left: 1.0, bottom: 1.0, right: 1.0))
         let text = ChatMessageItemTextLayoutConstants(bubbleInsets: UIEdgeInsets(top: 6.0 + UIScreenPixel, left: 11.0, bottom: 6.0 - UIScreenPixel, right: 11.0))
         let image = ChatMessageItemImageLayoutConstants(bubbleInsets: UIEdgeInsets(top: 2.0, left: 2.0, bottom: 2.0, right: 2.0), statusInsets: UIEdgeInsets(top: 0.0, left: 0.0, bottom: 6.0, right: 6.0), defaultCornerRadius: 15.0, mergedCornerRadius: 7.0, contentMergedCornerRadius: 0.0, maxDimensions: CGSize(width: 300.0, height: 380.0), minDimensions: CGSize(width: 170.0, height: 74.0))
         let video = ChatMessageItemVideoLayoutConstants(maxHorizontalHeight: 250.0, maxVerticalHeight: 360.0)
         let file = ChatMessageItemFileLayoutConstants(bubbleInsets: UIEdgeInsets(top: 15.0, left: 9.0, bottom: 15.0, right: 12.0))
-        let instantVideo = ChatMessageItemInstantVideoConstants(insets: UIEdgeInsets(top: 4.0, left: 0.0, bottom: 4.0, right: 0.0), dimensions: CGSize(width: 212.0, height: 212.0))
+        let instantVideo = ChatMessageItemInstantVideoConstants(insets: UIEdgeInsets(top: 4.0, left: 0.0, bottom: 4.0, right: 0.0), dimensions: KimogramSettings.roundVideoSize == 1 ? CGSize(width: 280.0, height: 280.0) : CGSize(width: 212.0, height: 212.0))
         let wallpapers = ChatMessageItemWallpaperLayoutConstants(maxTextWidth: 180.0)
         
         return ChatMessageItemLayoutConstants(avatarInset: 34.0 + 4.0, timestampHeaderHeight: 34.0, timestampDateAndTopicHeaderHeight: 7.0 * 2.0 + 20.0 * 2.0 + 7.0, bubble: bubble, image: image, video: video, text: text, file: file, instantVideo: instantVideo, wallpapers: wallpapers)

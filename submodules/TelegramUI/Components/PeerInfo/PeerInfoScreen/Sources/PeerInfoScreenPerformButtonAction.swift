@@ -634,7 +634,8 @@ extension PeerInfoScreenNode {
                     }
                     
                     if strongSelf.peerId.namespace == Namespaces.Peer.CloudUser, !user.isDeleted && user.botInfo == nil && !user.flags.contains(.isSupport) {
-                        if let cachedData = data.cachedData as? CachedUserData, cachedData.disallowedGifts == .All {
+                        if KimogramSettings.get(.hideGiftButton) {
+                        } else if let cachedData = data.cachedData as? CachedUserData, cachedData.disallowedGifts == .All {
                         } else {
                             items.append(.action(ContextMenuActionItem(text: presentationData.strings.Profile_SendGift, icon: { theme in
                                 generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Gift"), color: theme.contextMenu.primaryColor)
@@ -915,7 +916,7 @@ extension PeerInfoScreenNode {
                     }
                 } else if case let .channel(channel) = peer {
                     if let cachedData = strongSelf.data?.cachedData as? CachedChannelData {
-                        if case .broadcast = channel.info, cachedData.flags.contains(.starGiftsAvailable) {
+                        if case .broadcast = channel.info, cachedData.flags.contains(.starGiftsAvailable), !KimogramSettings.get(.hideGiftButton) {
                             items.append(.action(ContextMenuActionItem(text: presentationData.strings.Profile_SendGift, badge: nil, icon: { theme in
                                 generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Gift"), color: theme.contextMenu.primaryColor)
                             }, action: { [weak self] _, f in

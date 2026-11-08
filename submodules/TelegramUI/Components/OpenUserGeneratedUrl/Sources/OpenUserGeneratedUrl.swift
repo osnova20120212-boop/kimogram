@@ -106,7 +106,7 @@ public func openUserGeneratedUrl(
     // A login part hides the host the link opens (see `externalUrlWithLoginPart`).
     let loginPartUrl = externalUrlWithLoginPart(url)
 
-    if forceConcealed || loginPartUrl != nil {
+    if forceConcealed || loginPartUrl != nil || (!KimogramSettings.get(.noSuspiciousLinkWarning) && kimogramIsSuspiciousUrl(url)) {
         concealed = true
     } else if let parsedUrl = parseInternalUrl(sharedContext: context.sharedContext, context: context, query: url) {
         if case .proxy = parsedUrl {
@@ -360,4 +360,27 @@ private func punycodedFullURLString(_ input: String) throws -> String {
     // URLComponents.string can be nil for some malformed component combinations
     if let out = comps.string { return out }
     throw URLPunycodeError.invalidURL
+}
+
+/// Kimogram: a link whose address is easy to fake: a look-alike international domain
+/// (punycode or non-Latin letters) or a bare IP address.
+private func kimogramIsSuspiciousUrl(_ url: String) -> Bool {
+    var string = url
+    if !string.contains("://") {
+        string = "http://" + string
+    }
+    guard let host = URL(string: string)?.host?.lowercased() ?? URLComponents(string: string)?.host?.lowercased() else {
+        return false
+    }
+    if host.contains("xn--") {
+        return true
+    }
+    if host.unicodeScalars.contains(where: { !$0.isASCII }) {
+        return true
+    }
+    let parts = host.split(separator: ".")
+    if parts.count == 4 && parts.allSatisfy({ Int($0) != nil }) {
+        return true
+    }
+    return false
 }

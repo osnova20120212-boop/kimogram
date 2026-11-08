@@ -39,6 +39,9 @@ public func peerMessageAllowedReactions(context: AccountContext, message: Engine
         if let value = reactionSettings.knownValue?.starsAllowed {
             areStarsEnabled = value
         }
+        if KimogramSettings.get(.hidePaidReactions) {
+            areStarsEnabled = false
+        }
         
         if let peer, !canSendReactionsToPeer(peer, ignoreDefault: ignoreDefault) {
             return (nil, areStarsEnabled)

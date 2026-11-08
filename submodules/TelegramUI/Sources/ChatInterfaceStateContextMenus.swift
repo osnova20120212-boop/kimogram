@@ -1956,6 +1956,17 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             }
         }
         
+        if messages.count == 1, KimogramSettings.get(.extendedMessageMenu), let author = message.author, author.id != context.account.peerId, message.id.peerId.namespace == Namespaces.Peer.CloudGroup || message.id.peerId.namespace == Namespaces.Peer.CloudChannel, kimogramIsGroupChat(group: message.peers[message.id.peerId] as? TelegramGroup, channel: message.peers[message.id.peerId] as? TelegramChannel) {
+            // Kimogram: everything this member wrote in the chat.
+            let ru = chatPresentationInterfaceState.strings.baseLanguageCode == "ru"
+            actions.append(.action(ContextMenuActionItem(text: ru ? "Сообщения участника" : "Member's Messages", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Search"), color: theme.actionSheet.primaryTextColor)
+            }, action: { _, f in
+                f(.dismissWithoutContent)
+                interfaceInteraction.beginMessageSearch(.member(author), "")
+            })))
+        }
+        
         if messages.count == 1 {
             actions.append(contentsOf: kimogramMessageMenuItems(context: context, message: message, chatLocation: chatPresentationInterfaceState.chatLocation, isCopyProtected: isCopyProtected, controllerInteraction: controllerInteraction))
         }
@@ -4066,4 +4077,15 @@ private final class ChatRateTranscriptionContextItemNode: ASDisplayNode, Context
     func actionNode(at point: CGPoint) -> ContextActionNodeProtocol {
         return self
     }
+}
+
+/// Kimogram: a basic group or a supergroup, not a channel.
+private func kimogramIsGroupChat(group: TelegramGroup?, channel: TelegramChannel?) -> Bool {
+    if group != nil {
+        return true
+    }
+    if let channel, case .group = channel.info {
+        return true
+    }
+    return false
 }

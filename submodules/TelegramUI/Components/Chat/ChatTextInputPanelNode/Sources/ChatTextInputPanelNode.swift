@@ -4274,6 +4274,10 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
             let remainingCount = max(-999, inputTextMaxLength - textCount)
             let counterText = remainingCount >= 5 ? "" : "\(remainingCount)"
             self.counterTextNode.attributedText = NSAttributedString(string: counterText, font: counterFont, textColor: counterColor)
+        } else if KimogramSettings.get(.charCounter), let presentationInterfaceState = self.presentationInterfaceState, let textCount = self.richTextInputNode?.text.count, textCount > 0 {
+            // Kimogram: a running character count (a message holds at most 4096).
+            let counterColor: UIColor = textCount > 4096 ? presentationInterfaceState.theme.chat.inputPanel.panelControlDestructiveColor : presentationInterfaceState.theme.chat.inputPanel.panelControlColor
+            self.counterTextNode.attributedText = NSAttributedString(string: "\(textCount)", font: counterFont, textColor: counterColor)
         } else {
             self.counterTextNode.attributedText = NSAttributedString(string: "", font: counterFont, textColor: .black)
         }

@@ -991,6 +991,10 @@ class ChatControllerNode: ASDisplayNode, ASScrollViewDelegate {
                 if case .scheduledMessages = self.chatPresentationInterfaceState.subject, self.chatPresentationInterfaceState.editMessageState == nil {
                     self.controllerInteraction.scheduleCurrentMessage(nil)
                 } else {
+                    controller.kimogramConfirmSendIfNeeded(isEditing: self.chatPresentationInterfaceState.interfaceState.editMessage != nil) { [weak self] in
+                    guard let self else {
+                        return
+                    }
                     self.maybeSendEphemeralMessage { [weak self] in
                         guard let self else {
                             return
@@ -1011,6 +1015,7 @@ class ChatControllerNode: ASDisplayNode, ASScrollViewDelegate {
                         } else {
                             self.sendCurrentMessage()
                         }
+                    }
                     }
                 }
             }

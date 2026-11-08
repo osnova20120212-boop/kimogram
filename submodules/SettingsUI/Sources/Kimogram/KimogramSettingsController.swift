@@ -380,15 +380,23 @@ private func chatsPage(context: AccountContext) -> ViewController {
                     }))
                 }),
                 .toggle(.disableSwipeReply, title: ru ? "Выключить свайп для ответа" : "Disable Swipe to Reply", text: nil),
-                .toggle(.hideBotButtons, title: ru ? "Скрыть кнопки ботов" : "Hide Bot Buttons", text: ru ? "Кнопки под сообщениями ботов не показываются" : "Buttons under bot messages are hidden")
+                .toggle(.hideBotButtons, title: ru ? "Скрыть кнопки ботов" : "Hide Bot Buttons", text: ru ? "Кнопки под сообщениями ботов не показываются" : "Buttons under bot messages are hidden"),
+                .toggle(.hideStickerButton, title: ru ? "Скрыть кнопку стикеров" : "Hide Sticker Button", text: ru ? "Убирает значок стикеров из поля ввода" : "Removes the sticker icon from the message field"),
+                .toggle(.hideGiftButton, title: ru ? "Скрыть кнопку подарков" : "Hide Gift Button", text: ru ? "В поле ввода и в меню профиля" : "In the message field and the profile menu"),
+                .toggle(.hidePaidReactions, title: ru ? "Скрыть платные реакции" : "Hide Paid Reactions", text: ru ? "Реакция-звезда не предлагается в меню" : "The star reaction is not offered"),
+                .toggle(.charCounter, title: ru ? "Счётчик символов" : "Character Counter", text: ru ? "Показывает длину сообщения в поле ввода" : "Shows the message length in the field")
             ]),
             KimogramPageSection(header: ru ? "ОТПРАВКА" : "SENDING", rows: [
                 .toggle(.silentByDefault, title: ru ? "Отправлять без звука" : "Send Silently", text: ru ? "Собеседник получит сообщение без звука уведомления" : "Recipients get no notification sound"),
                 .toggle(.pinSilently, title: ru ? "Закреплять без уведомления" : "Pin Silently", text: ru ? "Без вопроса «Уведомить всех?»" : "No \"Notify all members?\" question"),
                 .toggle(.noLinkPreviews, title: ru ? "Ссылки без превью" : "Links Without Preview", text: ru ? "Ссылка уходит без карточки сайта" : "Links are sent without a site card"),
+                .flag(title: ru ? "Фото в высоком качестве" : "HD Photos", text: ru ? "Фото отправляются в HD сразу" : "Photos are sent in HD by default", value: UserDefaults.standard.bool(forKey: "TG_photoHighQuality_v0"), set: { value in
+                    UserDefaults.standard.set(value, forKey: "TG_photoHighQuality_v0")
+                }),
                 .toggle(.stripTrackingParams, title: ru ? "Очищать ссылки от слежки" : "Clean Tracking from Links", text: ru ? "Убирает utm, fbclid и подобные метки из ссылок" : "Removes utm, fbclid and similar tags")
             ]),
             KimogramPageSection(header: ru ? "ЗАЩИТА ОТ СЛУЧАЙНОСТЕЙ" : "NO ACCIDENTS", rows: [
+                .toggle(.confirmSend, title: ru ? "Спрашивать перед отправкой" : "Confirm Before Sending", text: ru ? "Перед каждым сообщением из поля ввода" : "Before every message from the text field"),
                 .toggle(.confirmStickers, title: ru ? "Спрашивать перед стикером и GIF" : "Confirm Stickers and GIFs", text: nil),
                 .toggle(.confirmVoice, title: ru ? "Прослушать голосовое перед отправкой" : "Review Voice Before Sending", text: ru ? "Отпустили кнопку — сначала прослушивание" : "Releasing the button opens a preview"),
                 .toggle(.confirmCalls, title: ru ? "Спрашивать перед звонком" : "Confirm Before Calling", text: nil)
@@ -439,6 +447,14 @@ private func ghostScheduleTitles(_ ru: Bool) -> [String] {
 
 private func avatarShapeTitles(_ ru: Bool) -> [String] {
     return ru ? ["Круг", "Скруглённый квадрат", "Квадрат"] : ["Circle", "Rounded Square", "Square"]
+}
+
+private func bubbleWidthTitles(_ ru: Bool) -> [String] {
+    return ru ? ["Обычная", "Узкая", "Широкая"] : ["Normal", "Narrow", "Wide"]
+}
+
+private func roundVideoTitles(_ ru: Bool) -> [String] {
+    return ru ? ["Обычный", "Большой"] : ["Normal", "Large"]
 }
 
 private func stickerSizeTitles(_ ru: Bool) -> [String] {
@@ -526,6 +542,20 @@ private func appearancePage(context: AccountContext) -> ViewController {
                     }, select: { index in
                         KimogramSettings.stickerSize = KimogramSettings.StickerSize(rawValue: index) ?? .normal
                     }))
+                }),
+                .link(title: ru ? "Ширина сообщений" : "Bubble Width", icon: nil, label: bubbleWidthTitles(ru)[KimogramSettings.bubbleWidth], action: { environment in
+                    environment.push(kimogramChoiceController(context: environment.context, title: ru ? "Ширина сообщений" : "Bubble Width", footer: ru ? "Насколько широкими бывают пузыри сообщений. Применяется к открытым заново чатам." : "How wide message bubbles can get. Applies when a chat is opened again.", options: bubbleWidthTitles(ru), selected: {
+                        return KimogramSettings.bubbleWidth
+                    }, select: { index in
+                        KimogramSettings.bubbleWidth = index
+                    }))
+                }),
+                .link(title: ru ? "Размер кружков" : "Round Video Size", icon: nil, label: roundVideoTitles(ru)[KimogramSettings.roundVideoSize], action: { environment in
+                    environment.push(kimogramChoiceController(context: environment.context, title: ru ? "Размер кружков" : "Round Video Size", footer: ru ? "Размер видеосообщений-кружков в чатах." : "Size of round video messages in chats.", options: roundVideoTitles(ru), selected: {
+                        return KimogramSettings.roundVideoSize
+                    }, select: { index in
+                        KimogramSettings.roundVideoSize = index
+                    }))
                 })
             ]),
             KimogramPageSection(rows: [
@@ -554,6 +584,9 @@ public func kimogramSettingsController(context: AccountContext) -> ViewControlle
             ], footer: ru ? "Авто-прокси сам находит рабочий бесплатный прокси, если подключиться не получается." : "Auto Proxy finds a working free proxy whenever the app cannot connect."),
             KimogramPageSection(header: ru ? "ПРИВАТНОСТЬ" : "PRIVACY", rows: [
                 .toggle(.blurInAppSwitcher, title: ru ? "Размывать в списке приложений" : "Blur in App Switcher", text: ru ? "Чужие не увидят переписку при переключении приложений" : "Nobody sees your chats when switching apps"),
+                .flag(title: ru ? "Предупреждать о подозрительных ссылках" : "Warn About Suspicious Links", text: ru ? "Спросит перед открытием поддельного адреса или голого IP" : "Asks before opening a look-alike address or a bare IP", value: !KimogramSettings.get(.noSuspiciousLinkWarning), set: { value in
+                    KimogramSettings.set(.noSuspiciousLinkWarning, !value)
+                }),
                 .link(title: ru ? "Режим призрака" : "Ghost Mode", icon: PresentationResourcesSettings.security, label: countLabel(ghostKeys, ru), action: { environment in
                     environment.push(ghostPage(context: environment.context))
                 }),

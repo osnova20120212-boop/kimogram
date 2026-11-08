@@ -178,6 +178,33 @@ func kimogramMessageMenuItems(context: AccountContext, message: EngineRawMessage
         })))
     }
 
+    // A voice message as an audio file, to save to Files or send anywhere.
+    if !isCopyProtected, let file = message.media.first(where: { $0 is TelegramMediaFile }) as? TelegramMediaFile, file.isVoice {
+        items.append(.action(ContextMenuActionItem(text: ru ? "Сохранить как аудиофайл" : "Save as Audio File", icon: { theme in
+            return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Download"), color: theme.actionSheet.primaryTextColor)
+        }, action: { _, f in
+            f(.default)
+            let _ = (context.account.postbox.mediaBox.resourceData(file.resource, option: .complete(waitUntilFetchStatus: false))
+            |> filter { $0.complete }
+            |> take(1)
+            |> deliverOnMainQueue).startStandalone(next: { data in
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd HH-mm"
+                let name = (ru ? "Голосовое " : "Voice ") + formatter.string(from: Date(timeIntervalSince1970: Double(message.timestamp))) + ".ogg"
+                let directory = NSTemporaryDirectory() + "kimogram-voice"
+                let _ = try? FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+                let path = directory + "/" + name
+                let _ = try? FileManager.default.removeItem(atPath: path)
+                guard let _ = try? FileManager.default.copyItem(atPath: data.path, toPath: path) else {
+                    return
+                }
+                let activityController = UIActivityViewController(activityItems: [URL(fileURLWithPath: path)], applicationActivities: nil)
+                context.sharedContext.applicationBindings.presentNativeController(activityController)
+            })
+            let _ = fetchedMediaResource(mediaBox: context.account.postbox.mediaBox, userLocation: .peer(message.id.peerId), userContentType: .audio, reference: .standalone(resource: file.resource)).startStandalone()
+        })))
+    }
+
     // Everything known about the message in one window.
     items.append(.action(ContextMenuActionItem(text: ru ? "Подробности" : "Details", icon: { theme in
         return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Info"), color: theme.actionSheet.primaryTextColor)

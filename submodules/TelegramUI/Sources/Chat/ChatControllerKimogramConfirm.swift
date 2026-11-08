@@ -28,4 +28,20 @@ extension ChatControllerImpl {
             })
         ]), in: .window(.root))
     }
+
+    /// Kimogram: asks "Send this message?" before the composer's message goes out.
+    func kimogramConfirmSendIfNeeded(isEditing: Bool, completion: @escaping () -> Void) {
+        guard KimogramSettings.get(.confirmSend), !isEditing else {
+            completion()
+            return
+        }
+        let presentationData = self.presentationData
+        let ru = presentationData.strings.baseLanguageCode == "ru"
+        self.present(textAlertController(context: self.context, title: nil, text: ru ? "Отправить сообщение?" : "Send this message?", actions: [
+            TextAlertAction(type: .genericAction, title: presentationData.strings.Common_Cancel, action: {}),
+            TextAlertAction(type: .defaultAction, title: ru ? "Отправить" : "Send", action: {
+                completion()
+            })
+        ]), in: .window(.root))
+    }
 }

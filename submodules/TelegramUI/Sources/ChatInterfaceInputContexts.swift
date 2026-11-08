@@ -202,7 +202,7 @@ func inputTextPanelStateForChatPresentationInterfaceState(_ chatPresentationInte
                             showPremiumGift = true
                         }
                     }
-                    if isTextEmpty, showPremiumGift, !KimogramSettings.get(.hidePremiumRows), let peer = chatPresentationInterfaceState.renderedPeer?.peer as? TelegramUser, !peer.isDeleted && peer.botInfo == nil && !peer.flags.contains(.isSupport) { //&& chatPresentationInterfaceState.suggestPremiumGift {
+                    if isTextEmpty, showPremiumGift, !KimogramSettings.get(.hidePremiumRows), !KimogramSettings.get(.hideGiftButton), let peer = chatPresentationInterfaceState.renderedPeer?.peer as? TelegramUser, !peer.isDeleted && peer.botInfo == nil && !peer.flags.contains(.isSupport) { //&& chatPresentationInterfaceState.suggestPremiumGift {
                         accessoryItems.append(.gift)
                     }
                 }
@@ -259,7 +259,9 @@ func inputTextPanelStateForChatPresentationInterfaceState(_ chatPresentationInte
                     }
                 } else {
                     stickersAreEmoji = stickersAreEmoji || hasForward
-                    if stickersEnabled {
+                    if KimogramSettings.get(.hideStickerButton) {
+                        // Kimogram: no sticker/emoji button in the composer.
+                    } else if stickersEnabled {
                         accessoryItems.append(.input(isEnabled: true, inputMode: stickersAreEmoji ? .emoji : .stickers))
                     } else {
                         accessoryItems.append(.input(isEnabled: true, inputMode: .emoji))

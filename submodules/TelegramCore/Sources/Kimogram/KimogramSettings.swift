@@ -49,6 +49,12 @@ public final class KimogramSettings {
         case hideEditButton = "kimogram.hideEditButton"
         case noLinkPreviews = "kimogram.noLinkPreviews"
         case hideBotButtons = "kimogram.hideBotButtons"
+        case hideStickerButton = "kimogram.hideStickerButton"
+        case hideGiftButton = "kimogram.hideGiftButton"
+        case hidePaidReactions = "kimogram.hidePaidReactions"
+        case charCounter = "kimogram.charCounter"
+        case confirmSend = "kimogram.confirmSend"
+        case noSuspiciousLinkWarning = "kimogram.noSuspiciousLinkWarning"
         case titleAccountName = "kimogram.titleAccountName"
         case noChatListSeparators = "kimogram.noChatListSeparators"
         case hideStoryCamera = "kimogram.hideStoryCamera"
@@ -217,6 +223,32 @@ public final class KimogramSettings {
         }
         set {
             defaults.set(newValue.rawValue, forKey: stickerSizeKey)
+            updatesPipe.putNext(Void())
+        }
+    }
+
+    private static let bubbleWidthKey = "kimogram.bubbleWidth"
+
+    /// Message bubble width: 0 is Telegram's, 1 narrower, 2 wider.
+    public static var bubbleWidth: Int {
+        get {
+            return max(0, min(2, defaults.integer(forKey: bubbleWidthKey)))
+        }
+        set {
+            defaults.set(newValue, forKey: bubbleWidthKey)
+            updatesPipe.putNext(Void())
+        }
+    }
+
+    private static let roundVideoSizeKey = "kimogram.roundVideoSize"
+
+    /// Round video message size: 0 is Telegram's, 1 large.
+    public static var roundVideoSize: Int {
+        get {
+            return max(0, min(1, defaults.integer(forKey: roundVideoSizeKey)))
+        }
+        set {
+            defaults.set(newValue, forKey: roundVideoSizeKey)
             updatesPipe.putNext(Void())
         }
     }

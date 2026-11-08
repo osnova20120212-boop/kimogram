@@ -1421,6 +1421,31 @@ extension ChatControllerImpl {
             }
         }
         
+        // Kimogram: long-press the scroll-down button to jump to the very first message.
+        self.chatDisplayNode.navigateButtons.downButton.isGestureEnabled = true
+        self.chatDisplayNode.navigateButtons.downButton.activated = { [weak self] gesture, _ in
+            guard let strongSelf = self, strongSelf.presentationInterfaceState.search?.resultsState == nil else {
+                gesture.cancel()
+                return
+            }
+            let ru = strongSelf.presentationData.strings.baseLanguageCode == "ru"
+            var menuItems: [ContextMenuItem] = []
+            menuItems.append(.action(ContextMenuActionItem(text: ru ? "К первому сообщению" : "Go to First Message", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/MoveUp"), color: theme.contextMenu.primaryColor)
+            }, action: { _, f in
+                f(.dismissWithoutContent)
+                self?.scrollToStartOfHistory()
+            })))
+            menuItems.append(.action(ContextMenuActionItem(text: ru ? "К последнему сообщению" : "Go to Last Message", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/GoToMessage"), color: theme.contextMenu.primaryColor)
+            }, action: { _, f in
+                f(.dismissWithoutContent)
+                self?.scrollToEndOfHistory()
+            })))
+            let items = ContextController.Items(content: .list(menuItems))
+            let controller = makeContextController(presentationData: strongSelf.presentationData, source: .extracted(ChatMessageNavigationButtonContextExtractedContentSource(chatNode: strongSelf.chatDisplayNode, contentNode: strongSelf.chatDisplayNode.navigateButtons.downButton.containerNode)), items: .single(items), recognizer: nil, gesture: gesture)
+            strongSelf.window?.presentInGlobalOverlay(controller)
+        }
         self.chatDisplayNode.navigateButtons.mentionsButton.activated = { [weak self] gesture, _ in
             guard let strongSelf = self else {
                 gesture.cancel()
