@@ -1974,6 +1974,9 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                             source = .controller(ContextControllerContentSourceImpl(controller: communityController, sourceNode: node, navigationController: strongSelf.navigationController as? NavigationController))
                         } else if let location = location {
                             source = .location(ChatListContextLocationContentSource(controller: strongSelf, location: location))
+                        } else if KimogramSettings.get(.noChatPreview) {
+                            // Kimogram: just the menu, no chat preview above it.
+                            source = .location(ChatListContextLocationContentSource(controller: strongSelf, location: node.view.convert(CGPoint(x: node.bounds.width * 0.5, y: node.bounds.height * 0.5), to: nil)))
                         } else if KimogramSettings.isChatLocked(peer.peerId) {
                             // Kimogram: a locked chat's preview shows a lock, never the messages.
                             let lockedController = KimogramLockedChatPreviewController(presentationData: strongSelf.presentationData)

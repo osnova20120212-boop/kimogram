@@ -54,6 +54,7 @@ public final class KimogramSettings {
         case hidePaidReactions = "kimogram.hidePaidReactions"
         case charCounter = "kimogram.charCounter"
         case confirmSend = "kimogram.confirmSend"
+        case noChatPreview = "kimogram.noChatPreview"
         case noSuspiciousLinkWarning = "kimogram.noSuspiciousLinkWarning"
         case titleAccountName = "kimogram.titleAccountName"
         case noChatListSeparators = "kimogram.noChatListSeparators"
@@ -157,6 +158,11 @@ public final class KimogramSettings {
     }
 
     /// Emits whenever any switch changes, starting immediately.
+    /// Tells open settings pages to rebuild.
+    public static func notifyChanged() {
+        updatesPipe.putNext(Void())
+    }
+
     public static func changes() -> Signal<Void, NoError> {
         return Signal<Void, NoError>.single(Void()) |> then(updatesPipe.signal())
     }

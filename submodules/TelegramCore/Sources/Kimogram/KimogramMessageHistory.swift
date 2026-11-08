@@ -87,8 +87,70 @@ func kimogramKeepDeletedMessages(transaction: Transaction, ids: [MessageId]) -> 
             return .update(StoreMessage(id: currentMessage.id, customStableId: nil, globallyUniqueId: currentMessage.globallyUniqueId, groupingKey: currentMessage.groupingKey, threadId: currentMessage.threadId, timestamp: currentMessage.timestamp, flags: StoreMessageFlags(currentMessage.flags), tags: currentMessage.tags, globalTags: currentMessage.globalTags, localTags: currentMessage.localTags, forwardInfo: storeForwardInfo, authorId: currentMessage.author?.id, text: text, attributes: attributes, media: currentMessage.media))
         })
         KimogramSettings.incrementStat(.deletedKept)
+        KimogramDeletedLog.append(KimogramDeletedLog.Entry(
+            peerId: id.peerId.toInt64(),
+            messageId: id.id,
+            timestamp: message.timestamp,
+            deletedAt: Int32(Date().timeIntervalSince1970),
+            chatTitle: kimogramPeerTitle(message.peers[id.peerId]),
+            author: kimogramPeerTitle(message.author),
+            text: message.text.isEmpty ? (message.media.isEmpty ? "" : (kimogramIsRussian ? "Вложение" : "Attachment")) : message.text
+        ))
     }
     return remaining
+}
+
+private func kimogramPeerTitle(_ peer: Peer?) -> String {
+    if let user = peer as? TelegramUser {
+        let name = [user.firstName ?? "", user.lastName ?? ""].filter { !$0.isEmpty }.joined(separator: " ")
+        return name.isEmpty ? (user.addressName ?? "") : name
+    } else if let group = peer as? TelegramGroup {
+        return group.title
+    } else if let channel = peer as? TelegramChannel {
+        return channel.title
+    }
+    return ""
+}
+
+/// Kimogram: a list of the messages kept after their deletion, for the "Deleted Messages" screen.
+/// Lives in the standard defaults, newest last, at most `limit` entries.
+public enum KimogramDeletedLog {
+    public struct Entry: Codable, Equatable {
+        public var peerId: Int64
+        public var messageId: Int32
+        public var timestamp: Int32
+        public var deletedAt: Int32
+        public var chatTitle: String
+        public var author: String
+        public var text: String
+    }
+
+    private static let key = "kimogram.deletedLog"
+    private static let limit = 1000
+
+    public static func all() -> [Entry] {
+        guard let data = UserDefaults.standard.data(forKey: key), let entries = try? JSONDecoder().decode([Entry].self, from: data) else {
+            return []
+        }
+        return entries
+    }
+
+    static func append(_ entry: Entry) {
+        var entries = all()
+        entries.removeAll(where: { $0.peerId == entry.peerId && $0.messageId == entry.messageId })
+        entries.append(entry)
+        if entries.count > limit {
+            entries.removeFirst(entries.count - limit)
+        }
+        if let data = try? JSONEncoder().encode(entries) {
+            UserDefaults.standard.set(data, forKey: key)
+        }
+    }
+
+    public static func clear() {
+        UserDefaults.standard.removeObject(forKey: key)
+        KimogramSettings.notifyChanged()
+    }
 }
 
 /// Kimogram "save edit history": the text an edited incoming message should be stored with, or

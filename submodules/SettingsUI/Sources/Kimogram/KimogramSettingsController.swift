@@ -55,6 +55,7 @@ final class KimogramPageEnvironment {
     let context: AccountContext
     var push: (ViewController) -> Void = { _ in }
     var present: (ViewController) -> Void = { _ in }
+    var navigationController: () -> NavigationController? = { return nil }
 
     /// A short message with one OK button.
     func showAlert(title: String?, text: String) {
@@ -255,6 +256,9 @@ func kimogramPageController(context: AccountContext, title: String, build: @esca
     environment.present = { [weak controller] c in
         controller?.present(c, in: .window(.root), with: nil)
     }
+    environment.navigationController = { [weak controller] in
+        return controller?.navigationController as? NavigationController
+    }
     return controller
 }
 
@@ -359,6 +363,11 @@ private func historyPage(context: AccountContext) -> ViewController {
                 .toggle(.saveEditHistory, title: ru ? "Сохранять историю правок" : "Keep Edit History", text: ru ? "Под исправленным видно, что было раньше" : "See what an edited message said before"),
                 .toggle(.keepSelfDestructing, title: ru ? "Не удалять исчезающие" : "Keep Self-Destructing", text: ru ? "Сообщения с таймером и одноразовые фото останутся" : "Timed messages and view-once media stay")
             ], footer: ru ? "Работает для сообщений, которые пришли, пока настройка включена." : "Works for messages received while this is on."),
+            KimogramPageSection(rows: [
+                .link(title: ru ? "Удалённые сообщения" : "Deleted Messages", icon: nil, label: "\(KimogramDeletedLog.all().count)", action: { environment in
+                    environment.push(kimogramDeletedMessagesController(context: environment.context))
+                })
+            ], footer: ru ? "Все пойманные удалённые сообщения в одном месте, с поиском." : "Every deleted message caught, in one place, with search."),
             KimogramPageSection(header: ru ? "ЗАЩИЩЁННОЕ" : "PROTECTED", rows: [
                 .toggle(.saveProtected, title: ru ? "Сохранять защищённое" : "Save Protected Content", text: ru ? "Копировать, сохранять и снимать скриншоты где запрещено, сохранять чужие истории" : "Copy, save and screenshot where it is restricted; save others' stories")
             ], footer: ru ? "Переслать такое сообщение всё равно нельзя: это запрещает сервер. Сохраните или скопируйте его." : "Forwarding stays blocked by the server; save or copy instead.")
@@ -407,6 +416,7 @@ private func chatsPage(context: AccountContext) -> ViewController {
                 .toggle(.hideStoriesBar, title: ru ? "Скрыть истории над чатами" : "Hide Stories Row", text: nil),
                 .toggle(.hideStoryCamera, title: ru ? "Скрыть кнопку камеры историй" : "Hide Story Camera Button", text: nil),
                 .toggle(.noChatListSeparators, title: ru ? "Без линий между чатами" : "No Lines Between Chats", text: nil),
+                .toggle(.noChatPreview, title: ru ? "Без превью чата при зажатии" : "No Chat Preview on Hold", text: ru ? "Долгое нажатие сразу открывает меню" : "A long press opens just the menu"),
                 .toggle(.hideReactions, title: ru ? "Скрыть реакции" : "Hide Reactions", text: ru ? "Под сообщениями не будет реакций" : "No reactions under messages"),
                 .toggle(.hideSimilarChannels, title: ru ? "Скрыть похожие каналы" : "Hide Similar Channels", text: nil),
                 .toggle(.hideShareButton, title: ru ? "Без кнопки «Поделиться» у постов" : "No Share Button on Posts", text: nil),
@@ -634,5 +644,84 @@ public func kimogramSettingsController(context: AccountContext) -> ViewControlle
                 })
             ], footer: ru ? "Kimogram \(version) (\(build)). Основан на открытом коде Telegram для iOS." : "Kimogram \(version) (\(build)). Built on the open-source Telegram for iOS.")
         ]
+    })
+}
+
+// MARK: - Deleted messages
+
+/// Every message Kimogram kept after it was deleted, grouped by chat, newest first. Tapping one
+/// opens the chat at that message. `query` narrows the list to messages containing it.
+func kimogramDeletedMessagesController(context: AccountContext, query: String? = nil) -> ViewController {
+    let ru = KimogramAutoProxy.isRussian
+    let title = query.map { "«\($0)»" } ?? (ru ? "Удалённые сообщения" : "Deleted Messages")
+    return kimogramPageController(context: context, title: title, build: { _ in
+        var entries: [KimogramDeletedLog.Entry] = Array(KimogramDeletedLog.all().reversed())
+        if let query, !query.isEmpty {
+            let lowered = query.lowercased()
+            entries = entries.filter { $0.text.lowercased().contains(lowered) || $0.author.lowercased().contains(lowered) || $0.chatTitle.lowercased().contains(lowered) }
+        }
+
+        var sections: [KimogramPageSection] = []
+        if query == nil {
+            sections.append(KimogramPageSection(rows: [
+                .link(title: ru ? "Поиск по удалённым" : "Search Deleted", icon: nil, label: "", action: { environment in
+                    environment.present(promptController(context: environment.context, text: ru ? "Что найти среди удалённых сообщений?" : "Find in deleted messages", value: nil, placeholder: ru ? "Слово или имя" : "Word or name", characterLimit: 64, displayCharacterLimit: false, apply: { value in
+                        if let value, !value.isEmpty {
+                            environment.push(kimogramDeletedMessagesController(context: environment.context, query: value))
+                        }
+                    }))
+                })
+            ], footer: entries.isEmpty ? (ru ? "Пока пусто. Когда кто-то удалит сообщение, а «Сохранять удалённые» включено, оно появится здесь." : "Nothing yet. When someone deletes a message while Keep Deleted Messages is on, it appears here.") : nil))
+        } else if entries.isEmpty {
+            sections.append(KimogramPageSection(rows: [], footer: ru ? "Ничего не найдено." : "Nothing found."))
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd.MM HH:mm"
+
+        var order: [Int64] = []
+        var grouped: [Int64: [KimogramDeletedLog.Entry]] = [:]
+        for entry in entries {
+            if grouped[entry.peerId] == nil {
+                order.append(entry.peerId)
+            }
+            grouped[entry.peerId, default: []].append(entry)
+        }
+        for peerId in order.prefix(50) {
+            guard let chatEntries = grouped[peerId], let first = chatEntries.first else {
+                continue
+            }
+            let rows: [KimogramRow] = chatEntries.prefix(100).map { entry in
+                let text = entry.text.replacingOccurrences(of: "\n", with: " ")
+                let line = entry.author.isEmpty || entry.author == entry.chatTitle ? text : "\(entry.author): \(text)"
+                return .link(title: line.isEmpty ? "—" : line, icon: nil, label: formatter.string(from: Date(timeIntervalSince1970: Double(entry.timestamp))), action: { environment in
+                    let peerId = EnginePeer.Id(entry.peerId)
+                    let _ = (environment.context.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: peerId))
+                    |> deliverOnMainQueue).startStandalone(next: { peer in
+                        guard let peer, let navigationController = environment.navigationController() else {
+                            return
+                        }
+                        let messageId = EngineMessage.Id(peerId: peerId, namespace: Namespaces.Message.Cloud, id: entry.messageId)
+                        environment.context.sharedContext.navigateToChatController(NavigateToChatControllerParams(navigationController: navigationController, context: environment.context, chatLocation: .peer(peer), subject: .message(id: .id(messageId), highlight: ChatControllerSubject.MessageHighlight(quote: nil), timecode: nil, setupReply: false)))
+                    })
+                })
+            }
+            sections.append(KimogramPageSection(header: (first.chatTitle.isEmpty ? (ru ? "ЧАТ" : "CHAT") : first.chatTitle).uppercased(), rows: rows))
+        }
+
+        if query == nil && !entries.isEmpty {
+            sections.append(KimogramPageSection(rows: [
+                .link(title: ru ? "Очистить список" : "Clear List", icon: nil, label: "", action: { environment in
+                    let presentationData = environment.context.sharedContext.currentPresentationData.with { $0 }
+                    environment.present(textAlertController(context: environment.context, title: nil, text: ru ? "Очистить список? Сами сообщения останутся в чатах." : "Clear the list? The messages stay in their chats.", actions: [
+                        TextAlertAction(type: .genericAction, title: presentationData.strings.Common_Cancel, action: {}),
+                        TextAlertAction(type: .destructiveAction, title: ru ? "Очистить" : "Clear", action: {
+                            KimogramDeletedLog.clear()
+                        })
+                    ]))
+                })
+            ], footer: ru ? "Сохраняется до 1000 последних удалённых сообщений." : "Up to the last 1000 deleted messages are listed."))
+        }
+        return sections
     })
 }
