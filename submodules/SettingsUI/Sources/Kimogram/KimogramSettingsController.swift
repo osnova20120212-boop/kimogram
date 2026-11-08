@@ -646,7 +646,15 @@ public func kimogramSettingsController(context: AccountContext) -> ViewControlle
                 .link(title: ru ? "Прокси" : "Proxy", icon: PresentationResourcesSettings.proxy, label: autoProxyEnabled ? (ru ? "Авто" : "Auto") : (ru ? "Свой" : "Manual"), action: { environment in
                     environment.push(proxySettingsController(context: environment.context))
                 }),
-                .toggle(.fastDownloads, title: ru ? "Быстрая загрузка и отправка" : "Faster Transfers", text: ru ? "Больше потоков для скачивания и отправки файлов" : "More parallel parts for downloads and uploads")
+                .toggle(.fastDownloads, title: ru ? "Быстрая загрузка и отправка" : "Faster Transfers", text: ru ? "Больше потоков для скачивания и отправки файлов" : "More parallel parts for downloads and uploads"),
+                .flag(title: ru ? "Экономия трафика" : "Data Saver", text: ru ? "Без автозагрузки медиа по мобильной сети" : "No media auto-download on mobile data", value: UserDefaults.standard.bool(forKey: "kimogram.dataSaver"), set: { value in
+                    UserDefaults.standard.set(value, forKey: "kimogram.dataSaver")
+                    let _ = updateMediaDownloadSettingsInteractively(accountManager: context.sharedContext.accountManager, { settings in
+                        var settings = settings
+                        settings.cellular.enabled = !value
+                        return settings
+                    }).startStandalone()
+                })
             ], footer: ru ? "Авто-прокси сам находит рабочий бесплатный прокси, если подключиться не получается." : "Auto Proxy finds a working free proxy whenever the app cannot connect."),
             KimogramPageSection(header: ru ? "ПРИВАТНОСТЬ" : "PRIVACY", rows: [
                 .toggle(.blurInAppSwitcher, title: ru ? "Размывать в списке приложений" : "Blur in App Switcher", text: ru ? "Чужие не увидят переписку при переключении приложений" : "Nobody sees your chats when switching apps"),
