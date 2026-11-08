@@ -362,6 +362,11 @@ func settingsItems(data: PeerInfoScreenData?, context: AccountContext, presentat
         interaction.openSettings(.tips)
     }))
     
+    // Kimogram: no "Ask a Question", "FAQ" and "Features" section.
+    if KimogramSettings.get(.hideHelpSection) {
+        items[.support] = []
+    }
+    
     // Kimogram: hide Premium, Business and Send a Gift if the user asked to.
     if KimogramSettings.get(.hidePremiumRows) {
         let hiddenIds: Set<AnyHashable> = [AnyHashable(100), AnyHashable(104), AnyHashable(105)]

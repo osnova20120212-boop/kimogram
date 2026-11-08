@@ -323,6 +323,11 @@ private func ghostPage(context: AccountContext) -> ViewController {
                 .toggle(.ghostStories, title: ru ? "Смотреть истории тайно" : "View Stories Secretly", text: nil),
                 .toggle(.ghostVoiceListened, title: ru ? "Слушать голосовые тайно" : "Listen to Voice Secretly", text: ru ? "Голосовое и кружок останутся «непрослушанными»" : "Voice and video messages stay unplayed for them")
             ]),
+            KimogramPageSection(header: ru ? "ЕЩЁ НЕЗАМЕТНЕЕ" : "EVEN QUIETER", rows: [
+                .toggle(.hideRecordingActivity, title: ru ? "Без «записывает голосовое»" : "Hide Recording Status", text: ru ? "И без «выбирает стикер», «отправляет фото»" : "Also choosing a sticker, sending a photo"),
+                .toggle(.noScreenshotNotice, title: ru ? "Без «сделан скриншот»" : "No Screenshot Notice", text: ru ? "В секретных чатах собеседник не узнает о скриншоте" : "Secret chats won't report your screenshots"),
+                .toggle(.noViewIncrement, title: ru ? "Не накручивать просмотры" : "Don't Count My Views", text: ru ? "Посты в каналах не получают ваш просмотр" : "Channel posts don't get your view")
+            ]),
             KimogramPageSection(header: ru ? "ИСКЛЮЧЕНИЕ" : "EXCEPTION", rows: [
                 .toggle(.ghostReadOnReply, title: ru ? "Прочитано, когда отвечаю" : "Mark Read When I Reply", text: ru ? "Ответ сам отмечает чат прочитанным" : "Replying marks the chat as read")
             ], footer: ru ? "Когда вы сами отправляете сообщение, сервер всё равно ненадолго показывает вас в сети." : "Sending a message still briefly shows you online."),
@@ -366,6 +371,11 @@ private func chatsPage(context: AccountContext) -> ViewController {
                 }),
                 .toggle(.disableSwipeReply, title: ru ? "Выключить свайп для ответа" : "Disable Swipe to Reply", text: nil)
             ]),
+            KimogramPageSection(header: ru ? "ОТПРАВКА" : "SENDING", rows: [
+                .toggle(.silentByDefault, title: ru ? "Отправлять без звука" : "Send Silently", text: ru ? "Собеседник получит сообщение без звука уведомления" : "Recipients get no notification sound"),
+                .toggle(.pinSilently, title: ru ? "Закреплять без уведомления" : "Pin Silently", text: ru ? "Без вопроса «Уведомить всех?»" : "No \"Notify all members?\" question"),
+                .toggle(.stripTrackingParams, title: ru ? "Очищать ссылки от слежки" : "Clean Tracking from Links", text: ru ? "Убирает utm, fbclid и подобные метки из ссылок" : "Removes utm, fbclid and similar tags")
+            ]),
             KimogramPageSection(header: ru ? "ЗАЩИТА ОТ СЛУЧАЙНОСТЕЙ" : "NO ACCIDENTS", rows: [
                 .toggle(.confirmStickers, title: ru ? "Спрашивать перед стикером и GIF" : "Confirm Stickers and GIFs", text: nil),
                 .toggle(.confirmVoice, title: ru ? "Прослушать голосовое перед отправкой" : "Review Voice Before Sending", text: ru ? "Отпустили кнопку — сначала прослушивание" : "Releasing the button opens a preview"),
@@ -375,6 +385,8 @@ private func chatsPage(context: AccountContext) -> ViewController {
                 .toggle(.hideSponsored, title: ru ? "Без рекламы в каналах" : "No Sponsored Messages", text: nil),
                 .toggle(.timestampSeconds, title: ru ? "Время с секундами" : "Show Seconds in Time", text: nil),
                 .toggle(.hideStoriesBar, title: ru ? "Скрыть истории над чатами" : "Hide Stories Row", text: nil),
+                .toggle(.hideStoryCamera, title: ru ? "Скрыть кнопку камеры историй" : "Hide Story Camera Button", text: nil),
+                .toggle(.noChatListSeparators, title: ru ? "Без линий между чатами" : "No Lines Between Chats", text: nil),
                 .toggle(.hideReactions, title: ru ? "Скрыть реакции" : "Hide Reactions", text: ru ? "Под сообщениями не будет реакций" : "No reactions under messages"),
                 .toggle(.hideSimilarChannels, title: ru ? "Скрыть похожие каналы" : "Hide Similar Channels", text: nil),
                 .toggle(.hideShareButton, title: ru ? "Без кнопки «Поделиться» у постов" : "No Share Button on Posts", text: nil),
@@ -394,9 +406,18 @@ private func profilePage(context: AccountContext) -> ViewController {
             KimogramPageSection(header: ru ? "МОИ НАСТРОЙКИ" : "MY SETTINGS", rows: [
                 .toggle(.hidePhoneNumber, title: ru ? "Скрыть мой номер" : "Hide My Number", text: ru ? "Удобно для скриншотов" : "Keeps it off screenshots"),
                 .toggle(.hidePremiumRows, title: ru ? "Скрыть Premium и подарки" : "Hide Premium and Gifts", text: ru ? "В настройках и кнопка подарка в чатах" : "In Settings, and the gift button in chats")
-            ])
+            ]),
+            KimogramPageSection(header: ru ? "МУЗЫКА В ПРОФИЛЕ" : "MUSIC IN PROFILE", rows: [
+                .flag(title: ru ? "Трек из Яндекс Музыки" : "Yandex Music Track", text: ru ? "Предлагать добавить скопированный трек в профиль" : "Offer to add a copied track to the profile", value: !KimogramSettings.get(.noMusicCard), set: { value in
+                    KimogramSettings.set(.noMusicCard, !value)
+                })
+            ], footer: ru ? "В Яндекс Музыке нажмите «Поделиться» → «Скопировать ссылку» и вернитесь в Kimogram: появится карточка «Добавить трек в профиль?». Трек встанет в описание профиля." : "In Yandex Music tap Share → Copy Link and come back to Kimogram: a card offers to add the track to your profile bio.")
         ]
     })
+}
+
+private func avatarShapeTitles(_ ru: Bool) -> [String] {
+    return ru ? ["Круг", "Скруглённый квадрат", "Квадрат"] : ["Circle", "Rounded Square", "Square"]
 }
 
 private func stickerSizeTitles(_ ru: Bool) -> [String] {
@@ -427,6 +448,20 @@ private func appearancePage(context: AccountContext) -> ViewController {
             ], footer: ru ? "Ползунок меняет стекло везде: панели, кнопки, меню и поле ввода. Середина — как в обычном Telegram." : "The slider changes the glass everywhere: bars, buttons, menus and the input field. The middle is Telegram's own look."),
             KimogramPageSection(header: ru ? "ИНТЕРФЕЙС" : "INTERFACE", rows: [
                 .toggle(.hideContactsTab, title: ru ? "Скрыть вкладку «Контакты»" : "Hide Contacts Tab", text: nil),
+                .link(title: ru ? "Форма аватарок" : "Avatar Shape", icon: nil, label: avatarShapeTitles(ru)[KimogramAppearance.avatarShape.rawValue], action: { environment in
+                    environment.push(kimogramChoiceController(context: environment.context, title: ru ? "Форма аватарок" : "Avatar Shape", footer: ru ? "Применяется полностью после перезапуска Kimogram." : "Fully applies after restarting Kimogram.", options: avatarShapeTitles(ru), selected: {
+                        return KimogramAppearance.avatarShape.rawValue
+                    }, select: { index in
+                        KimogramAppearance.avatarShape = KimogramAppearance.AvatarShape(rawValue: index) ?? .circle
+                    }))
+                }),
+                .flag(title: ru ? "Округлый шрифт" : "Rounded Font", text: ru ? "SF Rounded во всём приложении, после перезапуска" : "SF Rounded everywhere, after a restart", value: KimogramAppearance.roundedFont, set: { value in
+                    KimogramAppearance.roundedFont = value
+                }),
+                .flag(title: ru ? "Без вибрации" : "No Vibration", text: ru ? "Кнопки и жесты без отклика вибрацией" : "No haptic feedback on buttons and gestures", value: KimogramAppearance.noHaptics, set: { value in
+                    KimogramAppearance.noHaptics = value
+                }),
+                .toggle(.hideHelpSection, title: ru ? "Скрыть «Помощь» в настройках" : "Hide Help in Settings", text: ru ? "«Задать вопрос», «Вопросы и ответы», «Возможности»" : "Ask a Question, FAQ, Features"),
                 .link(title: ru ? "Вкладка «Звонки»" : "Calls Tab", icon: nil, label: "", action: { environment in
                     let accountManager = environment.context.sharedContext.accountManager
                     let _ = (accountManager.sharedData(keys: [ApplicationSpecificSharedDataKeys.callListSettings])
@@ -483,6 +518,7 @@ public func kimogramSettingsController(context: AccountContext) -> ViewControlle
                 .toggle(.fastDownloads, title: ru ? "Быстрая загрузка и отправка" : "Faster Transfers", text: ru ? "Больше потоков для скачивания и отправки файлов" : "More parallel parts for downloads and uploads")
             ], footer: ru ? "Авто-прокси сам находит рабочий бесплатный прокси, если подключиться не получается." : "Auto Proxy finds a working free proxy whenever the app cannot connect."),
             KimogramPageSection(header: ru ? "ПРИВАТНОСТЬ" : "PRIVACY", rows: [
+                .toggle(.blurInAppSwitcher, title: ru ? "Размывать в списке приложений" : "Blur in App Switcher", text: ru ? "Чужие не увидят переписку при переключении приложений" : "Nobody sees your chats when switching apps"),
                 .link(title: ru ? "Режим призрака" : "Ghost Mode", icon: PresentationResourcesSettings.security, label: countLabel(ghostKeys, ru), action: { environment in
                     environment.push(ghostPage(context: environment.context))
                 }),
@@ -509,6 +545,17 @@ public func kimogramSettingsController(context: AccountContext) -> ViewControlle
                 .link(title: ru ? "Вставить настройки" : "Paste Settings", icon: nil, label: "", action: { environment in
                     let ok = KimogramSettings.importText(UIPasteboard.general.string ?? "")
                     environment.showAlert(title: nil, text: ok ? (ru ? "Настройки применены." : "Settings applied.") : (ru ? "Сначала скопируйте текст настроек Kimogram, он начинается с KIMOGRAM:" : "Copy Kimogram settings text first; it starts with KIMOGRAM:"))
+                }),
+                .link(title: ru ? "Сбросить все настройки" : "Reset All Settings", icon: nil, label: "", action: { environment in
+                    let presentationData = environment.context.sharedContext.currentPresentationData.with { $0 }
+                    environment.present(textAlertController(context: environment.context, title: ru ? "Сбросить настройки Kimogram?" : "Reset Kimogram Settings?", text: ru ? "Все переключатели Kimogram вернутся к начальным. Заблокированные чаты останутся заблокированными." : "Every Kimogram switch goes back to its default. Locked chats stay locked.", actions: [
+                        TextAlertAction(type: .genericAction, title: presentationData.strings.Common_Cancel, action: {}),
+                        TextAlertAction(type: .destructiveAction, title: ru ? "Сбросить" : "Reset", action: {
+                            KimogramSettings.resetAll()
+                            KimogramAppearance.glassTransparency = 0.5
+                            UserDefaults.standard.removeObject(forKey: "kimogram.appearance.glassTransparency")
+                        })
+                    ]))
                 })
             ], footer: ru ? "Kimogram \(version) (\(build)). Основан на открытом коде Telegram для iOS." : "Kimogram \(version) (\(build)). Built on the open-source Telegram for iOS.")
         ]

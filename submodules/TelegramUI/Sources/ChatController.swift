@@ -9078,8 +9078,30 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
                 }
             }
             
+            // Kimogram: tracking parameters are removed from links in plain-text messages.
+            if KimogramSettings.get(.stripTrackingParams), case let .message(text, attributes, inlineStickers, mediaReference, threadId, replyToMessageId, replyToStoryId, localGroupingKey, correlationId, bubbleUpEmojiOrStickersets) = message, mediaReference == nil, !attributes.contains(where: { attribute in
+                guard let entities = (attribute as? TextEntitiesMessageAttribute)?.entities else {
+                    return false
+                }
+                return entities.contains(where: { entity in
+                    if case .Url = entity.type {
+                        return false
+                    }
+                    return true
+                })
+            }), let cleanedText = KimogramLinkCleaner.clean(text) {
+                // Only plain links are left as entities here; the server finds them again in the cleaned text.
+                let cleanedAttributes = attributes.filter { !($0 is TextEntitiesMessageAttribute) }
+                message = .message(text: cleanedText, attributes: cleanedAttributes, inlineStickers: inlineStickers, mediaReference: mediaReference, threadId: threadId, replyToMessageId: replyToMessageId, replyToStoryId: replyToStoryId, localGroupingKey: localGroupingKey, correlationId: correlationId, bubbleUpEmojiOrStickersets: bubbleUpEmojiOrStickersets)
+            }
+            
             return message.withUpdatedAttributes { attributes in
                 var attributes = attributes
+                
+                // Kimogram: messages go without sound unless sent otherwise.
+                if KimogramSettings.get(.silentByDefault) && !attributes.contains(where: { $0 is NotificationInfoMessageAttribute }) {
+                    attributes.append(NotificationInfoMessageAttribute(flags: .muted))
+                }
                 
                 if let sendPaidMessageStars = self.presentationInterfaceState.sendPaidMessageStars {
                     var effectivePostpone = postpone

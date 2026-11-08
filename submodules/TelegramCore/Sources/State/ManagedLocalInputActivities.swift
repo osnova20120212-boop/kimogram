@@ -146,6 +146,13 @@ private func requestActivity(postbox: Postbox, network: Network, accountPeerId: 
     if KimogramSettings.hidesTyping(in: peerId) {
         return .complete()
     }
+    // Kimogram: keep "typing…" but never show "recording a voice message", "choosing a sticker" and the like.
+    if KimogramSettings.get(.hideRecordingActivity), let activity {
+        if case .typingText = activity {
+        } else {
+            return .complete()
+        }
+    }
     return postbox.transaction { transaction -> Signal<Void, NoError> in
         if let peer = transaction.getPeer(peerId) {
             if peerId == accountPeerId {

@@ -5406,7 +5406,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                     }
                     
                     transition.updateFrame(node: strongSelf.separatorNode, frame: CGRect(origin: CGPoint(x: leftSeparatorInset, y: layoutOffset + itemHeight - separatorHeight), size: CGSize(width: params.width - leftSeparatorInset - rightSeparatorInset, height: separatorHeight)))
-                    strongSelf.separatorNode.isHidden = hideCommunitySeparator
+                    strongSelf.separatorNode.isHidden = hideCommunitySeparator || KimogramSettings.get(.noChatListSeparators)
                     if let inlineNavigationLocation = item.interaction.inlineNavigationLocation {
                         strongSelf.updateSeparatorAlpha(transition: transition, inlineNavigationProgress: inlineNavigationLocation.progress)
                     } else {

@@ -6375,7 +6375,7 @@ public final class StoryItemSetContainerComponent: Component {
                 c?.popItems()
             })))
 
-            items.append(.custom(SliderContextItem(minValue: 0.2, maxValue: 2.5, value: baseRate, valueChanged: { [weak self] newValue, done in
+            items.append(.custom(SliderContextItem(minValue: 0.2, maxValue: 3.0, value: baseRate, valueChanged: { [weak self] newValue, done in
                 guard let self, let component = self.component else {
                     return
                 }

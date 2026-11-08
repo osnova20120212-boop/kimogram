@@ -242,6 +242,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
     @objc var window: UIWindow?
     var nativeWindow: (UIWindow & WindowHost)?
     var mainWindow: Window1!
+    private var kimogramPrivacyBlurView: UIView?
     private var statusBarHost: ApplicationStatusBarHost?
     private var dataImportSplash: LegacyDataImportSplash?
     private var memoryUsageOverlayView: UILabel?
@@ -2053,6 +2054,30 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
     func handleWillResignActive() {
         self.isActiveValue = false
         self.isActivePromise.set(false)
+        
+        // Kimogram: keep the ghost shortcut's On/Off current, and hide the screen in the app switcher.
+        if let items = UIApplication.shared.shortcutItems, items.contains(where: { $0.type == ApplicationShortcutItemType.ghost.rawValue }), let sharedContext = self.contextValue?.context.sharedContext {
+            let strings = sharedContext.currentPresentationData.with { $0 }.strings
+            UIApplication.shared.shortcutItems = items.map { item in
+                if item.type == ApplicationShortcutItemType.ghost.rawValue {
+                    return kimogramGhostShortcutItem(strings: strings).shortcutItem()
+                }
+                return item
+            }
+        }
+        if KimogramSettings.get(.blurInAppSwitcher), self.kimogramPrivacyBlurView == nil, let window = self.mainWindow?.hostView.eventView.window {
+            let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+            blurView.frame = window.bounds
+            blurView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            if let logo = UIImage(bundleImageName: "Settings/KimogramLogo") {
+                let logoView = UIImageView(image: logo)
+                logoView.frame = CGRect(x: floor((window.bounds.width - 96.0) / 2.0), y: floor((window.bounds.height - 96.0) / 2.0), width: 96.0, height: 96.0)
+                logoView.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleTopMargin, .flexibleBottomMargin]
+                blurView.contentView.addSubview(logoView)
+            }
+            window.addSubview(blurView)
+            self.kimogramPrivacyBlurView = blurView
+        }
         self.clearNotificationsManager?.commitNow()
         
         if let navigationController = self.mainWindow.viewController as? NavigationController {
@@ -2157,10 +2182,27 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
     }
 
     func handleDidBecomeActive() {
+        if let blurView = self.kimogramPrivacyBlurView {
+            self.kimogramPrivacyBlurView = nil
+            UIView.animate(withDuration: 0.2, animations: {
+                blurView.alpha = 0.0
+            }, completion: { _ in
+                blurView.removeFromSuperview()
+            })
+        }
         self.isInForegroundValue = true
         self.isInForegroundPromise.set(true)
         self.isActiveValue = true
         self.isActivePromise.set(true)
+        
+        KimogramReinstallReminder.schedule(russian: Locale.preferredLanguages.first?.hasPrefix("ru") ?? false)
+        Queue.mainQueue().after(0.8, { [weak self] in
+            guard let self, let context = self.contextValue?.context else {
+                return
+            }
+            KimogramMusicCardController.shared.checkClipboard(context: context, window: self.mainWindow?.hostView.eventView.window)
+            KimogramWhatsNew.showIfNeeded(context: context)
+        })
 
         self.resetBadge()
         
@@ -2891,6 +2933,8 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                                     context.switchAccount()
                                 case .appIcon:
                                     context.openAppIcon()
+                                case .ghost:
+                                    KimogramSettings.setGhostMode(!KimogramSettings.ghostModeEnabled)
                             }
                         }
                     }

@@ -38,6 +38,17 @@ public final class KimogramSettings {
         case keepSelfDestructing = "kimogram.keepSelfDestructing"
         case hideFolderBadges = "kimogram.hideFolderBadges"
         case hideShareButton = "kimogram.hideShareButton"
+        case hideRecordingActivity = "kimogram.ghost.recordingActivity"
+        case noScreenshotNotice = "kimogram.ghost.noScreenshotNotice"
+        case noViewIncrement = "kimogram.ghost.noViewIncrement"
+        case blurInAppSwitcher = "kimogram.blurInAppSwitcher"
+        case hideHelpSection = "kimogram.hideHelpSection"
+        case noMusicCard = "kimogram.noMusicCard"
+        case noChatListSeparators = "kimogram.noChatListSeparators"
+        case hideStoryCamera = "kimogram.hideStoryCamera"
+        case silentByDefault = "kimogram.silentByDefault"
+        case pinSilently = "kimogram.pinSilently"
+        case stripTrackingParams = "kimogram.stripTrackingParams"
     }
 
     /// Switches that are on until the user turns them off. Everything else starts off,
@@ -215,6 +226,18 @@ public final class KimogramSettings {
             return ""
         }
         return "KIMOGRAM:" + text
+    }
+
+    /// Turns every Kimogram setting back to its default. Locked chats stay locked: unlocking
+    /// them is a separate, deliberate step.
+    public static func resetAll() {
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("kimogram.") {
+            if key == lockedChatsKey || key.hasPrefix("kimogram.music.") {
+                continue
+            }
+            defaults.removeObject(forKey: key)
+        }
+        updatesPipe.putNext(Void())
     }
 
     /// Applies text made by `exportedText()`. Returns false when the text is not Kimogram settings.

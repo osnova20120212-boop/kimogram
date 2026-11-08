@@ -26,6 +26,10 @@ func _internal_setSecretChatMessageAutoremoveTimeoutInteractively(transaction: T
 }
 
 func _internal_addSecretChatMessageScreenshot(account: Account, peerId: PeerId) -> Signal<Void, NoError> {
+    // Kimogram: the other side is not told about a screenshot.
+    if KimogramSettings.get(.noScreenshotNotice) {
+        return .complete()
+    }
     return account.postbox.transaction { transaction -> Void in
         if let _ = transaction.getPeer(peerId) as? TelegramSecretChat, let state = transaction.getPeerChatState(peerId) as? SecretChatState {
             switch state.embeddedState {

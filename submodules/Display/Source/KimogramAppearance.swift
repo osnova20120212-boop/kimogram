@@ -16,6 +16,7 @@ public enum KimogramAppearance {
     private static let avatarShapeKey = "kimogram.appearance.avatarShape"
     private static let roundedFontKey = "kimogram.appearance.roundedFont"
     private static let noMenuBlurKey = "kimogram.appearance.noMenuBlur"
+    private static let noHapticsKey = "kimogram.appearance.noHaptics"
 
     /// Bumped on every change, so cached views can tell that their look is out of date.
     public private(set) static var generation: Int = 0
@@ -148,9 +149,15 @@ public enum KimogramAppearance {
         }
     }
 
+    /// No vibration anywhere in the interface.
+    public static var noHaptics: Bool {
+        get { return UserDefaults.standard.bool(forKey: noHapticsKey) }
+        set { UserDefaults.standard.set(newValue, forKey: noHapticsKey); changed() }
+    }
+
     // MARK: Font
 
-    /// SF Rounded for the interface's system font.
+    /// SF Rounded for the interface's system font. Applies after a restart.
     public static var roundedFont: Bool {
         get { return UserDefaults.standard.bool(forKey: roundedFontKey) }
         set { UserDefaults.standard.set(newValue, forKey: roundedFontKey); changed() }

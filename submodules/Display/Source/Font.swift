@@ -204,7 +204,7 @@ public struct Font {
                 case .round:
                     updatedDescriptor = updatedDescriptor?.withDesign(.rounded)
                 default:
-                    updatedDescriptor = updatedDescriptor?.withDesign(.default)
+                    updatedDescriptor = updatedDescriptor?.withDesign(Font.kimogramRounded ? .rounded : .default)
             }
             if #available(iOS 14.0, *) {
                 if weight != .regular {
@@ -288,19 +288,42 @@ public struct Font {
         }
     }
     
+    /// Kimogram: SF Rounded for the whole interface. Read once per launch, so every cached font agrees.
+    public static let kimogramRounded: Bool = KimogramAppearance.roundedFont
+    
+    private static func kimogramRoundedSystemFont(_ size: CGFloat, weight: UIFont.Weight) -> UIFont {
+        let base = UIFont.systemFont(ofSize: size, weight: weight)
+        if let descriptor = base.fontDescriptor.withDesign(.rounded) {
+            return UIFont(descriptor: descriptor, size: size)
+        }
+        return base
+    }
+    
     public static func regular(_ size: CGFloat) -> UIFont {
+        if Font.kimogramRounded {
+            return kimogramRoundedSystemFont(size, weight: .regular)
+        }
         return UIFont.systemFont(ofSize: size)
     }
     
     public static func medium(_ size: CGFloat) -> UIFont {
+        if Font.kimogramRounded {
+            return kimogramRoundedSystemFont(size, weight: .medium)
+        }
         return UIFont.systemFont(ofSize: size, weight: UIFont.Weight.medium)
     }
     
     public static func semibold(_ size: CGFloat) -> UIFont {
+        if Font.kimogramRounded {
+            return kimogramRoundedSystemFont(size, weight: .semibold)
+        }
         return UIFont.systemFont(ofSize: size, weight: UIFont.Weight.semibold)
     }
     
     public static func bold(_ size: CGFloat) -> UIFont {
+        if Font.kimogramRounded {
+            return kimogramRoundedSystemFont(size, weight: .bold)
+        }
         if #available(iOS 8.2, *) {
             return UIFont.boldSystemFont(ofSize: size)
         } else {
@@ -313,6 +336,9 @@ public struct Font {
     }
     
     public static func light(_ size: CGFloat) -> UIFont {
+        if Font.kimogramRounded {
+            return kimogramRoundedSystemFont(size, weight: .light)
+        }
         return UIFont.systemFont(ofSize: size, weight: UIFont.Weight.light)
     }
     

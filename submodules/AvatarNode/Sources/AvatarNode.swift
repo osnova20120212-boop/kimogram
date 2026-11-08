@@ -40,6 +40,19 @@ public enum AvatarNodeClipStyle {
     case round
     case roundedRect
     case bubble
+    
+    /// Kimogram: round avatars follow the avatar shape chosen in Kimogram's appearance settings.
+    public var kimogramResolved: AvatarNodeClipStyle {
+        if case .round = self, KimogramAppearance.avatarShape != .circle {
+            return .roundedRect
+        }
+        return self
+    }
+}
+
+/// Kimogram: the corner radius of a rounded-rect avatar as a fraction of its side.
+public var kimogramAvatarRoundedRectFactor: CGFloat {
+    return KimogramAppearance.avatarShape == .square ? 0.12 : 0.25
 }
 
 private class AvatarNodeParameters: NSObject {
@@ -732,7 +745,7 @@ public final class AvatarNode: ASDisplayNode {
             let previousSize = self.params?.displayDimensions
             self.params = params
             
-            switch clipStyle {
+            switch clipStyle.kimogramResolved {
             case .none:
                 self.imageNode.clipsToBounds = false
                 self.imageNode.cornerRadius = 0.0
@@ -741,7 +754,7 @@ public final class AvatarNode: ASDisplayNode {
                 self.imageNode.cornerRadius = displayDimensions.height * 0.5
             case .roundedRect:
                 self.imageNode.clipsToBounds = true
-                self.imageNode.cornerRadius = displayDimensions.height * 0.25
+                self.imageNode.cornerRadius = displayDimensions.height * kimogramAvatarRoundedRectFactor
             case .bubble:
                 break
             }
@@ -968,14 +981,14 @@ public final class AvatarNode: ASDisplayNode {
             if let parameters = parameters as? AvatarNodeParameters {
                 colors = parameters.colors
                 
-                if case .round = parameters.clipStyle {
+                if case .round = parameters.clipStyle.kimogramResolved {
                     context.beginPath()
                     context.addEllipse(in: CGRect(x: 0.0, y: 0.0, width: bounds.size.width, height:
                         bounds.size.height))
                     context.clip()
-                } else if case .roundedRect = parameters.clipStyle {
+                } else if case .roundedRect = parameters.clipStyle.kimogramResolved {
                     context.beginPath()
-                    context.addPath(UIBezierPath(roundedRect: CGRect(x: 0.0, y: 0.0, width: bounds.size.width, height: bounds.size.height), cornerRadius: floor(bounds.size.width * 0.25)).cgPath)
+                    context.addPath(UIBezierPath(roundedRect: CGRect(x: 0.0, y: 0.0, width: bounds.size.width, height: bounds.size.height), cornerRadius: floor(bounds.size.width * kimogramAvatarRoundedRectFactor)).cgPath)
                     context.clip()
                 } else if case .bubble = parameters.clipStyle {
                     context.beginPath()

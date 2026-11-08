@@ -3261,7 +3261,12 @@ extension ChatControllerImpl {
                         
                         if let peer = peer as? TelegramChannel, case .broadcast = peer.info, let contextController = contextController {
                             contextController.dismiss(completion: {
-                                pinAction(true, false)
+                                pinAction(!KimogramSettings.get(.pinSilently), false)
+                            })
+                        } else if !(peer is TelegramUser), KimogramSettings.get(.pinSilently), let contextController = contextController {
+                            // Kimogram: pin without notifying members, no question asked.
+                            contextController.dismiss(completion: {
+                                pinAction(false, false)
                             })
                         } else if let peer = peer as? TelegramUser, let contextController = contextController {
                             if peer.id == strongSelf.context.account.peerId {

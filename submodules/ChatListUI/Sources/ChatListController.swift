@@ -318,7 +318,11 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
             hideNetworkActivityStatus: self.hideNetworkActivityStatus,
             containerNode: self.chatListDisplayNode.mainContainerNode,
             isReorderingTabs: self.isReorderingTabsValue.get(),
-            storyPostingAvailable: self.storyPostingAvailabilityValue.get() |> map { availability -> Bool in
+            storyPostingAvailable: combineLatest(self.storyPostingAvailabilityValue.get(), KimogramSettings.signal(.hideStoryCamera)) |> map { availability, hideStoryCamera -> Bool in
+                // Kimogram: the story camera button can be hidden.
+                if hideStoryCamera {
+                    return false
+                }
                 switch availability {
                 case .enabled, .premium:
                     return true
@@ -6362,6 +6366,16 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
             }, action: { _, f in
                 KimogramSettings.setGhostMode(!kimogramGhostOn)
                 f(.default)
+            })))
+            // Kimogram: every chat read in one tap.
+            items.append(.action(ContextMenuActionItem(text: kimogramRu ? "Прочитать все чаты" : "Read All Chats", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/MarkAsRead"), color: theme.contextMenu.primaryColor)
+            }, action: { _, f in
+                f(.default)
+                guard let strongSelf = self else {
+                    return
+                }
+                let _ = strongSelf.context.engine.messages.markAllChatsAsReadInteractively(items: [(groupId: .root, filterPredicate: nil), (groupId: .archive, filterPredicate: nil)]).startStandalone()
             })))
             items.append(.separator)
             

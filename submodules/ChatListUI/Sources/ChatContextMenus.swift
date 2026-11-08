@@ -555,6 +555,33 @@ func chatContextMenuItems(context: AccountContext, peerId: EnginePeer.Id, promoI
                             })))
                         }
                         
+                        // Kimogram: copy the chat's link or its ID (as bots see it).
+                        if peerId != context.account.peerId && peerId.namespace != Namespaces.Peer.SecretChat {
+                            let ru = strings.baseLanguageCode == "ru"
+                            items.append(.action(ContextMenuActionItem(text: ru ? "Скопировать ссылку" : "Copy Link", icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Link"), color: theme.contextMenu.primaryColor) }, action: { _, f in
+                                f(.default)
+                                let _ = (context.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: peerId))
+                                |> deliverOnMainQueue).startStandalone(next: { peer in
+                                    if let username = peer?.addressName, !username.isEmpty {
+                                        UIPasteboard.general.string = "https://t.me/\(username)"
+                                    } else if peerId.namespace == Namespaces.Peer.CloudUser {
+                                        UIPasteboard.general.string = "tg://user?id=\(peerId.id._internalGetInt64Value())"
+                                    }
+                                })
+                            })))
+                            items.append(.action(ContextMenuActionItem(text: ru ? "Скопировать ID" : "Copy ID", icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Copy"), color: theme.contextMenu.primaryColor) }, action: { _, f in
+                                f(.default)
+                                let rawId = peerId.id._internalGetInt64Value()
+                                if peerId.namespace == Namespaces.Peer.CloudChannel {
+                                    UIPasteboard.general.string = "-100\(rawId)"
+                                } else if peerId.namespace == Namespaces.Peer.CloudGroup {
+                                    UIPasteboard.general.string = "-\(rawId)"
+                                } else {
+                                    UIPasteboard.general.string = "\(rawId)"
+                                }
+                            })))
+                        }
+                        
                         // Kimogram: a chat where ghost mode does not apply.
                         if peerId != context.account.peerId && (KimogramSettings.get(.ghostReadReceipts) || KimogramSettings.get(.ghostTyping) || KimogramSettings.isGhostException(peerId)) {
                             let isException = KimogramSettings.isGhostException(peerId)
