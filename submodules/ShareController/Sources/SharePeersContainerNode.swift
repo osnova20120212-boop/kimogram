@@ -161,7 +161,8 @@ final class SharePeersContainerNode: ASDisplayNode, ShareContentContainerNode {
         self.extendedInitialReveal = extendedInitialReveal
         self.segmentedValues = segmentedValues
         
-        self.peersValue.set(.single(peers))
+        // Kimogram: locked chats are not offered as share targets.
+        self.peersValue.set(.single(peers.filter { !KimogramSettings.isChatLocked($0.peer.peerId) }))
         
         let canShareStory = controllerInteraction.shareStory != nil
         

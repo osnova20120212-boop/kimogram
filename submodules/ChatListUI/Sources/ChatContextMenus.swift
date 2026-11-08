@@ -551,6 +551,8 @@ func chatContextMenuItems(context: AccountContext, peerId: EnginePeer.Id, promoI
                             let ru = strings.baseLanguageCode == "ru"
                             items.append(.action(ContextMenuActionItem(text: isLocked ? (ru ? "Снять блокировку" : "Unlock Chat") : (ru ? "Заблокировать чат" : "Lock Chat"), icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Lock"), color: theme.contextMenu.primaryColor) }, action: { _, f in
                                 KimogramSettings.setChatLocked(peerId, !isLocked)
+                                // A locked chat's notifications show no text either.
+                                let _ = context.engine.peers.updatePeerDisplayPreviewsSetting(peerId: peerId, threadId: nil, displayPreviews: isLocked ? .default : .hide).startStandalone()
                                 f(.default)
                                 if !isLocked {
                                     let window = chatListController?.view.window

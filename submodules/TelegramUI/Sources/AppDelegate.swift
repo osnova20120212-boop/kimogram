@@ -2047,7 +2047,8 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                     //UIApplication.shared.applicationIconBadgeNumber = 1
                 }
             }
-            UIApplication.shared.applicationIconBadgeNumber = Int(count)
+            // Kimogram: no number on the app icon while Kimogram is in use.
+            UIApplication.shared.applicationIconBadgeNumber = KimogramSettings.get(.hideAppIconBadge) ? 0 : Int(count)
         }))
     }
 

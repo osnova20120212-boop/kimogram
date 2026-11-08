@@ -383,6 +383,7 @@ private func chatsPage(context: AccountContext) -> ViewController {
             KimogramPageSection(header: ru ? "ОТПРАВКА" : "SENDING", rows: [
                 .toggle(.silentByDefault, title: ru ? "Отправлять без звука" : "Send Silently", text: ru ? "Собеседник получит сообщение без звука уведомления" : "Recipients get no notification sound"),
                 .toggle(.pinSilently, title: ru ? "Закреплять без уведомления" : "Pin Silently", text: ru ? "Без вопроса «Уведомить всех?»" : "No \"Notify all members?\" question"),
+                .toggle(.noLinkPreviews, title: ru ? "Ссылки без превью" : "Links Without Preview", text: ru ? "Ссылка уходит без карточки сайта" : "Links are sent without a site card"),
                 .toggle(.stripTrackingParams, title: ru ? "Очищать ссылки от слежки" : "Clean Tracking from Links", text: ru ? "Убирает utm, fbclid и подобные метки из ссылок" : "Removes utm, fbclid and similar tags")
             ]),
             KimogramPageSection(header: ru ? "ЗАЩИТА ОТ СЛУЧАЙНОСТЕЙ" : "NO ACCIDENTS", rows: [
@@ -506,6 +507,9 @@ private func appearancePage(context: AccountContext) -> ViewController {
                 }),
                 .toggle(.hidePremiumBadges, title: ru ? "Скрыть значки Premium" : "Hide Premium Badges", text: ru ? "Звёзды и эмодзи-статусы у имён" : "Stars and emoji statuses next to names"),
                 .toggle(.hideFolderBadges, title: ru ? "Без счётчиков у папок" : "No Folder Counters", text: ru ? "Цифры непрочитанных на вкладках папок" : "Unread numbers on folder tabs"),
+                .toggle(.hideChatsTabBadge, title: ru ? "Без счётчика на вкладке «Чаты»" : "No Counter on Chats Tab", text: nil),
+                .toggle(.hideAppIconBadge, title: ru ? "Без цифры на иконке" : "No Number on App Icon", text: ru ? "Цифра пропадает, когда вы открываете Kimogram" : "Clears whenever you open Kimogram"),
+                .toggle(.hideEditButton, title: ru ? "Скрыть кнопку «Изменить»" : "Hide Edit Button", text: ru ? "Над списком чатов" : "Above the chat list"),
                 .link(title: ru ? "Размер стикеров" : "Sticker Size", icon: nil, label: stickerSizeTitles(ru)[KimogramSettings.stickerSize.rawValue], action: { environment in
                     environment.push(kimogramChoiceController(context: environment.context, title: ru ? "Размер стикеров" : "Sticker Size", footer: ru ? "Размер стикеров и больших эмодзи в чатах. Применяется к новым и открытым заново чатам." : "Size of stickers and large emoji in chats. Applies when a chat is opened again.", options: stickerSizeTitles(ru), selected: {
                         return KimogramSettings.stickerSize.rawValue
@@ -566,6 +570,10 @@ public func kimogramSettingsController(context: AccountContext) -> ViewControlle
                 .link(title: ru ? "Вставить настройки" : "Paste Settings", icon: nil, label: "", action: { environment in
                     let ok = KimogramSettings.importText(UIPasteboard.general.string ?? "")
                     environment.showAlert(title: nil, text: ok ? (ru ? "Настройки применены." : "Settings applied.") : (ru ? "Сначала скопируйте текст настроек Kimogram, он начинается с KIMOGRAM:" : "Copy Kimogram settings text first; it starts with KIMOGRAM:"))
+                }),
+                .link(title: ru ? "Рассказать другу" : "Tell a Friend", icon: nil, label: "", action: { environment in
+                    UIPasteboard.general.string = ru ? "Попробуй Kimogram — мессенджер на основе Telegram с режимом призрака, сохранением удалённых сообщений и красивым жидким стеклом: https://github.com/osnova20120212-boop/kimogram" : "Try Kimogram, a Telegram-based messenger with ghost mode, kept deleted messages and beautiful liquid glass: https://github.com/osnova20120212-boop/kimogram"
+                    environment.showAlert(title: nil, text: ru ? "Приглашение скопировано. Вставьте его в чат с другом." : "Invitation copied. Paste it into a chat with a friend.")
                 }),
                 .link(title: ru ? "Сбросить все настройки" : "Reset All Settings", icon: nil, label: "", action: { environment in
                     let presentationData = environment.context.sharedContext.currentPresentationData.with { $0 }

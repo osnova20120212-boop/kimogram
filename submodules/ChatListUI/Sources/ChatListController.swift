@@ -446,9 +446,10 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
             }
         }
         
-        self.badgeDisposable = (combineLatest(renderedTotalUnreadCount(accountManager: context.sharedContext.accountManager, engine: context.engine), self.presentationDataValue.get()) |> deliverOnMainQueue).startStrict(next: { [weak self] count, presentationData in
+        self.badgeDisposable = (combineLatest(renderedTotalUnreadCount(accountManager: context.sharedContext.accountManager, engine: context.engine), self.presentationDataValue.get(), KimogramSettings.signal(.hideChatsTabBadge)) |> deliverOnMainQueue).startStrict(next: { [weak self] count, presentationData, hideBadge in
             if let strongSelf = self {
-                if count.0 == 0 {
+                // Kimogram: the Chats tab can go without its unread counter.
+                if count.0 == 0 || hideBadge {
                     strongSelf.tabBarItem.badgeValue = ""
                 } else {
                     strongSelf.tabBarItem.badgeValue = compactNumericCountString(Int(count.0), decimalSeparator: presentationData.dateTimeFormat.decimalSeparator)
@@ -7346,6 +7347,9 @@ private final class ChatListLocationContext {
                                 self?.parentController?.donePressed()
                             }
                         )))
+                    } else if KimogramSettings.get(.hideEditButton) {
+                        // Kimogram: no Edit button; chats can still be selected with a long press.
+                        self.leftButton = nil
                     } else {
                         self.leftButton = AnyComponentWithIdentity(id: "edit", component: AnyComponent(NavigationButtonComponent(
                             content: .text(title: presentationData.strings.Common_Edit, isBold: false),

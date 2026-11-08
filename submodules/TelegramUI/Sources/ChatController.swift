@@ -9078,6 +9078,13 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
                 }
             }
             
+            // Kimogram: links go without a preview card.
+            if KimogramSettings.get(.noLinkPreviews), case let .message(text, attributes, inlineStickers, mediaReference, threadId, replyToMessageId, replyToStoryId, localGroupingKey, correlationId, bubbleUpEmojiOrStickersets) = message, mediaReference == nil || mediaReference?.media is TelegramMediaWebpage {
+                var updatedAttributes = attributes.filter { !($0 is OutgoingContentInfoMessageAttribute) && !($0 is WebpagePreviewMessageAttribute) }
+                updatedAttributes.append(OutgoingContentInfoMessageAttribute(flags: [.disableLinkPreviews]))
+                message = .message(text: text, attributes: updatedAttributes, inlineStickers: inlineStickers, mediaReference: nil, threadId: threadId, replyToMessageId: replyToMessageId, replyToStoryId: replyToStoryId, localGroupingKey: localGroupingKey, correlationId: correlationId, bubbleUpEmojiOrStickersets: bubbleUpEmojiOrStickersets)
+            }
+            
             // Kimogram: tracking parameters are removed from links in plain-text messages.
             if KimogramSettings.get(.stripTrackingParams), case let .message(text, attributes, inlineStickers, mediaReference, threadId, replyToMessageId, replyToStoryId, localGroupingKey, correlationId, bubbleUpEmojiOrStickersets) = message, mediaReference == nil, !attributes.contains(where: { attribute in
                 guard let entities = (attribute as? TextEntitiesMessageAttribute)?.entities else {
