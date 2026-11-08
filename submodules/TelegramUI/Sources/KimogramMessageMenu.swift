@@ -9,6 +9,7 @@ import ContextUI
 import UndoUI
 import ChatControllerInteraction
 import PresentationDataUtils
+import LocalizedPeerData
 
 /// Kimogram: the extra rows of a message's long-press menu.
 ///
@@ -141,7 +142,7 @@ func kimogramMessageMenuItems(context: AccountContext, message: EngineRawMessage
             return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Copy"), color: theme.actionSheet.primaryTextColor)
         }, action: { _, f in
             f(.default)
-            let _ = (context.account.postbox.mediaBox.resourceData(representation.resource, option: .complete(waitUntilFetched: true))
+            let _ = (context.account.postbox.mediaBox.resourceData(representation.resource, option: .complete(waitUntilFetchStatus: false))
             |> filter { $0.complete }
             |> take(1)
             |> deliverOnMainQueue).startStandalone(next: { data in

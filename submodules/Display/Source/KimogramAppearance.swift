@@ -89,8 +89,8 @@ public enum KimogramAppearance {
             let k = (0.5 - t) * 2.0
             let solid = UIColor(white: isDark ? 0.11 : 0.98, alpha: 1.0)
             let source = color ?? solid.withAlphaComponent(0.0)
-            var r: CGFloat = 0.0, g: CGFloat = 0.0, b: CGFloat = 0.0, a: CGFloat = 0.0
-            source.getRed(&r, green: &g, blue: &b, alpha: &a)
+            var a: CGFloat = 0.0
+            source.getRed(nil, green: nil, blue: nil, alpha: &a)
             let target = a + (0.92 - a) * k
             let mixed: UIColor = color == nil ? solid : source.withAlphaComponent(1.0)
             return (mixed.withAlphaComponent(max(a, target)), false)
