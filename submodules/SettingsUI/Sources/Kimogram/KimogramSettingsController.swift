@@ -314,9 +314,8 @@ private func doubleTapTitles(_ ru: Bool) -> [String] {
     return ru ? ["Реакция", "Ответить", "Открыть меню", "Ничего"] : ["Reaction", "Reply", "Open Menu", "Nothing"]
 }
 
-private func ghostPage(context: AccountContext) -> ViewController {
+private func ghostPageSections() -> [KimogramPageSection] {
     let ru = KimogramAutoProxy.isRussian
-    return kimogramPageController(context: context, title: ru ? "Режим призрака" : "Ghost Mode", build: { _ in
         return [
             KimogramPageSection(rows: [
                 .ghostMaster(title: ru ? "Режим призрака" : "Ghost Mode")
@@ -351,12 +350,21 @@ private func ghostPage(context: AccountContext) -> ViewController {
                 })
             ], footer: ru ? "В этих чатах призрак не действует, во всех остальных работает как обычно." : "Ghost mode does not apply in these chats.")
         ]
+}
+
+private func ghostPageTitle() -> String {
+    let ru = KimogramAutoProxy.isRussian
+    return ru ? "Режим призрака" : "Ghost Mode"
+}
+
+private func ghostPage(context: AccountContext) -> ViewController {
+    return kimogramPageController(context: context, title: ghostPageTitle(), build: { _ in
+        return ghostPageSections()
     })
 }
 
-private func historyPage(context: AccountContext) -> ViewController {
+private func historyPageSections() -> [KimogramPageSection] {
     let ru = KimogramAutoProxy.isRussian
-    return kimogramPageController(context: context, title: ru ? "Сохранение" : "Keep History", build: { _ in
         return [
             KimogramPageSection(header: ru ? "СООБЩЕНИЯ" : "MESSAGES", rows: [
                 .toggle(.saveDeletedMessages, title: ru ? "Сохранять удалённые" : "Keep Deleted Messages", text: ru ? "Останутся у вас с пометкой 🗑" : "They stay with a 🗑 mark"),
@@ -372,12 +380,21 @@ private func historyPage(context: AccountContext) -> ViewController {
                 .toggle(.saveProtected, title: ru ? "Сохранять защищённое" : "Save Protected Content", text: ru ? "Копировать, сохранять и снимать скриншоты где запрещено, сохранять чужие истории" : "Copy, save and screenshot where it is restricted; save others' stories")
             ], footer: ru ? "Переслать такое сообщение всё равно нельзя: это запрещает сервер. Сохраните или скопируйте его." : "Forwarding stays blocked by the server; save or copy instead.")
         ]
+}
+
+private func historyPageTitle() -> String {
+    let ru = KimogramAutoProxy.isRussian
+    return ru ? "Сохранение" : "Keep History"
+}
+
+private func historyPage(context: AccountContext) -> ViewController {
+    return kimogramPageController(context: context, title: historyPageTitle(), build: { _ in
+        return historyPageSections()
     })
 }
 
-private func chatsPage(context: AccountContext) -> ViewController {
+private func chatsPageSections() -> [KimogramPageSection] {
     let ru = KimogramAutoProxy.isRussian
-    return kimogramPageController(context: context, title: ru ? "Сообщения и чаты" : "Messages and Chats", build: { _ in
         return [
             KimogramPageSection(header: ru ? "ЖЕСТЫ И МЕНЮ" : "GESTURES AND MENU", rows: [
                 .toggle(.extendedMessageMenu, title: ru ? "Расширенное меню" : "Extended Menu", text: ru ? "Повторить, В Избранное, ID и точное время" : "Repeat, Save to Favourites, ID and exact time"),
@@ -397,6 +414,7 @@ private func chatsPage(context: AccountContext) -> ViewController {
                 .toggle(.charCounter, title: ru ? "Счётчик символов" : "Character Counter", text: ru ? "Показывает длину сообщения в поле ввода" : "Shows the message length in the field")
             ]),
             KimogramPageSection(header: ru ? "ОТПРАВКА" : "SENDING", rows: [
+                .toggle(.forwardWithoutAuthor, title: ru ? "Пересылать без автора" : "Forward Without Author", text: ru ? "Пересланное уходит без строки «Переслано от»" : "Forwards go without the \"Forwarded from\" line"),
                 .toggle(.silentByDefault, title: ru ? "Отправлять без звука" : "Send Silently", text: ru ? "Собеседник получит сообщение без звука уведомления" : "Recipients get no notification sound"),
                 .toggle(.pinSilently, title: ru ? "Закреплять без уведомления" : "Pin Silently", text: ru ? "Без вопроса «Уведомить всех?»" : "No \"Notify all members?\" question"),
                 .toggle(.noLinkPreviews, title: ru ? "Ссылки без превью" : "Links Without Preview", text: ru ? "Ссылка уходит без карточки сайта" : "Links are sent without a site card"),
@@ -424,12 +442,21 @@ private func chatsPage(context: AccountContext) -> ViewController {
                 .toggle(.openLinksDirectly, title: ru ? "Открывать ссылки без вопроса" : "Open Links Without Asking", text: ru ? "Даже если текст ссылки не совпадает с адресом" : "Even when the link text differs from the address")
             ])
         ]
+}
+
+private func chatsPageTitle() -> String {
+    let ru = KimogramAutoProxy.isRussian
+    return ru ? "Сообщения и чаты" : "Messages and Chats"
+}
+
+private func chatsPage(context: AccountContext) -> ViewController {
+    return kimogramPageController(context: context, title: chatsPageTitle(), build: { _ in
+        return chatsPageSections()
     })
 }
 
-private func profilePage(context: AccountContext) -> ViewController {
+private func profilePageSections() -> [KimogramPageSection] {
     let ru = KimogramAutoProxy.isRussian
-    return kimogramPageController(context: context, title: ru ? "Профиль" : "Profile", build: { _ in
         return [
             KimogramPageSection(header: ru ? "ЧУЖИЕ ПРОФИЛИ" : "OTHER PROFILES", rows: [
                 .toggle(.showPeerId, title: ru ? "Показывать ID" : "Show ID", text: ru ? "Нажмите на ID, чтобы скопировать" : "Tap the ID to copy it")
@@ -444,6 +471,16 @@ private func profilePage(context: AccountContext) -> ViewController {
                 })
             ], footer: ru ? "В Яндекс Музыке нажмите «Поделиться» → «Скопировать ссылку» и вернитесь в Kimogram: появится карточка «Добавить трек в профиль?». Трек встанет в описание профиля." : "In Yandex Music tap Share → Copy Link and come back to Kimogram: a card offers to add the track to your profile bio.")
         ]
+}
+
+private func profilePageTitle() -> String {
+    let ru = KimogramAutoProxy.isRussian
+    return ru ? "Профиль" : "Profile"
+}
+
+private func profilePage(context: AccountContext) -> ViewController {
+    return kimogramPageController(context: context, title: profilePageTitle(), build: { _ in
+        return profilePageSections()
     })
 }
 
@@ -472,9 +509,8 @@ private func stickerSizeTitles(_ ru: Bool) -> [String] {
     return ru ? ["Обычные", "Маленькие", "Средние", "Крупные"] : ["Normal", "Small", "Medium", "Large"]
 }
 
-private func appearancePage(context: AccountContext) -> ViewController {
+private func appearancePageSections() -> [KimogramPageSection] {
     let ru = KimogramAutoProxy.isRussian
-    return kimogramPageController(context: context, title: ru ? "Оформление" : "Appearance", build: { _ in
         let glassStep = Int((KimogramAppearance.glassTransparency * 10.0).rounded())
         return [
             KimogramPageSection(header: ru ? "ЖИДКОЕ СТЕКЛО" : "LIQUID GLASS", rows: [
@@ -575,6 +611,16 @@ private func appearancePage(context: AccountContext) -> ViewController {
                 })
             ], footer: ru ? "Фиолетовая тема Kimogram стоит первой в списке цветов, там же варианты иконки." : "The violet Kimogram colours come first in the colour list, next to the Kimogram icons.")
         ]
+}
+
+private func appearancePageTitle() -> String {
+    let ru = KimogramAutoProxy.isRussian
+    return ru ? "Оформление" : "Appearance"
+}
+
+private func appearancePage(context: AccountContext) -> ViewController {
+    return kimogramPageController(context: context, title: appearancePageTitle(), build: { _ in
+        return appearancePageSections()
     })
 }
 
@@ -586,6 +632,15 @@ public func kimogramSettingsController(context: AccountContext) -> ViewControlle
         return [
             KimogramPageSection(rows: [
                 .hero(title: "Kimogram", subtitle: ru ? "Привычный мессенджер, только мощнее и красивее" : "The messenger you know, more powerful and beautiful")
+            ]),
+            KimogramPageSection(rows: [
+                .link(title: ru ? "🔍 Поиск по настройкам" : "🔍 Search Settings", icon: nil, label: "", action: { environment in
+                    environment.present(promptController(context: environment.context, text: ru ? "Какую настройку найти?" : "Which setting?", value: nil, placeholder: ru ? "Например, стекло" : "For example, glass", characterLimit: 40, displayCharacterLimit: false, apply: { value in
+                        if let value, !value.trimmingCharacters(in: .whitespaces).isEmpty {
+                            environment.push(kimogramSettingsSearchController(context: environment.context, query: value.trimmingCharacters(in: .whitespaces)))
+                        }
+                    }))
+                })
             ]),
             KimogramPageSection(header: ru ? "ПОДКЛЮЧЕНИЕ" : "CONNECTION", rows: [
                 .link(title: ru ? "Прокси" : "Proxy", icon: PresentationResourcesSettings.proxy, label: autoProxyEnabled ? (ru ? "Авто" : "Auto") : (ru ? "Свой" : "Manual"), action: { environment in
@@ -724,5 +779,53 @@ func kimogramDeletedMessagesController(context: AccountContext, query: String? =
             ], footer: ru ? "Сохраняется до 1000 последних удалённых сообщений." : "Up to the last 1000 deleted messages are listed."))
         }
         return sections
+    })
+}
+
+// MARK: - Search
+
+/// Every switch of the inner pages whose title or note contains `query`, grouped by page.
+func kimogramSettingsSearchController(context: AccountContext, query: String) -> ViewController {
+    let ru = KimogramAutoProxy.isRussian
+    return kimogramPageController(context: context, title: "«\(query)»", build: { _ in
+        let lowered = query.lowercased()
+        let pages: [(String, [KimogramPageSection])] = [
+            (ghostPageTitle(), ghostPageSections()),
+            (historyPageTitle(), historyPageSections()),
+            (chatsPageTitle(), chatsPageSections()),
+            (profilePageTitle(), profilePageSections()),
+            (appearancePageTitle(), appearancePageSections())
+        ]
+        var result: [KimogramPageSection] = []
+        for (title, sections) in pages {
+            var rows: [KimogramRow] = []
+            for section in sections {
+                for row in section.rows {
+                    var texts: [String] = []
+                    switch row {
+                    case let .toggle(_, title, text):
+                        texts = [title, text ?? ""]
+                    case let .flag(title, text, _, _):
+                        texts = [title, text ?? ""]
+                    case let .link(title, _, _, _):
+                        texts = [title]
+                    case let .check(title, _, _):
+                        texts = [title]
+                    default:
+                        break
+                    }
+                    if texts.contains(where: { $0.lowercased().contains(lowered) }) {
+                        rows.append(row)
+                    }
+                }
+            }
+            if !rows.isEmpty {
+                result.append(KimogramPageSection(header: title.uppercased(), rows: rows))
+            }
+        }
+        if result.isEmpty {
+            result.append(KimogramPageSection(rows: [], footer: ru ? "Ничего не найдено." : "Nothing found."))
+        }
+        return result
     })
 }

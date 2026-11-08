@@ -56,6 +56,7 @@ public final class KimogramSettings {
         case confirmSend = "kimogram.confirmSend"
         case noChatPreview = "kimogram.noChatPreview"
         case quickDelete = "kimogram.quickDelete"
+        case forwardWithoutAuthor = "kimogram.forwardWithoutAuthor"
         case noSuspiciousLinkWarning = "kimogram.noSuspiciousLinkWarning"
         case titleAccountName = "kimogram.titleAccountName"
         case noChatListSeparators = "kimogram.noChatListSeparators"
