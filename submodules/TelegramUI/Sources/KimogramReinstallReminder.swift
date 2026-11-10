@@ -1,5 +1,6 @@
 import Foundation
 import UserNotifications
+import TelegramCore
 
 /// Kimogram: a free sideload signature lasts seven days. A day before it runs out, a local
 /// notification reminds to reinstall the app from the computer.
@@ -7,6 +8,11 @@ enum KimogramReinstallReminder {
     private static let identifier = "kimogram.reinstallReminder"
 
     static func schedule(russian: Bool) {
+        // An App Store install is signed by Apple and never runs out.
+        if KimogramSettings.storeEdition {
+            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
+            return
+        }
         let fileManager = FileManager.default
         guard let attributes = try? fileManager.attributesOfItem(atPath: Bundle.main.bundlePath), let installDate = (attributes[.creationDate] as? Date) ?? (attributes[.modificationDate] as? Date) else {
             return

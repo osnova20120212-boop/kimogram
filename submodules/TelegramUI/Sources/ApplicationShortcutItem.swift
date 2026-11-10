@@ -50,16 +50,14 @@ func applicationShortcutItems(strings: PresentationStrings, otherAccountName: St
             ApplicationShortcutItem(type: .search, title: strings.Common_Search, subtitle: nil),
             ApplicationShortcutItem(type: .compose, title: strings.Compose_NewMessage, subtitle: nil),
             ApplicationShortcutItem(type: .savedMessages, title: strings.Conversation_SavedMessages, subtitle: nil),
-            ApplicationShortcutItem(type: .account, title: strings.Shortcut_SwitchAccount, subtitle: otherAccountName),
-            kimogramGhostShortcutItem(strings: strings)
-        ]
+            ApplicationShortcutItem(type: .account, title: strings.Shortcut_SwitchAccount, subtitle: otherAccountName)
+        ] + (KimogramSettings.storeEdition ? [] : [kimogramGhostShortcutItem(strings: strings)])
     } else {
         return [
             ApplicationShortcutItem(type: .search, title: strings.Common_Search, subtitle: nil),
             ApplicationShortcutItem(type: .compose, title: strings.Compose_NewMessage, subtitle: nil),
-            ApplicationShortcutItem(type: .savedMessages, title: strings.Conversation_SavedMessages, subtitle: nil),
-            kimogramGhostShortcutItem(strings: strings)
-        ]
+            ApplicationShortcutItem(type: .savedMessages, title: strings.Conversation_SavedMessages, subtitle: nil)
+        ] + (KimogramSettings.storeEdition ? [] : [kimogramGhostShortcutItem(strings: strings)])
     }
 }
 

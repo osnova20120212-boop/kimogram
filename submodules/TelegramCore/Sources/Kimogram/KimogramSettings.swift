@@ -77,7 +77,39 @@ public final class KimogramSettings {
     }()
     private static let updatesPipe = ValuePipe<Void>()
 
+    /// The App Store edition. Telegram's API terms (core.telegram.org/api/terms, 1.4 and 3.3)
+    /// forbid ghost mode, tampering with read, online and typing statuses, keeping
+    /// self-destructing content and hiding official sponsored messages; Apple reviews against
+    /// them too. In this edition those switches always read off and their rows are hidden.
+    /// Set from `BuildConfig.isAppStoreBuild` at launch, before any network work starts.
+    public static var storeEdition: Bool = false
+
+    public static let storeForbiddenKeys: Set<Key> = [
+        .ghostReadReceipts, .ghostOnline, .ghostTyping, .ghostStories, .ghostReadOnReply,
+        .ghostVoiceListened, .hideRecordingActivity, .noScreenshotNotice, .noViewIncrement,
+        .saveDeletedMessages, .keepSelfDestructing, .saveProtected, .hideSponsored
+    ]
+
+    /// Always on in the App Store edition: Apple requires digital goods to be sold through its
+    /// own in-app purchases (guideline 3.1.1), and this build has none, so the Premium, gift and
+    /// paid-reaction entry points stay hidden.
+    public static let storeForcedKeys: Set<Key> = [
+        .hidePremiumRows, .hideGiftButton, .hidePaidReactions
+    ]
+
+    public static func isAvailable(_ key: Key) -> Bool {
+        return !(storeEdition && (storeForbiddenKeys.contains(key) || storeForcedKeys.contains(key)))
+    }
+
     public static func get(_ key: Key) -> Bool {
+        if storeEdition {
+            if storeForbiddenKeys.contains(key) {
+                return false
+            }
+            if storeForcedKeys.contains(key) {
+                return true
+            }
+        }
         if defaults.bool(forKey: key.rawValue) {
             return true
         }
@@ -132,6 +164,9 @@ public final class KimogramSettings {
     }
 
     public static var ghostScheduleActiveNow: Bool {
+        if storeEdition {
+            return false
+        }
         let index = ghostSchedule
         if index == 0 {
             return false
@@ -174,6 +209,9 @@ public final class KimogramSettings {
     }
 
     public static func setGhostMode(_ value: Bool) {
+        if storeEdition {
+            return
+        }
         defaults.set(value, forKey: Key.ghostReadReceipts.rawValue)
         defaults.set(value, forKey: Key.ghostOnline.rawValue)
         defaults.set(value, forKey: Key.ghostTyping.rawValue)

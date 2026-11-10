@@ -200,6 +200,33 @@ private enum KimogramPageEntry: ItemListNodeEntry {
     }
 }
 
+/// Glues row groups together; spelled as a function so the type checker sees `[KimogramRow]` per group.
+private func kimogramJoinedRows(_ groups: [KimogramRow]...) -> [KimogramRow] {
+    return groups.flatMap { $0 }
+}
+
+/// The App Store edition hides every switch Telegram's API terms forbid
+/// (`KimogramSettings.storeForbiddenKeys`), and any section left empty by that.
+private func kimogramStoreFiltered(_ sections: [KimogramPageSection]) -> [KimogramPageSection] {
+    guard KimogramSettings.storeEdition else {
+        return sections
+    }
+    return sections.compactMap { section -> KimogramPageSection? in
+        var section = section
+        section.rows = section.rows.filter { row in
+            switch row {
+            case let .toggle(key, _, _):
+                return KimogramSettings.isAvailable(key)
+            case .ghostMaster:
+                return false
+            default:
+                return true
+            }
+        }
+        return section.rows.isEmpty ? nil : section
+    }
+}
+
 private func kimogramPageEntries(sections: [KimogramPageSection]) -> [KimogramPageEntry] {
     var entries: [KimogramPageEntry] = []
     for (sectionIndex, section) in sections.enumerated() {
@@ -242,7 +269,7 @@ func kimogramPageController(context: AccountContext, title: String, build: @esca
 
     let signal = combineLatest(queue: Queue.mainQueue(), context.sharedContext.presentationData, KimogramSettings.changes(), KimogramAutoProxy.shared.enabled, kimogramAppearanceChanges())
     |> map { presentationData, _, autoProxyEnabled, _ -> (ItemListControllerState, (ItemListNodeState, Any)) in
-        let sections = build(autoProxyEnabled)
+        let sections = kimogramStoreFiltered(build(autoProxyEnabled))
         arguments.sections = sections
         let controllerState = ItemListControllerState(presentationData: ItemListPresentationData(presentationData), title: .text(title), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
         let listState = ItemListNodeState(presentationData: ItemListPresentationData(presentationData), entries: kimogramPageEntries(sections: sections), style: .blocks, animateChanges: true)
@@ -371,7 +398,7 @@ private func historyPageSections() -> [KimogramPageSection] {
                 .toggle(.saveEditHistory, title: ru ? "Сохранять историю правок" : "Keep Edit History", text: ru ? "Под исправленным видно, что было раньше" : "See what an edited message said before"),
                 .toggle(.keepSelfDestructing, title: ru ? "Не удалять исчезающие" : "Keep Self-Destructing", text: ru ? "Сообщения с таймером и одноразовые фото останутся" : "Timed messages and view-once media stay")
             ], footer: ru ? "Работает для сообщений, которые пришли, пока настройка включена." : "Works for messages received while this is on."),
-            KimogramPageSection(rows: [
+            KimogramPageSection(rows: KimogramSettings.storeEdition ? [] : [
                 .link(title: ru ? "Удалённые сообщения" : "Deleted Messages", icon: nil, label: "\(KimogramDeletedLog.all().count)", action: { environment in
                     environment.push(kimogramDeletedMessagesController(context: environment.context))
                 })
@@ -656,21 +683,27 @@ public func kimogramSettingsController(context: AccountContext) -> ViewControlle
                     }).startStandalone()
                 })
             ], footer: ru ? "Авто-прокси сам находит рабочий бесплатный прокси, если подключиться не получается." : "Auto Proxy finds a working free proxy whenever the app cannot connect."),
-            KimogramPageSection(header: ru ? "ПРИВАТНОСТЬ" : "PRIVACY", rows: [
+            KimogramPageSection(header: ru ? "ПРИВАТНОСТЬ" : "PRIVACY", rows: kimogramJoinedRows([
                 .toggle(.blurInAppSwitcher, title: ru ? "Размывать в списке приложений" : "Blur in App Switcher", text: ru ? "Чужие не увидят переписку при переключении приложений" : "Nobody sees your chats when switching apps"),
                 .flag(title: ru ? "Предупреждать о подозрительных ссылках" : "Warn About Suspicious Links", text: ru ? "Спросит перед открытием поддельного адреса или голого IP" : "Asks before opening a look-alike address or a bare IP", value: !KimogramSettings.get(.noSuspiciousLinkWarning), set: { value in
                     KimogramSettings.set(.noSuspiciousLinkWarning, !value)
-                }),
+                })
+            ], KimogramSettings.storeEdition ? [] : [
                 .link(title: ru ? "Режим призрака" : "Ghost Mode", icon: PresentationResourcesSettings.security, label: countLabel(ghostKeys, ru), action: { environment in
                     environment.push(ghostPage(context: environment.context))
-                }),
+                })
+            ], [
                 .link(title: ru ? "Сохранение" : "Keep History", icon: PresentationResourcesSettings.savedMessages, label: countLabel(historyKeys, ru), action: { environment in
                     environment.push(historyPage(context: environment.context))
                 }),
                 .link(title: ru ? "Статистика" : "Statistics", icon: nil, label: "\(KimogramSettings.statValue(.deletedKept) + KimogramSettings.statValue(.editsKept))", action: { environment in
+                    if KimogramSettings.storeEdition {
+                        environment.showAlert(title: ru ? "Статистика Kimogram" : "Kimogram Statistics", text: ru ? "Сохранено правок: \(KimogramSettings.statValue(.editsKept))\nЗаблокировано чатов: \(KimogramSettings.lockedChatCount)" : "Edits kept: \(KimogramSettings.statValue(.editsKept))\nLocked chats: \(KimogramSettings.lockedChatCount)")
+                        return
+                    }
                     environment.showAlert(title: ru ? "Статистика Kimogram" : "Kimogram Statistics", text: ru ? "Сохранено удалённых сообщений: \(KimogramSettings.statValue(.deletedKept))\nСохранено правок: \(KimogramSettings.statValue(.editsKept))\nЗаблокировано чатов: \(KimogramSettings.lockedChatCount)\nЧатов без призрака: \(KimogramSettings.ghostExceptionPeerIds.count)" : "Deleted messages kept: \(KimogramSettings.statValue(.deletedKept))\nEdits kept: \(KimogramSettings.statValue(.editsKept))\nLocked chats: \(KimogramSettings.lockedChatCount)\nChats without ghost mode: \(KimogramSettings.ghostExceptionPeerIds.count)")
                 })
-            ], footer: ru ? "Любой чат можно закрыть Face ID: зажмите его в списке чатов и выберите «Заблокировать чат». А «Скрыть чат» уберёт его из списка совсем, найти его можно будет только поиском. Заблокировано: \(KimogramSettings.lockedChatCount), скрыто: \(KimogramSettings.hiddenChatIds.count)." : "Any chat can be locked with Face ID: press and hold it in the chat list and choose Lock Chat. Hide Chat removes it from the list; only search finds it. Locked: \(KimogramSettings.lockedChatCount), hidden: \(KimogramSettings.hiddenChatIds.count)."),
+            ]), footer: ru ? "Любой чат можно закрыть Face ID: зажмите его в списке чатов и выберите «Заблокировать чат». А «Скрыть чат» уберёт его из списка совсем, найти его можно будет только поиском. Заблокировано: \(KimogramSettings.lockedChatCount), скрыто: \(KimogramSettings.hiddenChatIds.count)." : "Any chat can be locked with Face ID: press and hold it in the chat list and choose Lock Chat. Hide Chat removes it from the list; only search finds it. Locked: \(KimogramSettings.lockedChatCount), hidden: \(KimogramSettings.hiddenChatIds.count)."),
             KimogramPageSection(header: ru ? "УДОБСТВО" : "COMFORT", rows: [
                 .link(title: ru ? "Сообщения и чаты" : "Messages and Chats", icon: PresentationResourcesSettings.privateChats, label: "", action: { environment in
                     environment.push(chatsPage(context: environment.context))
@@ -692,7 +725,11 @@ public func kimogramSettingsController(context: AccountContext) -> ViewControlle
                     environment.showAlert(title: nil, text: ok ? (ru ? "Настройки применены." : "Settings applied.") : (ru ? "Сначала скопируйте текст настроек Kimogram, он начинается с KIMOGRAM:" : "Copy Kimogram settings text first; it starts with KIMOGRAM:"))
                 }),
                 .link(title: ru ? "Рассказать другу" : "Tell a Friend", icon: nil, label: "", action: { environment in
+                    if KimogramSettings.storeEdition {
+                        UIPasteboard.general.string = ru ? "Попробуй Kimogram — красивый неофициальный клиент Telegram с жидким стеклом и десятками удобных настроек: https://github.com/osnova20120212-boop/kimogram" : "Try Kimogram, a beautiful unofficial Telegram client with liquid glass and dozens of handy settings: https://github.com/osnova20120212-boop/kimogram"
+                    } else {
                     UIPasteboard.general.string = ru ? "Попробуй Kimogram — мессенджер на основе Telegram с режимом призрака, сохранением удалённых сообщений и красивым жидким стеклом: https://github.com/osnova20120212-boop/kimogram" : "Try Kimogram, a Telegram-based messenger with ghost mode, kept deleted messages and beautiful liquid glass: https://github.com/osnova20120212-boop/kimogram"
+                    }
                     environment.showAlert(title: nil, text: ru ? "Приглашение скопировано. Вставьте его в чат с другом." : "Invitation copied. Paste it into a chat with a friend.")
                 }),
                 .link(title: ru ? "Сбросить все настройки" : "Reset All Settings", icon: nil, label: "", action: { environment in

@@ -584,6 +584,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         }
         
         let buildConfig = BuildConfig(baseAppBundleId: baseAppBundleId)
+        KimogramSettings.storeEdition = buildConfig.isAppStoreBuild
         self.buildConfig = buildConfig
         let signatureDict = BuildConfigExtra.signatureDict()
         
@@ -2935,6 +2936,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                                 case .appIcon:
                                     context.openAppIcon()
                                 case .ghost:
+                                    // setGhostMode does nothing in the App Store edition.
                                     KimogramSettings.setGhostMode(!KimogramSettings.ghostModeEnabled)
                             }
                         }
