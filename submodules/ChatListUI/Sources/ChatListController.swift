@@ -6365,6 +6365,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
             // Kimogram: ghost mode in one tap from the Chats tab.
             let kimogramRu = strongSelf.presentationData.strings.baseLanguageCode == "ru"
             let kimogramGhostOn = KimogramSettings.ghostModeEnabled
+            if !KimogramSettings.storeEdition {
             items.append(.action(ContextMenuActionItem(text: kimogramGhostOn ? (kimogramRu ? "Выключить режим призрака" : "Turn Off Ghost Mode") : (kimogramRu ? "Включить режим призрака 👻" : "Turn On Ghost Mode 👻"), icon: { theme in
                 return generateTintedImage(image: UIImage(bundleImageName: kimogramGhostOn ? "Chat/Context Menu/Eye" : "Chat/Context Menu/EyeLocked"), color: theme.contextMenu.primaryColor)
             }, action: { _, f in
@@ -6377,6 +6378,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                     }
                 }
             })))
+            }
             // Kimogram: every chat read in one tap.
             items.append(.action(ContextMenuActionItem(text: kimogramRu ? "Прочитать все чаты" : "Read All Chats", icon: { theme in
                 return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/MarkAsRead"), color: theme.contextMenu.primaryColor)
