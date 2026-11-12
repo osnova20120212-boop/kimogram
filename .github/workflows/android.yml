@@ -72,6 +72,10 @@ jobs:
           git remote add origin https://github.com/DrKLO/Telegram.git
           git fetch -q --depth 1 origin "$COMMIT"
           git checkout -q FETCH_HEAD
+          # Native libraries (ffmpeg, boringssl, tgcalls, ...) and the media3 module are submodules.
+          git submodule update --init --recursive --depth 1 --jobs 8 \
+            || git submodule update --init --recursive --jobs 8
+          du -sh .
           git log -1 --format='%H %s'
 
       - name: Apply Kimogram
