@@ -85,3 +85,13 @@ store = os.path.join(out, 'store')
 os.makedirs(store, exist_ok=True)
 full_logo(1024).convert('RGB').resize((512, 512), Image.LANCZOS).save(os.path.join(store, 'play-icon-512.png'))
 print('icons written')
+
+# In-app logo for the "Настройки Kimogram" row: just the mark, no background (24dp square).
+bb = MARK.getbbox()
+crop = MARK.crop(bb)
+side = max(crop.width, crop.height)
+sq = Image.new('RGBA', (side, side), (0, 0, 0, 0))
+sq.alpha_composite(crop, ((side - crop.width) // 2, (side - crop.height) // 2))
+for name, k in DENS.items():
+    S = int(round(24 * k))
+    save(sq.resize((S, S), Image.LANCZOS), f'drawable-{name}/kimogram_settings_logo.png')

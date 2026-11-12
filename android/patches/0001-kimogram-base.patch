@@ -23,10 +23,18 @@ index 99f64ad..69323b8 100644
          </activity-alias>
          <activity
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java b/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java
-index 4d0a8f5..2051a9f 100644
+index 4d0a8f5..125cf74 100644
 --- a/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java
-@@ -381,7 +381,7 @@ public class ApplicationLoader extends Application {
+@@ -200,6 +200,7 @@ public class ApplicationLoader extends Application {
+         } catch (Exception e) {
+             e.printStackTrace();
+         }
++        AndroidUtilities.runOnUIThread(() -> org.telegram.messenger.kimogram.KimogramAutoProxy.getInstance().start());
+ 
+         try {
+             connectivityManager = (ConnectivityManager) ApplicationLoader.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+@@ -381,7 +382,7 @@ public class ApplicationLoader extends Application {
          if (preferences.contains("pushService")) {
              enabled = preferences.getBoolean("pushService", true);
          } else {
@@ -167,8 +175,22 @@ index 3a5413c..097c95e 100644
          final Context context = ApplicationLoader.applicationContext;
          String value;
  
+diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/MessagesController.java b/TMessagesProj/src/main/java/org/telegram/messenger/MessagesController.java
+index ec76835..5f9f9e1 100644
+--- a/TMessagesProj/src/main/java/org/telegram/messenger/MessagesController.java
++++ b/TMessagesProj/src/main/java/org/telegram/messenger/MessagesController.java
+@@ -21727,6 +21727,9 @@ public class MessagesController extends BaseController implements NotificationCe
+     }
+ 
+     public SponsoredMessagesInfo getSponsoredMessages(long dialogId) {
++        if (org.telegram.messenger.kimogram.KimogramConfig.hideSponsored()) {
++            return null;
++        }
+         SponsoredMessagesInfo info = sponsoredMessages.get(dialogId);
+         if (info != null && (info.loading || Math.abs(SystemClock.elapsedRealtime() - info.loadTime) <= 5 * 60 * 1000)) {
+             return info;
 diff --git a/TMessagesProj/src/main/java/org/telegram/tgnet/ConnectionsManager.java b/TMessagesProj/src/main/java/org/telegram/tgnet/ConnectionsManager.java
-index ab54ee3..cf9abd7 100644
+index ab54ee3..f6d1208 100644
 --- a/TMessagesProj/src/main/java/org/telegram/tgnet/ConnectionsManager.java
 +++ b/TMessagesProj/src/main/java/org/telegram/tgnet/ConnectionsManager.java
 @@ -295,7 +295,7 @@ public class ConnectionsManager extends BaseController {
@@ -180,6 +202,43 @@ index ab54ee3..cf9abd7 100644
          }
      }
  
+@@ -420,6 +420,9 @@ public class ConnectionsManager extends BaseController {
+     }
+ 
+     private void sendRequestInternal(TLObject object, RequestDelegate onComplete, RequestDelegateTimestamp onCompleteTimestamp, QuickAckDelegate onQuickAck, WriteToSocketDelegate onWriteToSocket, int flags, int datacenterId, int connectionType, boolean immediate, int requestToken) {
++        if (org.telegram.messenger.kimogram.KimogramGhost.intercept(object)) {
++            return; // Kimogram ghost mode
++        }
+         if (BuildVars.LOGS_ENABLED) {
+             FileLog.d("send request " + object + " with token = " + requestToken);
+         }
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/voip/VoIPHelper.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/voip/VoIPHelper.java
+index cb6f2e2..0ccf435 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/Components/voip/VoIPHelper.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/voip/VoIPHelper.java
+@@ -75,6 +75,9 @@ public class VoIPHelper {
+ 	private static final int VOIP_SUPPORT_ID = 4244000;
+ 
+ 	public static void startCall(TLRPC.User user, boolean videoCall, boolean canVideoCall, final Activity activity, TLRPC.UserFull userFull, AccountInstance accountInstance) {
++		if (org.telegram.ui.kimogram.KimogramCallConfirm.askFirst(activity, user, videoCall, () -> startCall(user, videoCall, canVideoCall, activity, userFull, accountInstance))) {
++			return;
++		}
+ 		if (accountInstance == null ? MessagesController.getInstance(UserConfig.selectedAccount).isFrozen() : accountInstance.getMessagesController().isFrozen()) {
+ 			AccountFrozenAlert.show(accountInstance == null ? UserConfig.selectedAccount : accountInstance.getCurrentAccount());
+ 			return;
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
+index e6478ee..17450f5 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
+@@ -12427,7 +12427,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+         }
+         boolean onlySelfStories = !isArchive() && getStoriesController().hasOnlySelfStories();
+         boolean newVisibility;
+-        if (communityId != 0) {
++        if (communityId != 0 || org.telegram.messenger.kimogram.KimogramConfig.hideStoriesBar()) {
+             newVisibility = false;
+         } else if (isArchive()) {
+             newVisibility = !getStoriesController().getHiddenList().isEmpty();
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java
 index 1dd2ffe..df3f85b 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java
@@ -230,6 +289,56 @@ index f1aee78..c668ca4 100644
                      } else if (position == badgeNumberShowRow) {
                          checkCell.setTextAndCheck(getString("BadgeNumberShow", R.string.BadgeNumberShow), getNotificationsController().showBadgeNumber, true);
                      } else if (position == badgeNumberMutedRow) {
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
+index e2b917b..08deba8 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
+@@ -812,10 +812,11 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+             items.add(UItem.asShadow(null));
+         }
+ 
+-        if (!getMessagesController().premiumFeaturesBlocked()) {
++        final boolean kimogramHidePremium = org.telegram.messenger.kimogram.KimogramConfig.hidePremiumRows();
++        if (!kimogramHidePremium && !getMessagesController().premiumFeaturesBlocked()) {
+             items.add(SettingCell.Factory.of(11, 0xFFB659FF, 0xFF617CFF, R.drawable.settings_premium, getString(R.string.TelegramPremium)));
+         }
+-        if (getMessagesController().starsPurchaseAvailable()) {
++        if (!kimogramHidePremium && getMessagesController().starsPurchaseAvailable()) {
+             StarsController c = StarsController.getInstance(currentAccount);
+             long balance = c.getBalance().amount;
+             items.add(SettingCell.Factory.of(12, 0xFFEFA612, 0xFFE77512, R.drawable.settings_stars, getString(R.string.TelegramStars), null, c.balanceAvailable() && balance > 0 ? StarsIntroActivity.formatStarsAmount(c.getBalance(), 0.85f, ' ') : ""));
+@@ -827,15 +828,19 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+             items.add(SettingCell.Factory.of(13, 0xFF1BA4ED, 0xFF1488E1, R.drawable.filled_gram_earnings, getString(R.string.GramEarnings), null, c.balanceAvailable() && balance > 0 ? StarsIntroActivity.formatStarsAmount(c.getBalance(), 0.85f, ' ') : ""));
+         }
+ 
+-        if (!getMessagesController().premiumFeaturesBlocked()) {
++        if (!kimogramHidePremium && !getMessagesController().premiumFeaturesBlocked()) {
+             items.add(SettingCell.Factory.of(15, 0xFFF45255, 0xFFDF3955, R.drawable.settings_business, getString(R.string.TelegramBusiness)));
+         }
+-        if (!getMessagesController().premiumPurchaseBlocked()) {
++        if (!kimogramHidePremium && !getMessagesController().premiumPurchaseBlocked()) {
+             items.add(SettingCell.Factory.of(16, 0xFFF38B31, 0xFFE26314, R.drawable.settings_gift, getString(R.string.SendAGift)));
+         }
+         if (items.get(items.size() - 1).viewType != UniversalAdapter.VIEW_TYPE_SHADOW)
+             items.add(UItem.asShadow(null));
+ 
++        // Kimogram: the mod's own settings, right under the money section.
++        items.add(SettingCell.Factory.of(40, 0, 0, R.drawable.kimogram_settings_logo, org.telegram.messenger.kimogram.KimogramConfig.t("Настройки Kimogram", "Kimogram Settings")));
++        items.add(UItem.asShadow(null));
++
+         items.add(UItem.asHeader(getString(R.string.SettingsHelp)));
+         items.add(SettingCell.Factory.of(17, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.settings_ask, getString(R.string.AskAQuestion)));
+         items.add(SettingCell.Factory.of(18, IconBackgroundColors.BLUE_LIGHT.top, IconBackgroundColors.BLUE_LIGHT.bottom, R.drawable.settings_faq, getString(R.string.TelegramFAQ)));
+@@ -945,6 +950,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+                 presentSettingFragment(new LanguageSelectActivity());
+                 break;
+ 
++            case 40:
++                presentSettingFragment(new org.telegram.ui.kimogram.KimogramSettingsActivity());
++                break;
+             case 11:
+                 presentSettingFragment(new PremiumPreviewFragment("settings"));
+                 break;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ThemeActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/ThemeActivity.java
 index c964b54..e4802d1 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/ThemeActivity.java
