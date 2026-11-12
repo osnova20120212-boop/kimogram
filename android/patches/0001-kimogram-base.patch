@@ -1,0 +1,336 @@
+diff --git a/TMessagesProj/src/main/AndroidManifest.xml b/TMessagesProj/src/main/AndroidManifest.xml
+index 99f64ad..69323b8 100644
+--- a/TMessagesProj/src/main/AndroidManifest.xml
++++ b/TMessagesProj/src/main/AndroidManifest.xml
+@@ -250,7 +250,7 @@
+             <intent-filter>
+                 <action android:name="android.intent.action.VIEW"/>
+                 <category android:name="android.intent.category.DEFAULT"/>
+-                <data android:mimeType="vnd.android.cursor.item/vnd.org.telegram.messenger.android.profile"/>
++                <data android:mimeType="vnd.android.cursor.item/vnd.com.kimogram.app.android.profile"/>
+             </intent-filter>
+             <intent-filter>
+                 <action android:name="android.intent.action.VIEW"/>
+@@ -306,8 +306,8 @@
+             <intent-filter>
+                 <action android:name="android.intent.action.VIEW"/>
+                 <category android:name="android.intent.category.DEFAULT"/>
+-                <data android:mimeType="vnd.android.cursor.item/vnd.org.telegram.messenger.android.call"/>
+-                <data android:mimeType="vnd.android.cursor.item/vnd.org.telegram.messenger.android.call.video"/>
++                <data android:mimeType="vnd.android.cursor.item/vnd.com.kimogram.app.android.call"/>
++                <data android:mimeType="vnd.android.cursor.item/vnd.com.kimogram.app.android.call.video"/>
+             </intent-filter>
+         </activity-alias>
+         <activity
+diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java b/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java
+index 4d0a8f5..2051a9f 100644
+--- a/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java
++++ b/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java
+@@ -381,7 +381,7 @@ public class ApplicationLoader extends Application {
+         if (preferences.contains("pushService")) {
+             enabled = preferences.getBoolean("pushService", true);
+         } else {
+-            enabled = MessagesController.getMainSettings(UserConfig.selectedAccount).getBoolean("keepAliveService", false);
++            enabled = true; // Kimogram: keep the notification service on unless the user turned it off
+         }
+         if (enabled) {
+             try {
+diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java b/TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java
+index ca82181..9612f29 100644
+--- a/TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java
++++ b/TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java
+@@ -22,29 +22,29 @@ public class BuildVars {
+     public static boolean LOGS_ENABLED = BuildConfig.DEBUG_VERSION;
+     public static boolean DEBUG_PRIVATE_VERSION = BuildConfig.DEBUG_PRIVATE_VERSION;
+     public static boolean USE_CLOUD_STRINGS = true;
+-    public static boolean CHECK_UPDATES = true;
++    public static boolean CHECK_UPDATES = false; // Kimogram: no Telegram self-updates
+     public static boolean NO_SCOPED_STORAGE = Build.VERSION.SDK_INT <= 29;
+     public static String BUILD_VERSION_STRING = BuildConfig.BUILD_VERSION_STRING;
+ 
+-    public static int APP_ID = 4;
++    public static int APP_ID = 4; // replaced by android/apply.sh
+     public static String APP_HASH = "014b35b6184100b085b0d0572f9b5103";
+ 
+     // SafetyNet key for Google Identity SDK, set it to empty to disable
+-    public static String SAFETYNET_KEY = "AIzaSyDqt8P-7F7CPCseMkOiVRgb1LY8RN1bvH8";
+-    public static String PLAYSTORE_APP_URL = "https://play.google.com/store/apps/details?id=org.telegram.messenger";
++    public static String SAFETYNET_KEY = "";
++    public static String PLAYSTORE_APP_URL = "https://play.google.com/store/apps/details?id=com.kimogram.app";
+     public static String HUAWEI_STORE_URL = "https://appgallery.huawei.com/app/C101184875";
+     public static String GOOGLE_AUTH_CLIENT_ID = "760348033671-81kmi3pi84p11ub8hp9a1funsv0rn2p9.apps.googleusercontent.com";
+ 
+     public static String HUAWEI_APP_ID = "101184875";
+ 
+     // You can use this flag to disable Google Play Billing (If you're making fork and want it to be in Google Play)
+-    public static boolean IS_BILLING_UNAVAILABLE = false;
++    public static boolean IS_BILLING_UNAVAILABLE = true;
+ 
+     // works only on official app ids, disable on your forks
+-    public static boolean SUPPORTS_PASSKEYS = true;
++    public static boolean SUPPORTS_PASSKEYS = false;
+     // the second main tab: News, or Contacts as before them
+ 
+-    public static boolean SUPPORTS_FPNV = true;
++    public static boolean SUPPORTS_FPNV = false;
+ 
+     static {
+         if (ApplicationLoader.applicationContext != null) {
+diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/ContactsController.java b/TMessagesProj/src/main/java/org/telegram/messenger/ContactsController.java
+index 41ce86e..d554f76 100644
+--- a/TMessagesProj/src/main/java/org/telegram/messenger/ContactsController.java
++++ b/TMessagesProj/src/main/java/org/telegram/messenger/ContactsController.java
+@@ -391,7 +391,7 @@ public class ContactsController extends BaseController {
+         Utilities.globalQueue.postRunnable(() -> {
+             AccountManager am = AccountManager.get(ApplicationLoader.applicationContext);
+             try {
+-                Account[] accounts = am.getAccountsByType("org.telegram.messenger");
++                Account[] accounts = am.getAccountsByType("com.kimogram.app");
+                 for (int a = 0; a < accounts.length; a++) {
+                     Account acc = accounts[a];
+                     boolean found = false;
+@@ -423,7 +423,7 @@ public class ContactsController extends BaseController {
+                 readContacts();
+                 if (systemAccount == null) {
+                     try {
+-                        systemAccount = new Account("" + getUserConfig().getClientUserId(), "org.telegram.messenger");
++                        systemAccount = new Account("" + getUserConfig().getClientUserId(), "com.kimogram.app");
+                         am.addAccountExplicitly(systemAccount, "", null);
+                     } catch (Exception ignore) {
+ 
+@@ -437,7 +437,7 @@ public class ContactsController extends BaseController {
+         try {
+             systemAccount = null;
+             AccountManager am = AccountManager.get(ApplicationLoader.applicationContext);
+-            Account[] accounts = am.getAccountsByType("org.telegram.messenger");
++            Account[] accounts = am.getAccountsByType("com.kimogram.app");
+             for (int a = 0; a < accounts.length; a++) {
+                 Account acc = accounts[a];
+                 boolean found = false;
+@@ -513,7 +513,7 @@ public class ContactsController extends BaseController {
+                 AndroidUtilities.runOnUIThread(() -> {
+                     AccountManager am = AccountManager.get(ApplicationLoader.applicationContext);
+                     try {
+-                        Account[] accounts = am.getAccountsByType("org.telegram.messenger");
++                        Account[] accounts = am.getAccountsByType("com.kimogram.app");
+                         systemAccount = null;
+                         for (int a = 0; a < accounts.length; a++) {
+                             Account acc = accounts[a];
+@@ -531,7 +531,7 @@ public class ContactsController extends BaseController {
+ 
+                     }
+                     try {
+-                        systemAccount = new Account("" + getUserConfig().getClientUserId(), "org.telegram.messenger");
++                        systemAccount = new Account("" + getUserConfig().getClientUserId(), "com.kimogram.app");
+                         am.addAccountExplicitly(systemAccount, "", null);
+                     } catch (Exception ignore) {
+ 
+@@ -2353,7 +2353,7 @@ public class ContactsController extends BaseController {
+ 
+         builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
+         builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
+-        builder.withValue(ContactsContract.Data.MIMETYPE, "vnd.android.cursor.item/vnd.org.telegram.messenger.android.profile");
++        builder.withValue(ContactsContract.Data.MIMETYPE, "vnd.android.cursor.item/vnd.com.kimogram.app.android.profile");
+         builder.withValue(ContactsContract.Data.DATA1, user.id);
+         builder.withValue(ContactsContract.Data.DATA2, "Telegram Profile");
+         builder.withValue(ContactsContract.Data.DATA3, LocaleController.formatString("ContactShortcutMessage", R.string.ContactShortcutMessage, phoneOrName));
+@@ -2362,7 +2362,7 @@ public class ContactsController extends BaseController {
+ 
+         builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
+         builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
+-        builder.withValue(ContactsContract.Data.MIMETYPE, "vnd.android.cursor.item/vnd.org.telegram.messenger.android.call");
++        builder.withValue(ContactsContract.Data.MIMETYPE, "vnd.android.cursor.item/vnd.com.kimogram.app.android.call");
+         builder.withValue(ContactsContract.Data.DATA1, user.id);
+         builder.withValue(ContactsContract.Data.DATA2, "Telegram Voice Call");
+         builder.withValue(ContactsContract.Data.DATA3, LocaleController.formatString("ContactShortcutVoiceCall", R.string.ContactShortcutVoiceCall, phoneOrName));
+@@ -2371,7 +2371,7 @@ public class ContactsController extends BaseController {
+ 
+         builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
+         builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
+-        builder.withValue(ContactsContract.Data.MIMETYPE, "vnd.android.cursor.item/vnd.org.telegram.messenger.android.call.video");
++        builder.withValue(ContactsContract.Data.MIMETYPE, "vnd.android.cursor.item/vnd.com.kimogram.app.android.call.video");
+         builder.withValue(ContactsContract.Data.DATA1, user.id);
+         builder.withValue(ContactsContract.Data.DATA2, "Telegram Video Call");
+         builder.withValue(ContactsContract.Data.DATA3, LocaleController.formatString("ContactShortcutVideoCall", R.string.ContactShortcutVideoCall, phoneOrName));
+diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/LocaleController.java b/TMessagesProj/src/main/java/org/telegram/messenger/LocaleController.java
+index 3a5413c..097c95e 100644
+--- a/TMessagesProj/src/main/java/org/telegram/messenger/LocaleController.java
++++ b/TMessagesProj/src/main/java/org/telegram/messenger/LocaleController.java
+@@ -4781,6 +4781,10 @@ public class LocaleController {
+ 
+     @Nullable
+     private String getStringV2(String key, @StringRes int stringRes, String fallback) {
++        return org.telegram.messenger.kimogram.KimogramBrand.apply(getStringV2Raw(key, stringRes, fallback));
++    }
++
++    private String getStringV2Raw(String key, @StringRes int stringRes, String fallback) {
+         final Context context = ApplicationLoader.applicationContext;
+         String value;
+ 
+diff --git a/TMessagesProj/src/main/java/org/telegram/tgnet/ConnectionsManager.java b/TMessagesProj/src/main/java/org/telegram/tgnet/ConnectionsManager.java
+index ab54ee3..cf9abd7 100644
+--- a/TMessagesProj/src/main/java/org/telegram/tgnet/ConnectionsManager.java
++++ b/TMessagesProj/src/main/java/org/telegram/tgnet/ConnectionsManager.java
+@@ -295,7 +295,7 @@ public class ConnectionsManager extends BaseController {
+         if (preferences.contains("pushConnection")) {
+             return preferences.getBoolean("pushConnection", true);
+         } else {
+-            return MessagesController.getMainSettings(UserConfig.selectedAccount).getBoolean("backgroundConnection", false);
++            return true; // Kimogram: background connection on unless the user turned it off
+         }
+     }
+ 
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java
+index 1dd2ffe..df3f85b 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java
+@@ -2921,9 +2921,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
+                                             NotificationCenter.getInstance(intentAccount[0]).postNotificationName(NotificationCenter.closeChats);
+                                             push_user_id = userId;
+                                             String mimeType = cursor.getString(cursor.getColumnIndex(ContactsContract.Data.MIMETYPE));
+-                                            if (TextUtils.equals(mimeType, "vnd.android.cursor.item/vnd.org.telegram.messenger.android.call")) {
++                                            if (TextUtils.equals(mimeType, "vnd.android.cursor.item/vnd.com.kimogram.app.android.call")) {
+                                                 audioCallUser = true;
+-                                            } else if (TextUtils.equals(mimeType, "vnd.android.cursor.item/vnd.org.telegram.messenger.android.call.video")) {
++                                            } else if (TextUtils.equals(mimeType, "vnd.android.cursor.item/vnd.com.kimogram.app.android.call.video")) {
+                                                 videoCallUser = true;
+                                             }
+                                         }
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/NotificationsSettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/NotificationsSettingsActivity.java
+index f1aee78..c668ca4 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/NotificationsSettingsActivity.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/NotificationsSettingsActivity.java
+@@ -733,7 +733,7 @@ public class NotificationsSettingsActivity extends BaseFragment implements Notif
+                 getNotificationsController().updateBadge();
+             } else if (position == notificationsServiceConnectionRow) {
+                 SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
+-                enabled = preferences.getBoolean("pushConnection", getMessagesController().backgroundConnection);
++                enabled = preferences.getBoolean("pushConnection", true);
+                 SharedPreferences.Editor editor = preferences.edit();
+                 editor.putBoolean("pushConnection", !enabled);
+                 editor.commit();
+@@ -762,7 +762,7 @@ public class NotificationsSettingsActivity extends BaseFragment implements Notif
+                 }
+             } else if (position == notificationsServiceRow) {
+                 SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
+-                enabled = preferences.getBoolean("pushService", getMessagesController().keepAliveService);
++                enabled = preferences.getBoolean("pushService", true);
+                 SharedPreferences.Editor editor = preferences.edit();
+                 editor.putBoolean("pushService", !enabled);
+                 editor.commit();
+@@ -1029,9 +1029,9 @@ public class NotificationsSettingsActivity extends BaseFragment implements Notif
+                     } else if (position == androidAutoAlertRow) {
+                         checkCell.setTextAndCheck("Android Auto", preferences.getBoolean("EnableAutoNotifications", false), true);
+                     } else if (position == notificationsServiceRow) {
+-                        checkCell.setTextAndValueAndCheck(getString("NotificationsService", R.string.NotificationsService), getString("NotificationsServiceInfo", R.string.NotificationsServiceInfo), preferences.getBoolean("pushService", getMessagesController().keepAliveService), true, true);
++                        checkCell.setTextAndValueAndCheck(getString("NotificationsService", R.string.NotificationsService), getString("NotificationsServiceInfo", R.string.NotificationsServiceInfo), preferences.getBoolean("pushService", true), true, true);
+                     } else if (position == notificationsServiceConnectionRow) {
+-                        checkCell.setTextAndValueAndCheck(getString("NotificationsServiceConnection", R.string.NotificationsServiceConnection), getString("NotificationsServiceConnectionInfo", R.string.NotificationsServiceConnectionInfo), preferences.getBoolean("pushConnection", getMessagesController().backgroundConnection), true, true);
++                        checkCell.setTextAndValueAndCheck(getString("NotificationsServiceConnection", R.string.NotificationsServiceConnection), getString("NotificationsServiceConnectionInfo", R.string.NotificationsServiceConnectionInfo), preferences.getBoolean("pushConnection", true), true, true);
+                     } else if (position == badgeNumberShowRow) {
+                         checkCell.setTextAndCheck(getString("BadgeNumberShow", R.string.BadgeNumberShow), getNotificationsController().showBadgeNumber, true);
+                     } else if (position == badgeNumberMutedRow) {
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ThemeActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/ThemeActivity.java
+index c964b54..e4802d1 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/ThemeActivity.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/ThemeActivity.java
+@@ -778,9 +778,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
+             chatListRow = rowCount++;
+             chatListInfoRow = rowCount++;
+ 
+-            appIconHeaderRow = rowCount++;
+-            appIconSelectorRow = rowCount++;
+-            appIconShadowRow = rowCount++;
++            // Kimogram: Telegram's alternative app icons carry the Telegram logo, so the picker is hidden.
+ 
+             swipeGestureHeaderRow = rowCount++;
+             swipeGestureRow = rowCount++;
+diff --git a/TMessagesProj/src/main/res/values/strings.xml b/TMessagesProj/src/main/res/values/strings.xml
+index e4f8cf6..713b849 100644
+--- a/TMessagesProj/src/main/res/values/strings.xml
++++ b/TMessagesProj/src/main/res/values/strings.xml
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <resources>
+-    <string name="AppName">Telegram</string>
+-    <string name="AppNameBeta">Telegram Beta</string>
++    <string name="AppName">Kimogram</string>
++    <string name="AppNameBeta">Kimogram Beta</string>
+     <string name="LanguageName">English</string>
+     <string name="English">English</string>
+     <string name="LanguageNameInEnglish">English</string>
+diff --git a/TMessagesProj/src/main/res/xml/auth.xml b/TMessagesProj/src/main/res/xml/auth.xml
+index 4dc99f2..d5b7fe3 100644
+--- a/TMessagesProj/src/main/res/xml/auth.xml
++++ b/TMessagesProj/src/main/res/xml/auth.xml
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ 
+ <account-authenticator xmlns:android="http://schemas.android.com/apk/res/android"
+-    android:accountType="org.telegram.messenger"
++    android:accountType="com.kimogram.app"
+     android:icon="@drawable/ic_launcher_dr"
+     android:smallIcon="@drawable/ic_launcher_dr"
+     android:label="@string/AppName"
+diff --git a/TMessagesProj/src/main/res/xml/auth_menu.xml b/TMessagesProj/src/main/res/xml/auth_menu.xml
+index 98b9a70..5a29168 100644
+--- a/TMessagesProj/src/main/res/xml/auth_menu.xml
++++ b/TMessagesProj/src/main/res/xml/auth_menu.xml
+@@ -6,7 +6,7 @@
+         android:title="@string/AccountSettings"
+         android:summary="">
+         <intent android:action="org.telegram.messenger.OPEN_ACCOUNT"
+-            android:targetPackage="org.telegram.messenger"
++            android:targetPackage="com.kimogram.app"
+             android:targetClass="org.telegram.ui.LaunchActivity"/>
+     </PreferenceScreen>
+ </PreferenceScreen>
+diff --git a/TMessagesProj/src/main/res/xml/contacts.xml b/TMessagesProj/src/main/res/xml/contacts.xml
+index 4e09402..6c49436 100644
+--- a/TMessagesProj/src/main/res/xml/contacts.xml
++++ b/TMessagesProj/src/main/res/xml/contacts.xml
+@@ -1,17 +1,17 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <ContactsAccountType xmlns:android="http://schemas.android.com/apk/res/android">
+     <ContactsDataKind android:icon="@drawable/ic_launcher_dr"
+-        android:mimeType="vnd.android.cursor.item/vnd.org.telegram.messenger.android.profile"
++        android:mimeType="vnd.android.cursor.item/vnd.com.kimogram.app.android.profile"
+         android:summaryColumn="data2"
+         android:detailColumn="data3"
+         android:detailSocialSummary="true"/>
+     <ContactsDataKind android:icon="@drawable/ic_launcher_dr"
+-        android:mimeType="vnd.android.cursor.item/vnd.org.telegram.messenger.android.call"
++        android:mimeType="vnd.android.cursor.item/vnd.com.kimogram.app.android.call"
+         android:summaryColumn="data2"
+         android:detailColumn="data3"
+         android:detailSocialSummary="true"/>
+     <ContactsDataKind android:icon="@drawable/ic_launcher_dr"
+-        android:mimeType="vnd.android.cursor.item/vnd.org.telegram.messenger.android.call.video"
++        android:mimeType="vnd.android.cursor.item/vnd.com.kimogram.app.android.call.video"
+         android:summaryColumn="data2"
+         android:detailColumn="data3"
+         android:detailSocialSummary="true"/>
+diff --git a/TMessagesProj/src/main/res/xml/sync_contacts.xml b/TMessagesProj/src/main/res/xml/sync_contacts.xml
+index 9e9962e..e30647d 100644
+--- a/TMessagesProj/src/main/res/xml/sync_contacts.xml
++++ b/TMessagesProj/src/main/res/xml/sync_contacts.xml
+@@ -1,3 +1,3 @@
+ <sync-adapter xmlns:android="http://schemas.android.com/apk/res/android"
+     android:contentAuthority="com.android.contacts"
+-    android:accountType="org.telegram.messenger"/>
+\ No newline at end of file
++    android:accountType="com.kimogram.app"/>
+\ No newline at end of file
+diff --git a/gradle.properties b/gradle.properties
+index 17bb1dc..ea2ca9f 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -15,7 +15,7 @@
+ #Sat Mar 12 05:53:50 MSK 2016
+ APP_VERSION_CODE=7303
+ APP_VERSION_NAME=13.2.2
+-APP_PACKAGE=org.telegram.messenger
++APP_PACKAGE=com.kimogram.app
+ IS_PRIVATE=false
+ RELEASE_KEY_PASSWORD=android
+ RELEASE_KEY_ALIAS=androidkey

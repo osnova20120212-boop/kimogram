@@ -1,0 +1,170 @@
+name: Build Kimogram (Android)
+
+# Builds Kimogram for Android from Telegram Android (DrKLO/Telegram at android/UPSTREAM_COMMIT)
+# plus android/apply.sh, and publishes a GitHub Release with:
+#   Kimogram.apk  - install directly on a phone
+#   Kimogram.aab  - upload to Google Play Console
+#
+# Secrets:
+#   TELEGRAM_API_ID, TELEGRAM_API_HASH   (required, same as the iOS build)
+#   ANDROID_KEYSTORE_BASE64              (optional) base64 of the upload keystore (.jks)
+#   ANDROID_KEYSTORE_PASSWORD            (optional) its store password
+#   ANDROID_KEY_ALIAS                    (optional) key alias
+#   ANDROID_KEY_PASSWORD                 (optional) key password
+# Without the keystore secrets the build is signed with Telegram's public test key: fine for
+# installing by hand, not accepted by Google Play.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, 'claude/**' ]
+    paths:
+      - 'android/**'
+      - '.github/workflows/android.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kimogram-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+
+    env:
+      NDK_VERSION: 27.2.12479018
+      BUNDLETOOL_VERSION: 1.17.2
+
+    steps:
+      - name: Check Telegram API keys
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: |
+          if [ -z "$TELEGRAM_API_ID" ] || [ -z "$TELEGRAM_API_HASH" ]; then
+            echo "::error::Add TELEGRAM_API_ID and TELEGRAM_API_HASH in Settings -> Secrets and variables -> Actions"
+            exit 1
+          fi
+
+      - name: Free disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/node_modules /opt/ghc /usr/local/.ghcup \
+            /usr/local/share/powershell /usr/share/swift /opt/hostedtoolcache/CodeQL || true
+          docker image prune -af >/dev/null 2>&1 || true
+          df -h /
+
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            android
+          sparse-checkout-cone-mode: true
+          path: kimogram
+
+      - name: Fetch Telegram Android source
+        run: |
+          COMMIT=$(cat kimogram/android/UPSTREAM_COMMIT)
+          git init -q telegram
+          cd telegram
+          git remote add origin https://github.com/DrKLO/Telegram.git
+          git fetch -q --depth 1 origin "$COMMIT"
+          git checkout -q FETCH_HEAD
+          git log -1 --format='%H %s'
+
+      - name: Apply Kimogram
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: kimogram/android/apply.sh telegram
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+          cache-dependency-path: |
+            telegram/**/*.gradle*
+            telegram/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Install Android SDK parts
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKM" --licenses >/dev/null || true
+          "$SDKM" "platforms;android-36" "build-tools;36.0.0" "ndk;$NDK_VERSION" "cmake;3.22.1" >/dev/null
+          echo "sdk.dir=$ANDROID_HOME" > telegram/local.properties
+          echo "ndk.dir=$ANDROID_HOME/ndk/$NDK_VERSION" >> telegram/local.properties
+
+      - name: Signing key
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cd telegram
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > TMessagesProj/config/release.keystore
+            sed -i "s/^RELEASE_STORE_PASSWORD=.*/RELEASE_STORE_PASSWORD=$KS_PASS/; s/^RELEASE_KEY_ALIAS=.*/RELEASE_KEY_ALIAS=$KEY_ALIAS/; s/^RELEASE_KEY_PASSWORD=.*/RELEASE_KEY_PASSWORD=$KEY_PASS/" gradle.properties
+            echo "SIGNING=kimogram" >> "$GITHUB_ENV"
+            echo "Signing with the Kimogram upload key"
+          else
+            echo "SIGNING=test" >> "$GITHUB_ENV"
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret: signed with the public test key (not for Google Play)"
+          fi
+          grep '^RELEASE_' gradle.properties | sed 's/=.*/=***/'
+
+      - name: Build app bundle
+        working-directory: telegram
+        run: |
+          # 4 cores / 16 GB on the hosted runner.
+          sed -i 's/^org.gradle.jvmargs=.*/org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8/' gradle.properties
+          ./gradlew --no-daemon --stacktrace :TMessagesProj_App:bundleBundleAfatRelease
+
+      - name: Make installable APK from the bundle
+        run: |
+          set -e
+          AAB=$(ls telegram/TMessagesProj_App/build/outputs/bundle/bundleAfatRelease/*.aab | head -1)
+          mkdir -p out
+          cp "$AAB" out/Kimogram.aab
+          curl -fsSL -o bundletool.jar "https://github.com/google/bundletool/releases/download/$BUNDLETOOL_VERSION/bundletool-all-$BUNDLETOOL_VERSION.jar"
+          P=telegram/gradle.properties
+          KS_PASS=$(grep '^RELEASE_STORE_PASSWORD=' $P | cut -d= -f2-)
+          ALIAS=$(grep '^RELEASE_KEY_ALIAS=' $P | cut -d= -f2-)
+          KEY_PASS=$(grep '^RELEASE_KEY_PASSWORD=' $P | cut -d= -f2-)
+          java -jar bundletool.jar build-apks --bundle=out/Kimogram.aab --output=out/universal.apks --mode=universal \
+            --ks=telegram/TMessagesProj/config/release.keystore --ks-pass="pass:$KS_PASS" \
+            --ks-key-alias="$ALIAS" --key-pass="pass:$KEY_PASS"
+          unzip -o -q out/universal.apks universal.apk -d out
+          mv out/universal.apk out/Kimogram.apk
+          rm out/universal.apks
+          VERSION=$(grep '^APP_VERSION_NAME=' $P | cut -d= -f2)
+          echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
+          ls -la out
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-build-${{ github.run_number }}
+          name: Kimogram Android ${{ env.APP_VERSION }} (${{ github.run_number }})
+          target_commitish: ${{ github.sha }}
+          prerelease: ${{ github.ref != 'refs/heads/main' }}
+          body: |
+            Kimogram for Android.
+            Kimogram.apk - install on the phone directly.
+            Kimogram.aab - for Google Play Console.
+            Signing: ${{ env.SIGNING }}
+          files: |
+            out/Kimogram.apk
+            out/Kimogram.aab
+
+      - name: Keep native debug symbols
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-debug-symbols
+          path: telegram/TMessagesProj_App/build/outputs/native-debug-symbols/
+          if-no-files-found: ignore
+          retention-days: 14

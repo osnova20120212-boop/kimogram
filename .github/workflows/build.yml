@@ -9,6 +9,8 @@ on:
       - 'docs/**'
       - 'tools/kimogram/**'
       - '.github/workflows/proxies.yml'
+      - 'android/**'
+      - '.github/workflows/android.yml'
 
 permissions:
   contents: write
