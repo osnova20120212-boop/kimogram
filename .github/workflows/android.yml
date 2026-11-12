@@ -27,7 +27,7 @@ permissions:
 
 concurrency:
   group: kimogram-android-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -153,7 +153,10 @@ jobs:
         with:
           tag_name: android-build-${{ github.run_number }}
           name: Kimogram Android ${{ env.APP_VERSION }} (${{ github.run_number }})
-          target_commitish: ${{ github.sha }}
+          # The tag goes on main: GitHub refuses the workflow token a tag on a commit whose
+          # workflow files are not on the default branch yet (403 "Resource not accessible").
+          target_commitish: main
+          make_latest: false
           prerelease: ${{ github.ref != 'refs/heads/main' }}
           body: |
             Kimogram for Android.
@@ -163,6 +166,15 @@ jobs:
           files: |
             out/Kimogram.apk
             out/Kimogram.aab
+
+      - name: Keep the APK if the release could not be made
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kimogram-apk
+          path: out/Kimogram.apk
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Keep native debug symbols
         if: always()
